@@ -1,10 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My GitHub Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Mon - AI Web Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* Global */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding: 6rem 1rem 4rem;
+      background: linear-gradient(90deg, #4f46e5, #22d3ee);
+      clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
+    }
+    header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 4rem;
+      background: linear-gradient(90deg, #22d3ee, #4f46e5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    header p {
+      font-size: 1.4rem;
+      color: #cbd5e1;
+    }
+    .cta-button {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      font-weight: bold;
+      font-size: 1rem;
+      border-radius: 50px;
+      border: 2px solid #22d3ee;
+      color: #22d3ee;
+      transition: all 0.3s ease;
+    }
+    .cta-button:hover {
+      background: #22d3ee;
+      color: #0f0c29;
+      box-shadow: 0 0 20px #22d3ee;
+    }
+
+    /* Main */
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3rem 1rem;
+    }
+    section {
+      margin-bottom: 4rem;
+    }
+    section h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.2rem;
+      color: #22d3ee;
+      margin-bottom: 1rem;
+      border-left: 4px solid #4f46e5;
+      padding-left: 0.8rem;
+    }
+    section p, section li {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+    ul { list-style: none; margin-top: 1rem; }
+    ul li::before {
+      content: "•";
+      color: #22d3ee;
+      display: inline-block;
+      width: 1em;
+      margin-left: -1em;
+    }
+
+    /* Form */
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 2rem;
+      gap: 1rem;
+    }
+    input[type="text"] {
+      width: 90%;
+      max-width: 600px;
+      padding: 1rem;
+      border-radius: 50px;
+      border: 2px solid #4f46e5;
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    input[type="text"]:focus {
+      border-color: #22d3ee;
+      box-shadow: 0 0 15px #22d3ee;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Glitch effect on h1 */
+    @keyframes glitch {
+      0% { transform: translate(0);}
+      20% { transform: translate(-2px,2px);}
+      40% { transform: translate(2px,-2px);}
+      60% { transform: translate(-1px,1px);}
+      80% { transform: translate(1px,-1px);}
+      100% { transform: translate(0);}
+    }
+    header h1 {
+      animation: glitch 2s infinite;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px){
+      header h1 { font-size: 2.5rem; }
+      header p { font-size: 1rem; }
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello World 👋</h1>
-  <p>This is my first GitHub Page!</p>
+  <header>
+    <h1>Code Mon</h1>
+    <p>The AI that generates websites from your imagination</p>
+    <a href="#create" class="cta-button">Generate a Website</a>
+  </header>
+
+  <main>
+    <section id="about">
+      <h2>About Code Mon</h2>
+      <p>Code Mon is an advanced AI-powered system that creates fully functional websites from simple text instructions. Describe your idea, and Code Mon transforms it into a professional-looking webpage in seconds.</p>
+    </section>
+
+    <section id="features">
+      <h2>Features</h2>
+      <ul>
+        <li>Instant website generation from plain text</li>
+        <li>Customizable futuristic templates</li>
+        <li>Responsive design for desktop & mobile</li>
+        <li>Supports HTML, CSS, JS, and media assets</li>
+        <li>High-tech, AI-powered workflow</li>
+      </ul>
+    </section>
+
+    <section id="create">
+      <h2>Start Creating</h2>
+      <p>Type your website idea below and watch Code Mon bring it to life:</p>
+      <form action="/query" method="GET">
+        <input type="text" name="text" placeholder="Describe your website..." required>
+        <button type="submit" class="cta-button">Generate</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2025 Code Mon • Powered by AI • All rights reserved
+  </footer>
 </body>
 </html>
