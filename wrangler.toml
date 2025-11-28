@@ -1,6 +1,6 @@
 name = "code-mon"
 type = "webpack"  
-account_id = "<YOUR_CLOUDFLARE_ACCOUNT_ID>"
+account_id = "1f2e73201bfa9303029aa46fcf809ef5"
 compatibility_date = "2025-11-28"
 
 [site]
