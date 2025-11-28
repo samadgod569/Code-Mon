@@ -1,3 +1,8 @@
 name = "code-mon"
-main = "worker.js"
+type = "webpack"  
+account_id = "<YOUR_CLOUDFLARE_ACCOUNT_ID>"
 compatibility_date = "2025-11-28"
+
+[site]
+bucket = "./public"
+entry-point = "workers-site"
