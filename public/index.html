@@ -175,9 +175,17 @@
     &copy; 2025 Code Mon • Powered by AI • All rights reserved
   </footer>
   <script>
+  
+  const btn = document.getElementById('btn');
+
+  btn.addEventListener('click', (event) => {
+    event.preventDefault(); // stop form from submitting normally
+
     const inp = document.getElementById('inp').value;
-    const btn = document.getElementById('btn');
-    btn.addEventListener('click',() => window.location.href = `generate.html?text=${inp}`;);
+
+    window.location.href = `generate.html?text=${encodeURIComponent(inp)}`;
+  });
+
   </script>
 </body>
 </html>
