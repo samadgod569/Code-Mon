@@ -7,108 +7,84 @@
 
 <style>
     body {
-        font-family: "Inter", Arial, sans-serif;
+        font-family: Arial, sans-serif;
         background: #f5f7fa;
         margin: 0;
         padding: 0;
     }
-
     header {
-        background: #2d3436;
+        background: #1e1f22;
         color: white;
-        padding: 18px;
+        padding: 15px;
         text-align: center;
-        font-size: 24px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        font-size: 22px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-
     #container {
         display: flex;
-        height: calc(100vh - 70px);
+        height: calc(100vh - 60px);
     }
-
-    /* LEFT SIDEBAR */
     #files {
         width: 270px;
         background: #ffffff;
-        border-right: 1px solid #ddd;
+        border-right: 1px solid #d6d6d6;
         padding: 15px;
         overflow-y: auto;
     }
-
-    #files button {
-        width: 100%;
-        background: #0984e3;
-        padding: 10px;
-        border-radius: 6px;
-        color: #fff;
-        font-size: 15px;
-        cursor: pointer;
-        border: none;
-        font-weight: 600;
-        transition: 0.2s;
-    }
-
-    #files button:hover {
-        background: #74b9ff;
-    }
-
-    .fileItem {
-        padding: 10px;
-        margin: 8px 0;
-        background: #f1f2f6;
-        cursor: pointer;
-        border-radius: 6px;
-        font-size: 15px;
-        border: 1px solid #dcdde1;
-        transition: 0.2s;
-    }
-
-    .fileItem:hover {
-        background: #dfe6e9;
-    }
-
-    /* RIGHT SIDE EDITOR */
     #editorArea {
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 15px;
-        background: #f8f9fa;
+        padding: 10px;
     }
-
     #editor {
         width: 100%;
         height: 100%;
-        padding: 16px;
+        padding: 15px;
         border: 1px solid #ccc;
         outline: none;
         resize: none;
-        font-size: 15px;
+        font-size: 16px;
         border-radius: 8px;
         font-family: monospace;
         background: #ffffff;
         box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
-
-    /* ACTION BUTTONS */
-    #editorArea button {
+    button {
         padding: 12px;
         margin-top: 10px;
         cursor: pointer;
         border: none;
-        background: #2d3436;
+        background: #1e1f22;
         color: white;
         border-radius: 6px;
         font-size: 15px;
-        font-weight: 600;
         transition: 0.2s;
     }
-
-    #editorArea button:hover {
-        background: #636e72;
+    button:hover {
+        background: #333;
+    }
+    .fileItem {
+        padding: 10px;
+        margin: 6px 0;
+        background: #e8e8e8;
+        cursor: pointer;
+        border-radius: 6px;
+    }
+    .fileItem:hover {
+        background: #dcdcdc;
+    }
+    #errorBox {
+        display: none;
+        background: #ffdddd;
+        color: #a70000;
+        border: 1px solid #ff8a8a;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        font-size: 14px;
+        white-space: pre-wrap;
     }
 </style>
 
@@ -119,13 +95,16 @@
 
 <div id="container">
 
-    <!-- LEFT SIDE (FILE LIST) -->
+    <!-- ERROR BOX -->
+    <div id="errorBox"></div>
+
+    <!-- LEFT SIDE -->
     <div id="files">
         <button onclick="createFile()">+ Create File</button>
         <div id="fileList"></div>
     </div>
 
-    <!-- RIGHT SIDE (EDITOR + ACTIONS) -->
+    <!-- RIGHT SIDE -->
     <div id="editorArea">
         <textarea id="editor" placeholder="Select or create a file to begin..."></textarea>
         <button onclick="saveFile()">💾 Save</button>
@@ -141,116 +120,138 @@ if (!user) location.href = "login.html";
 
 let currentFile = null;
 
-// ERROR POPUP FUNCTION
+// ------------------
+// Error Display
+// ------------------
 function showError(msg) {
-    alert("❌ ERROR:\n\n" + msg);
+    const box = document.getElementById("errorBox");
+    box.style.display = "block";
+    box.innerText = msg;
+    setTimeout(() => box.style.display = "none", 6000);
 }
 
-// SAFER FETCH WRAPPER
-async function safeFetch(url, options = {}) {
+// Helper fetch wrapper with CORS + error handling
+async function apiFetch(url, options = {}) {
     try {
-        const res = await fetch(url, options);
-        const text = await res.text();
+        const res = await fetch(url, {
+            ...options,
+            headers: { "Content-Type": "application/json" },
+            mode: "cors"
+        });
 
         if (!res.ok) {
-            showError(text || "Unknown server error");
-            throw new Error(text);
+            const text = await res.text();
+            throw new Error(`Server Error (${res.status}): ${text}`);
         }
-        return text;
-    } catch (e) {
-        showError(e.message);
-        throw e;
+
+        return res;
+    } catch (err) {
+        showError("❌ " + err.message);
+        throw err;
     }
 }
 
-// LOAD FILE LIST
+// ------------------------------
+// Load all files
+// ------------------------------
 async function loadFiles() {
-    try {
-        const text = await safeFetch(`/api/list?user=${user}`);
-        const files = JSON.parse(text);
+    const res = await apiFetch(`/api/list?user=${user}`);
+    const files = await res.json();
 
-        const list = document.getElementById("fileList");
-        list.innerHTML = "";
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
 
-        files.forEach(filename => {
-            const div = document.createElement("div");
-            div.className = "fileItem";
-            div.innerText = filename;
-            div.onclick = () => loadFile(filename);
-            list.appendChild(div);
-        });
-
-    } catch (e) {}
+    files.forEach(filename => {
+        const div = document.createElement("div");
+        div.className = "fileItem";
+        div.innerText = filename;
+        div.onclick = () => loadFile(filename);
+        list.appendChild(div);
+    });
 }
 
 loadFiles();
 
-// LOAD CONTENT
+// ------------------------------
+// Load a file
+// ------------------------------
 async function loadFile(name) {
     currentFile = name;
 
-    try {
-        const text = await safeFetch(`/api/load?user=${user}&filename=${name}`);
-        document.getElementById("editor").value = text;
-    } catch (e) {}
+    const res = await apiFetch(`/api/load?user=${user}&filename=${name}`);
+    const text = await res.text();
+
+    document.getElementById("editor").value = text;
 }
 
-// CREATE FILE
+// ------------------------------
+// Create file
+// ------------------------------
 async function createFile() {
     const name = prompt("Enter file name (example: index.html):");
     if (!name) return;
 
-    try {
-        await safeFetch("/api/save", {
-            method: "POST",
-            body: JSON.stringify({ user, filename: name, content: "" })
-        });
+    await apiFetch("/api/save", {
+        method: "POST",
+        body: JSON.stringify({
+            user,
+            filename: name,
+            content: ""
+        })
+    });
 
-        loadFiles();
-        loadFile(name);
-
-    } catch (e) {}
+    loadFiles();
+    loadFile(name);
 }
 
-// SAVE FILE
+// ------------------------------
+// Save file
+// ------------------------------
 async function saveFile() {
-    if (!currentFile) return showError("Select a file first!");
+    if (!currentFile) return showError("⚠️ Select a file first!");
+
+    await apiFetch("/api/save", {
+        method: "POST",
+        body: JSON.stringify({
+            user,
+            filename: currentFile,
+            content: document.getElementById("editor").value
+        })
+    });
+
+    alert("Saved!");
+}
+
+// ------------------------------
+// Deploy file
+// ------------------------------
+async function deploy() {
+    if (!currentFile) return showError("⚠️ Select a file first!");
 
     try {
-        await safeFetch("/api/save", {
+        const res = await apiFetch("/api/deploy", {
             method: "POST",
             body: JSON.stringify({
                 user,
-                filename: currentFile,
-                content: document.getElementById("editor").value
+                filename: currentFile
             })
         });
-        alert("💾 Saved!");
-    } catch (e) {}
+
+        const data = await res.json();
+        alert("Deployed!\nLive URL: " + data.kv_url);
+
+    } catch (err) {
+        showError("❌ Deploy failed: " + err.message);
+    }
 }
 
-// DEPLOY FILE
-async function deploy() {
-    if (!currentFile) return showError("Select a file first!");
-
-    try {
-        const text = await safeFetch("/api/deploy", {
-            method: "POST",
-            body: JSON.stringify({ user, filename: currentFile })
-        });
-
-        const data = JSON.parse(text);
-        alert("🚀 Deployed!\nLive URL:\n" + data.kv_url);
-
-    } catch (e) {}
-}
-
-// PREVIEW FILE
+// ------------------------------
+// Preview file
+// ------------------------------
 function preview() {
-    if (!currentFile) return showError("Select a file first!");
+    if (!currentFile) return showError("⚠️ Select a file first!");
     window.open(`/public/${currentFile}`, "_blank");
 }
-
 </script>
 
 </body>
