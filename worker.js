@@ -3,7 +3,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS
+    // CORS headers
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -29,7 +29,6 @@ export default {
       if (!user) return json({ error: "Missing user" }, 400);
 
       const list = await env.FILES.list({ prefix: `${user}/` });
-
       return json({ files: list.keys.map(k => k.name.replace(`${user}/`, "")) });
     }
 
@@ -43,7 +42,6 @@ export default {
       if (!user || !filename) return json({ error: "Missing parameters" }, 400);
 
       const content = await env.FILES.get(`${user}/${filename}`);
-
       return new Response(content || "", {
         headers: { "Content-Type": "text/plain", ...corsHeaders }
       });
@@ -58,7 +56,6 @@ export default {
         return json({ error: "Missing parameters" }, 400);
 
       await env.FILES.put(`${body.user}/${body.filename}`, body.content || "");
-
       return json({ success: true });
     }
 
@@ -68,23 +65,24 @@ export default {
     if (path === "/api/deploy") {
       try {
         const { user, filename } = await request.json();
-
-        if (!user || !filename) return json({ error: "Missing params" }, 400);
+        if (!user || !filename) return json({ error: "Missing parameters" }, 400);
 
         const content = await env.FILES.get(`${user}/${filename}`);
-
         if (!content) return json({ error: "File not found" }, 404);
 
         // Store in public folder
         await env.FILES.put(`public/${filename}`, content);
 
+        // Fetch GitHub token from FILES KV
+        const githubToken = await env.FILES.get("GITHUB_TOKEN");
+        if (!githubToken) return json({ error: "GitHub token not found in KV" }, 500);
+
         // Push to GitHub
         const githubUrl = `https://api.github.com/repos/samadgod569/Code-Mon/contents/public/${filename}`;
-
         const res = await fetch(githubUrl, {
           method: "PUT",
           headers: {
-            "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+            "Authorization": `Bearer ${githubToken}`,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
@@ -94,7 +92,12 @@ export default {
           })
         });
 
-        const githubData = await res.json();
+        let githubData;
+        try {
+          githubData = await res.json();
+        } catch (err) {
+          return json({ error: "GitHub response is not valid JSON", details: await res.text() }, 500);
+        }
 
         if (!res.ok) {
           return json({
