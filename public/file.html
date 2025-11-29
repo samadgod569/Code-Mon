@@ -7,66 +7,108 @@
 
 <style>
     body {
-        font-family: Arial, sans-serif;
-        background: #f0f0f0;
+        font-family: "Inter", Arial, sans-serif;
+        background: #f5f7fa;
         margin: 0;
         padding: 0;
     }
+
     header {
-        background: #333;
+        background: #2d3436;
         color: white;
-        padding: 15px;
+        padding: 18px;
         text-align: center;
-        font-size: 22px;
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
+
     #container {
         display: flex;
-        height: calc(100vh - 60px);
+        height: calc(100vh - 70px);
     }
+
+    /* LEFT SIDEBAR */
     #files {
-        width: 260px;
-        background: #fff;
-        border-right: 1px solid #ccc;
+        width: 270px;
+        background: #ffffff;
+        border-right: 1px solid #ddd;
         padding: 15px;
         overflow-y: auto;
     }
+
+    #files button {
+        width: 100%;
+        background: #0984e3;
+        padding: 10px;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+        border: none;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    #files button:hover {
+        background: #74b9ff;
+    }
+
+    .fileItem {
+        padding: 10px;
+        margin: 8px 0;
+        background: #f1f2f6;
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 15px;
+        border: 1px solid #dcdde1;
+        transition: 0.2s;
+    }
+
+    .fileItem:hover {
+        background: #dfe6e9;
+    }
+
+    /* RIGHT SIDE EDITOR */
     #editorArea {
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 10px;
+        padding: 15px;
+        background: #f8f9fa;
     }
+
     #editor {
         width: 100%;
         height: 100%;
-        padding: 15px;
+        padding: 16px;
         border: 1px solid #ccc;
         outline: none;
         resize: none;
-        font-size: 16px;
+        font-size: 15px;
         border-radius: 8px;
         font-family: monospace;
-        background: #fff;
+        background: #ffffff;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
-    button {
+
+    /* ACTION BUTTONS */
+    #editorArea button {
         padding: 12px;
         margin-top: 10px;
         cursor: pointer;
         border: none;
-        background: #333;
+        background: #2d3436;
         color: white;
         border-radius: 6px;
         font-size: 15px;
+        font-weight: 600;
+        transition: 0.2s;
     }
-    .fileItem {
-        padding: 10px;
-        margin: 6px 0;
-        background: #eee;
-        cursor: pointer;
-        border-radius: 6px;
-    }
-    .fileItem:hover {
-        background: #ddd;
+
+    #editorArea button:hover {
+        background: #636e72;
     }
 </style>
 
@@ -99,106 +141,113 @@ if (!user) location.href = "login.html";
 
 let currentFile = null;
 
-// ------------------------------
-// Load all files
-// ------------------------------
+// ERROR POPUP FUNCTION
+function showError(msg) {
+    alert("❌ ERROR:\n\n" + msg);
+}
+
+// SAFER FETCH WRAPPER
+async function safeFetch(url, options = {}) {
+    try {
+        const res = await fetch(url, options);
+        const text = await res.text();
+
+        if (!res.ok) {
+            showError(text || "Unknown server error");
+            throw new Error(text);
+        }
+        return text;
+    } catch (e) {
+        showError(e.message);
+        throw e;
+    }
+}
+
+// LOAD FILE LIST
 async function loadFiles() {
-    const res = await fetch(`/api/list?user=${user}`);
-    const files = await res.json();
+    try {
+        const text = await safeFetch(`/api/list?user=${user}`);
+        const files = JSON.parse(text);
 
-    const list = document.getElementById("fileList");
-    list.innerHTML = "";
+        const list = document.getElementById("fileList");
+        list.innerHTML = "";
 
-    files.forEach(filename => {
-        const div = document.createElement("div");
-        div.className = "fileItem";
-        div.innerText = filename;
-        div.onclick = () => loadFile(filename);
-        list.appendChild(div);
-    });
+        files.forEach(filename => {
+            const div = document.createElement("div");
+            div.className = "fileItem";
+            div.innerText = filename;
+            div.onclick = () => loadFile(filename);
+            list.appendChild(div);
+        });
+
+    } catch (e) {}
 }
 
 loadFiles();
 
-
-// ------------------------------
-// Load file content
-// ------------------------------
+// LOAD CONTENT
 async function loadFile(name) {
     currentFile = name;
 
-    const res = await fetch(`/api/load?user=${user}&filename=${name}`);
-    const text = await res.text();
-
-    document.getElementById("editor").value = text;
+    try {
+        const text = await safeFetch(`/api/load?user=${user}&filename=${name}`);
+        document.getElementById("editor").value = text;
+    } catch (e) {}
 }
 
-
-// ------------------------------
-// Create new file
-// ------------------------------
+// CREATE FILE
 async function createFile() {
     const name = prompt("Enter file name (example: index.html):");
     if (!name) return;
 
-    // create empty file
-    await fetch("/api/save", {
-        method: "POST",
-        body: JSON.stringify({
-            user,
-            filename: name,
-            content: ""
-        })
-    });
+    try {
+        await safeFetch("/api/save", {
+            method: "POST",
+            body: JSON.stringify({ user, filename: name, content: "" })
+        });
 
-    loadFiles();
-    loadFile(name);  // auto-open the new file
+        loadFiles();
+        loadFile(name);
+
+    } catch (e) {}
 }
 
-
-// ------------------------------
-// Save file
-// ------------------------------
+// SAVE FILE
 async function saveFile() {
-    if (!currentFile) return alert("Select a file first!");
+    if (!currentFile) return showError("Select a file first!");
 
-    await fetch("/api/save", {
-        method: "POST",
-        body: JSON.stringify({
-            user,
-            filename: currentFile,
-            content: document.getElementById("editor").value
-        })
-    });
-
-    alert("Saved!");
+    try {
+        await safeFetch("/api/save", {
+            method: "POST",
+            body: JSON.stringify({
+                user,
+                filename: currentFile,
+                content: document.getElementById("editor").value
+            })
+        });
+        alert("💾 Saved!");
+    } catch (e) {}
 }
 
-
-// ------------------------------
-// Deploy file
-// ------------------------------
+// DEPLOY FILE
 async function deploy() {
-    if (!currentFile) return alert("Select a file first!");
+    if (!currentFile) return showError("Select a file first!");
 
-    const res = await fetch("/api/deploy", {
-        method: "POST",
-        body: JSON.stringify({
-            user,
-            filename: currentFile
-        }),
-    });
+    try {
+        const text = await safeFetch("/api/deploy", {
+            method: "POST",
+            body: JSON.stringify({ user, filename: currentFile })
+        });
 
-    const data = await res.json();
-    alert("Deployed!\nLive URL: " + data.kv_url);
+        const data = JSON.parse(text);
+        alert("🚀 Deployed!\nLive URL:\n" + data.kv_url);
+
+    } catch (e) {}
 }
 
-
-// ------------------------------
-// Preview (KV public URL)
-// ------------------------------
+// PREVIEW FILE
 function preview() {
-    if (!currentFile) return alert("Select a file first!");
+    if (!currentFile) return showError("Select a file first!");
     window.open(`/public/${currentFile}`, "_blank");
 }
 
