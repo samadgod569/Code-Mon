@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Code Mon - File Manager</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0f24, #111a3a);
+      color: #e0e6ff;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      color: #00eaff;
+      text-shadow: 0 0 10px rgba(0,255,255,0.7);
+    }
+    #file-list div {
+      margin: 5px 0;
+    }
+    a {
+      color: #00eaff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      margin-top: 15px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      resize: vertical;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #00eaff;
+      color: #00131a;
+      font-weight: bold;
+      box-shadow: 0 0 15px #00eaff;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #00bcd4;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+
+<h2>File Manager</h2>
+<div id="file-list"></div>
+<button onclick="createFile()">+ Create File</button>
+
+<textarea id="editor" placeholder="Select or create a file..."></textarea>
+<br>
+<button onclick="deployFile()">Deploy</button>
+
+<script>
+  const API = "https://<your-worker-url>"; // Replace with your worker URL
+  const user = localStorage.getItem("user");
+  if (!user) window.location.href = "login.html";
+
+  // Load all files for this user
+  function loadFiles() {
+    fetch(`${API}/api/list?user=${user}`)
+      .then(res => res.json())
+      .then(files => {
+        const container = document.getElementById("file-list");
+        if(files.length === 0) container.innerHTML = "<i>No files yet.</i>";
+        else container.innerHTML = files.map(f => `
+          <div>
+            <a onclick="openFile('${f}')">${f}</a>
+          </div>
+        `).join('');
+      });
+  }
+
+  // Create a new file
+  function createFile() {
+    const filename = prompt("File name (with extension: .html, .css, .js, .txt, .json):");
+    if (!filename) return;
+    fetch(`${API}/api/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user, filename, content: "" })
+    }).then(() => loadFiles());
+  }
+
+  // Open an existing file
+  function openFile(filename) {
+    fetch(`${API}/api/load?user=${user}&filename=${filename}`)
+      .then(res => res.text())
+      .then(content => {
+        const editor = document.getElementById("editor");
+        editor.value = content;
+        editor.dataset.filename = filename;
+      });
+  }
+
+  // Save + Deploy file to KV and GitHub
+  function deployFile() {
+    const editor = document.getElementById("editor");
+    const filename = editor.dataset.filename;
+    if (!filename) return alert("Select a file first!");
+    const content = editor.value;
+
+    // Save to KV
+    fetch(`${API}/api/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user, filename, content })
+    }).then(() => {
+      // Deploy
+      fetch(`${API}/api/deploy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, filename })
+      }).then(res => res.json())
+        .then(data => alert(`Deployed!\nKV URL: ${data.kv_url}\nGitHub URL: ${data.github_url}`));
+    });
+  }
+
+  // Load files on page load
+  loadFiles();
+</script>
+
+</body>
+</html>
