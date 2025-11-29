@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>File Manager</title>
 <style>
 body { margin:0; font-family:Arial; background:#f3f3f3; }
@@ -10,17 +11,15 @@ header { background:#222; color:white; padding:15px; text-align:center; }
 #wrap { display:flex; height:calc(100vh - 60px); }
 #files { width:250px; background:white; padding:10px; border-right:1px solid #ccc; }
 #editorArea { flex:1; display:flex; flex-direction:column; padding:10px; }
-#editor { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; resize:none; font-family:monospace; }
+#editor { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; font-family:monospace; resize:none; }
 button { margin-top:10px; padding:12px; background:#222; color:white; border:none; border-radius:5px; cursor:pointer; }
 .fileItem { padding:10px; background:#eee; margin:6px 0; border-radius:5px; cursor:pointer; }
 .fileItem:hover { background:#ddd; }
 </style>
 </head>
-
 <body>
-<header>File Manager</header>
 
-<!-- ERROR DIV -->
+<header>File Manager</header>
 <div id="error"></div>
 
 <div id="wrap">
@@ -43,31 +42,23 @@ if (!user) location.href = "login.html";
 
 let currentFile = null;
 
-// Show error in #error div
 function showError(msg) {
-    const errorDiv = document.getElementById("error");
-    errorDiv.style.display = "block";
-    errorDiv.innerText = msg;
+    const e = document.getElementById("error");
+    e.style.display = "block";
+    e.innerText = msg;
 }
 
-// Hide error
-function hideError() {
-    const errorDiv = document.getElementById("error");
-    errorDiv.style.display = "none";
-}
-
-// Load files
+// --------------------
+// Load file list
+// --------------------
 async function loadFiles() {
-    hideError();
     try {
         const res = await fetch(`${API}/api/list?user=${user}`);
         const data = await res.json();
+        if (data.error) return showError("Failed to load files: " + data.error);
 
         const list = document.getElementById("fileList");
         list.innerHTML = "";
-
-        if (data.error) return showError(data.error);
-
         data.files.forEach(f => {
             const div = document.createElement("div");
             div.className = "fileItem";
@@ -79,12 +70,14 @@ async function loadFiles() {
         showError("Failed to load files: " + err.message);
     }
 }
+loadFiles();
 
-// Load single file
+// --------------------
+// Load file content
+// --------------------
 async function loadFile(name) {
-    hideError();
-    currentFile = name;
     try {
+        currentFile = name;
         const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
         const text = await res.text();
         document.getElementById("editor").value = text;
@@ -93,18 +86,21 @@ async function loadFile(name) {
     }
 }
 
+// --------------------
 // Create file
+// --------------------
 async function createFile() {
-    hideError();
-    const name = prompt("Enter file name:");
+    const name = prompt("File name:");
     if (!name) return;
-
     try {
-        await fetch(`${API}/api/save`, {
+        const res = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename: name, content: "" })
         });
+        const data = await res.json();
+        if (data.error) return showError("Failed to create file: " + data.error);
+
         loadFiles();
         loadFile(name);
     } catch (err) {
@@ -112,13 +108,14 @@ async function createFile() {
     }
 }
 
+// --------------------
 // Save file
+// --------------------
 async function saveFile() {
-    hideError();
     if (!currentFile) return showError("Select a file first");
 
     try {
-        await fetch(`${API}/api/save`, {
+        const res = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -127,15 +124,19 @@ async function saveFile() {
                 content: document.getElementById("editor").value
             })
         });
+        const data = await res.json();
+        if (data.error) return showError("Save failed: " + data.error);
+
         alert("Saved!");
     } catch (err) {
-        showError("Failed to save file: " + err.message);
+        showError("Save failed: " + err.message);
     }
 }
 
+// --------------------
 // Deploy file
+// --------------------
 async function deploy() {
-    hideError();
     if (!currentFile) return showError("Select a file first!");
 
     try {
@@ -145,14 +146,13 @@ async function deploy() {
             body: JSON.stringify({ user, filename: currentFile })
         });
         const data = await res.json();
-        if (data.error) showError("Deploy failed: " + data.error);
-        else alert("Deployed!\nLive URL: " + data.url);
+        if (data.error) return showError("Deploy failed: " + data.error);
+
+        alert("Deployed!\nLive URL: " + data.url);
     } catch (err) {
         showError("Deploy failed: " + err.message);
     }
 }
-
-loadFiles();
 </script>
 
 </body>
