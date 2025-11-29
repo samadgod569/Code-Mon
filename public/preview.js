@@ -1,5 +1,5 @@
 // Load saved code
-let raw = localStorage.getItem("generatedCode");
+let raw = localStorage.getItem("codeMonGenerated");
 
 if (!raw) {
     document.body.innerHTML = "<h2>No preview data found.</h2>";
