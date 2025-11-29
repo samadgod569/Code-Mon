@@ -1,78 +1,98 @@
-function cors(response) {
-    const headers = new Headers(response.headers);
-    headers.set("Access-Control-Allow-Origin", "*");
-    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    headers.set("Access-Control-Allow-Headers", "Content-Type");
-    return new Response(response.body, { status: response.status, headers });
-}
-
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
+        const path = url.pathname;
 
-        // CORS preflight
+        // CORS
+        const corsHeaders = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        };
+
         if (request.method === "OPTIONS") {
-            return cors(new Response(null, { status: 204 }));
+            return new Response("OK", { headers: corsHeaders });
         }
 
-        // ---------------- LIST FILES ----------------
-        if (url.pathname === "/api/list") {
+        // Helper to reply json with CORS
+        function json(data, status = 200) {
+            return new Response(JSON.stringify(data), {
+                status,
+                headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+        }
+
+        // -------------------------------
+        // /api/list  (GET)
+        // -------------------------------
+        if (path === "/api/list" && request.method === "GET") {
             const user = url.searchParams.get("user");
+            if (!user) return json({ error: "Missing user" }, 400);
+
             const list = await env.GITHUB_TOKEN.list({ prefix: `${user}/` });
-            const files = list.keys.map(k => k.name.replace(`${user}/`, ""));
-            return cors(new Response(JSON.stringify(files)));
+
+            const filenames = list.keys.map(k => k.name.replace(`${user}/`, ""));
+            return json(filenames);
         }
 
-        // ---------------- LOAD FILE ----------------
-        if (url.pathname === "/api/load") {
+        // -------------------------------
+        // /api/load  (GET)
+        // -------------------------------
+        if (path === "/api/load" && request.method === "GET") {
             const user = url.searchParams.get("user");
             const filename = url.searchParams.get("filename");
-            const key = `${user}/${filename}`;
-            const content = await env.GITHUB_TOKEN.get(key);
-            return cors(new Response(content || ""));
+
+            if (!user || !filename) 
+                return json({ error: "Missing fields" }, 400);
+
+            const value = await env.GITHUB_TOKEN.get(`${user}/${filename}`);
+
+            return new Response(value || "", {
+                status: 200,
+                headers: { "Content-Type": "text/plain", ...corsHeaders }
+            });
         }
 
-        // ---------------- SAVE FILE ----------------
-        if (url.pathname === "/api/save" && request.method === "POST") {
-            const data = await request.json();
-            await env.GITHUB_TOKEN.put(`${data.user}/${data.filename}`, data.content);
-            return cors(new Response("OK"));
+        // -------------------------------
+        // /api/save  (POST)
+        // -------------------------------
+        if (path === "/api/save" && request.method === "POST") {
+            const body = await request.json().catch(() => null);
+            if (!body) return json({ error: "Invalid JSON" }, 400);
+
+            const { user, filename, content } = body;
+            if (!user || !filename) return json({ error: "Missing fields" }, 400);
+
+            await env.GITHUB_TOKEN.put(`${user}/${filename}`, content);
+
+            return json({ success: true });
         }
 
-        // ---------------- DEPLOY ----------------
-        if (url.pathname === "/api/deploy" && request.method === "POST") {
-            try {
-                const data = await request.json();
-                const key = `${data.user}/${data.filename}`;
-                const content = await env.GITHUB_TOKEN.get(key);
+        // -------------------------------
+        // /api/deploy  (POST)
+        // -------------------------------
+        if (path === "/api/deploy" && request.method === "POST") {
+            const body = await request.json().catch(() => null);
+            if (!body) return json({ error: "Invalid JSON" }, 400);
 
-                if (!content) {
-                    return cors(new Response(JSON.stringify({ error: "File empty" }), { status: 400 }));
-                }
+            const { user, filename } = body;
+            if (!user || !filename) return json({ error: "Missing fields" }, 400);
 
-                const publicKey = `public/${data.filename}`;
-                await env.GITHUB_TOKEN.put(publicKey, content);
+            const fileContent = await env.GITHUB_TOKEN.get(`${user}/${filename}`);
+            if (!fileContent) return json({ error: "File not found" }, 404);
 
-                return cors(new Response(JSON.stringify({
-                    kv_url: `https://code-mon.codemon.workers.dev/public/${data.filename}`
-                }), {
-                    headers: { "Content-Type": "application/json" }
-                }));
+            // Deploy to KV public endpoint
+            await env.GITHUB_TOKEN.put(`public/${user}/${filename}`, fileContent);
 
-            } catch (e) {
-                return cors(new Response(JSON.stringify({ error: e.toString() }), { status: 500 }));
-            }
+            return json({
+                success: true,
+                kv_url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`
+            });
         }
 
-        // ---------------- PUBLIC FILE SERVE ----------------
-        if (url.pathname.startsWith("/public/")) {
-            const filename = url.pathname.replace("/public/", "");
-            const content = await env.GITHUB_TOKEN.get(`public/${filename}`);
-            return cors(new Response(content, {
-                headers: { "Content-Type": "text/html" }
-            }));
-        }
-
-        return cors(new Response("404 Not Found", { status: 404 }));
+        // -------------------------------
+        // If route not found
+        // -------------------------------
+        return json({ error: "Route not found" }, 404);
     }
 };
