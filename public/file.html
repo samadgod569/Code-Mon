@@ -1,216 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>File Manager</title>
-
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f5f7fa;
-        margin: 0;
-        padding: 0;
-    }
-    header {
-        background: #1e1f22;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        font-size: 22px;
-        font-weight: bold;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    #container {
-        display: flex;
-        height: calc(100vh - 60px);
-    }
-    #files {
-        width: 270px;
-        background: #ffffff;
-        border-right: 1px solid #d6d6d6;
-        padding: 15px;
-        overflow-y: auto;
-    }
-    #editorArea {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        padding: 10px;
-    }
-    #editor {
-        width: 100%;
-        height: 100%;
-        padding: 15px;
-        border: 1px solid #ccc;
-        outline: none;
-        resize: none;
-        font-size: 16px;
-        border-radius: 8px;
-        font-family: monospace;
-        background: #ffffff;
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-    }
-    button {
-        padding: 12px;
-        margin-top: 10px;
-        cursor: pointer;
-        border: none;
-        background: #1e1f22;
-        color: white;
-        border-radius: 6px;
-        font-size: 15px;
-        transition: 0.2s;
-    }
-    button:hover {
-        background: #333;
-    }
-    .fileItem {
-        padding: 10px;
-        margin: 6px 0;
-        background: #e8e8e8;
-        cursor: pointer;
-        border-radius: 6px;
-    }
-    .fileItem:hover {
-        background: #dcdcdc;
-    }
-    #errorBox {
-        display: none;
-        background: #ffdddd;
-        color: #a70000;
-        border: 1px solid #ff8a8a;
-        padding: 12px;
-        margin-bottom: 10px;
-        border-radius: 6px;
-        font-size: 14px;
-        white-space: pre-wrap;
-    }
+body { margin:0; font-family:Arial; background:#f3f3f3; }
+header { background:#222; color:white; padding:15px; text-align:center; }
+#wrap { display:flex; height:calc(100vh - 60px); }
+#files { width:250px; background:white; padding:10px; border-right:1px solid #ccc; }
+#editorArea { flex:1; display:flex; flex-direction:column; padding:10px; }
+#editor { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; }
+button { margin-top:10px; padding:12px; background:#222; color:white; border:none; border-radius:5px; cursor:pointer; }
+.fileItem { padding:10px; background:#eee; margin:6px 0; border-radius:5px; cursor:pointer; }
+.fileItem:hover { background:#ddd; }
+#error { color:red; padding:10px; display:none; background:white; border-left:4px solid red; margin-bottom:10px; }
 </style>
-
 </head>
-<body>
 
+<body>
 <header>File Manager</header>
 
-<div id="container">
+<div id="error"></div>
 
-    <!-- ERROR BOX -->
-    <div id="errorBox"></div>
-
-    <!-- LEFT SIDE -->
+<div id="wrap">
     <div id="files">
-        <button onclick="createFile()">+ Create File</button>
+        <button onclick="createFile()">+ Create</button>
         <div id="fileList"></div>
     </div>
 
-    <!-- RIGHT SIDE -->
     <div id="editorArea">
-        <textarea id="editor" placeholder="Select or create a file to begin..."></textarea>
-        <button onclick="saveFile()">💾 Save</button>
-        <button onclick="deploy()">🚀 Deploy</button>
-        <button onclick="preview()">🔍 Preview</button>
+        <textarea id="editor" placeholder="Select a file..."></textarea>
+        <button onclick="saveFile()">Save</button>
+        <button onclick="deploy()">Deploy</button>
     </div>
-
 </div>
 
 <script>
+const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("user");
+
 if (!user) location.href = "login.html";
 
 let currentFile = null;
 
-// ------------------
-// Error Display
-// ------------------
 function showError(msg) {
-    const box = document.getElementById("errorBox");
-    box.style.display = "block";
-    box.innerText = msg;
-    setTimeout(() => box.style.display = "none", 6000);
+    const e = document.getElementById("error");
+    e.style.display = "block";
+    e.innerText = msg;
 }
 
-// Helper fetch wrapper with CORS + error handling
-async function apiFetch(url, options = {}) {
-    try {
-        const res = await fetch(url, {
-            ...options,
-            headers: { "Content-Type": "application/json" },
-            mode: "cors"
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Server Error (${res.status}): ${text}`);
-        }
-
-        return res;
-    } catch (err) {
-        showError("❌ " + err.message);
-        throw err;
-    }
-}
-
-// ------------------------------
-// Load all files
-// ------------------------------
+// Load file list
 async function loadFiles() {
-    const res = await apiFetch(`/api/list?user=${user}`);
-    const files = await res.json();
+    const res = await fetch(`${API}/api/list?user=${user}`);
+    const data = await res.json();
 
     const list = document.getElementById("fileList");
     list.innerHTML = "";
 
-    files.forEach(filename => {
+    data.files.forEach(f => {
         const div = document.createElement("div");
         div.className = "fileItem";
-        div.innerText = filename;
-        div.onclick = () => loadFile(filename);
+        div.innerText = f;
+        div.onclick = () => loadFile(f);
         list.appendChild(div);
     });
 }
-
 loadFiles();
 
-// ------------------------------
-// Load a file
-// ------------------------------
+// Load file content
 async function loadFile(name) {
     currentFile = name;
-
-    const res = await apiFetch(`/api/load?user=${user}&filename=${name}`);
+    const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
     const text = await res.text();
-
     document.getElementById("editor").value = text;
 }
 
-// ------------------------------
 // Create file
-// ------------------------------
 async function createFile() {
-    const name = prompt("Enter file name (example: index.html):");
+    const name = prompt("File name:");
     if (!name) return;
 
-    await apiFetch("/api/save", {
+    await fetch(`${API}/api/save`, {
         method: "POST",
-        body: JSON.stringify({
-            user,
-            filename: name,
-            content: ""
-        })
+        body: JSON.stringify({ user, filename: name, content: "" })
     });
 
     loadFiles();
     loadFile(name);
 }
 
-// ------------------------------
 // Save file
-// ------------------------------
 async function saveFile() {
-    if (!currentFile) return showError("⚠️ Select a file first!");
+    if (!currentFile) return showError("Select a file first");
 
-    await apiFetch("/api/save", {
+    await fetch(`${API}/api/save`, {
         method: "POST",
         body: JSON.stringify({
             user,
@@ -222,35 +105,20 @@ async function saveFile() {
     alert("Saved!");
 }
 
-// ------------------------------
 // Deploy file
-// ------------------------------
 async function deploy() {
-    if (!currentFile) return showError("⚠️ Select a file first!");
+    if (!currentFile) return showError("Select a file first");
 
-    try {
-        const res = await apiFetch("/api/deploy", {
-            method: "POST",
-            body: JSON.stringify({
-                user,
-                filename: currentFile
-            })
-        });
+    const res = await fetch(`${API}/api/deploy`, {
+        method: "POST",
+        body: JSON.stringify({ user, filename: currentFile })
+    });
 
-        const data = await res.json();
-        alert("Deployed!\nLive URL: " + data.kv_url);
+    const data = await res.json();
 
-    } catch (err) {
-        showError("❌ Deploy failed: " + err.message);
-    }
-}
+    if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
 
-// ------------------------------
-// Preview file
-// ------------------------------
-function preview() {
-    if (!currentFile) return showError("⚠️ Select a file first!");
-    window.open(`/public/${currentFile}`, "_blank");
+    alert("Deployed!\nURL: " + data.url);
 }
 </script>
 
