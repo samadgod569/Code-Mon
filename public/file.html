@@ -19,7 +19,6 @@ button { margin-top:10px; padding:12px; background:#222; color:white; border:non
 
 <body>
 <header>File Manager</header>
-
 <div id="error"></div>
 
 <div id="wrap">
@@ -36,15 +35,13 @@ button { margin-top:10px; padding:12px; background:#222; color:white; border:non
 </div>
 
 <script>
-const API = "https://code-mon.codemon.workers.dev"; // Your Worker URL
+const API = "https://code-mon.codemon.workers.dev"; // Worker URL
 const user = localStorage.getItem("user");
-
-// Redirect to login if not logged in
 if (!user) location.href = "login.html";
 
 let currentFile = null;
 
-// Show error messages on screen
+// Show error messages
 function showError(msg) {
     const e = document.getElementById("error");
     e.style.display = "block";
@@ -59,18 +56,20 @@ function clearError() {
 }
 
 // ------------------------------
-// Load all files
+// Load file list
 // ------------------------------
-async function loadFiles() {
+async function loadFiles(selectedFile = null) {
+    clearError();
     try {
         const res = await fetch(`${API}/api/list?user=${user}`);
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Failed to load files:\n" + text); }
 
         if (data.error) return showError("Failed to load files: " + data.error);
 
         const list = document.getElementById("fileList");
         list.innerHTML = "";
-
         data.files.forEach(f => {
             const div = document.createElement("div");
             div.className = "fileItem";
@@ -78,11 +77,13 @@ async function loadFiles() {
             div.onclick = () => loadFile(f);
             list.appendChild(div);
         });
+
+        // Auto-select a file if provided
+        if (selectedFile && data.files.includes(selectedFile)) loadFile(selectedFile);
     } catch (err) {
         showError("Failed to load files: " + err.message);
     }
 }
-loadFiles();
 
 // ------------------------------
 // Load file content
@@ -90,7 +91,6 @@ loadFiles();
 async function loadFile(name) {
     clearError();
     currentFile = name;
-
     try {
         const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
         const text = await res.text();
@@ -114,11 +114,14 @@ async function createFile() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename: name, content: "" })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Failed to create file:\n" + text); }
+
         if (data.error) return showError("Failed to create file: " + data.error);
 
-        loadFiles();
-        loadFile(name);
+        // Refresh file list and select the new file
+        loadFiles(name);
     } catch (err) {
         showError("Failed to create file: " + err.message);
     }
@@ -135,12 +138,20 @@ async function saveFile() {
         const res = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user, filename: currentFile, content: document.getElementById("editor").value })
+            body: JSON.stringify({
+                user,
+                filename: currentFile,
+                content: document.getElementById("editor").value
+            })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Failed to save file:\n" + text); }
+
         if (data.error) return showError("Failed to save file: " + data.error);
 
         alert("File saved!");
+        loadFiles(currentFile); // Refresh list and keep file selected
     } catch (err) {
         showError("Failed to save file: " + err.message);
     }
@@ -159,7 +170,10 @@ async function deploy() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename: currentFile })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Deploy failed:\n" + text); }
+
         if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
 
         alert("Deployed!\nLive URL: " + data.url + (data.github ? "\nGitHub URL: " + data.github : ""));
@@ -168,6 +182,5 @@ async function deploy() {
     }
 }
 </script>
-
 </body>
 </html>
