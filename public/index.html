@@ -165,8 +165,8 @@
       <h2>Start Creating</h2>
       <p>Type your website idea below and watch Code Mon bring it to life:</p>
       <form action="/query" method="GET">
-        <input type="text" name="text" placeholder="Describe your website..." required>
-        <button type="submit" class="cta-button">Generate</button>
+        <input id ="inp" type="text" name="text" placeholder="Describe your website..." required>
+        <button type="submit" class="cta-button" id ="btn">Generate</button>
       </form>
     </section>
   </main>
@@ -174,5 +174,10 @@
   <footer>
     &copy; 2025 Code Mon • Powered by AI • All rights reserved
   </footer>
+  <script>
+    const inp = document.getElementById('inp').value;
+    const btn = document.getElementById('btn');
+    btn.addEventListener('click',() => window.location.href = `generate.html?text=${inp}`;);
+  </script>
 </body>
 </html>
