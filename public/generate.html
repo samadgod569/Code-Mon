@@ -4,79 +4,103 @@
     <meta charset="UTF-8">
     <title>Code-Mon Generator</title>
     <style>
+    /* GLOBAL */
     body {
         margin: 0;
-        padding: 0;
-        font-family: "Segoe UI", Arial, sans-serif;
-        background: linear-gradient(135deg, #0a0f24, #111a3a);
-        color: #e0e6ff;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-
-    .container {
-        width: 90%;
-        max-width: 500px;
-        padding: 30px;
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 20px;
-        backdrop-filter: blur(15px);
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
-        text-align: center;
-        border: 1px solid rgba(0, 255, 255, 0.1);
-        animation: fadeIn 0.8s ease-out;
-    }
-
-    h1 {
-        font-size: 30px;
-        margin-bottom: 10px;
+        padding: 40px;
+        font-family: "Segoe UI", "Roboto Mono", monospace;
+        background: radial-gradient(circle at top, #0b0f1e, #081124, #050812);
         color: #00eaff;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        min-height: 100vh;
     }
 
-    p {
-        font-size: 17px;
-        margin-bottom: 20px;
-        opacity: 0.9;
+    h2, h3 {
+        color: #00eaff;
+        text-shadow: 0 0 12px #00eaffaa;
+        margin-bottom: 10px;
+        font-weight: 600;
+        letter-spacing: 1px;
     }
 
-    button {
-        padding: 14px 26px;
-        font-size: 16px;
-        border: none;
+    /* OUTPUT TEXTAREA */
+    textarea {
+        width: 100%;
+        height: 350px;
+        background: #0d1326;
+        color: #00f7ff;
+        border: 1px solid #00eaff55;
         border-radius: 12px;
+        padding: 15px;
+        font-size: 15px;
+        resize: vertical;
+        box-shadow: 0 0 20px #00eaff22;
+        outline: none;
+        font-family: "Roboto Mono", monospace;
+        transition: 0.15s;
+    }
+
+    textarea:focus {
+        border-color: #00eaff;
+        box-shadow: 0 0 25px #00eaff55;
+    }
+
+    /* BUTTONS */
+    button {
+        padding: 12px 24px;
+        font-size: 17px;
+        margin-top: 20px;
+        margin-right: 10px;
+        border: none;
+        border-radius: 10px;
         cursor: pointer;
         background: #00eaff;
-        color: #00131a;
+        color: #001219;
         font-weight: bold;
-        letter-spacing: 1px;
-        box-shadow: 0 0 15px #00eaff;
+        letter-spacing: 0.5px;
         transition: 0.2s;
+        box-shadow: 0 0 15px #00eaffaa;
     }
 
     button:hover {
-        background: #00bcd4;
+        background: #00b8d4;
         box-shadow: 0 0 25px #00eaff;
-        transform: scale(1.05);
+        transform: translateY(-2px);
     }
 
-    /* Fade-in animation */
+    /* GREEN DEPLOY BUTTON */
+    #deployBtn {
+        background: #00ff6a;
+        box-shadow: 0 0 15px #00ff6a99;
+        color: #00240f;
+    }
+
+    #deployBtn:hover {
+        background: #00e05c;
+        box-shadow: 0 0 25px #00ff6a;
+    }
+
+    /* LAYOUT CONTAINER */
+    .wrapper {
+        max-width: 800px;
+        margin: auto;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 0 40px #00eaff22;
+        border: 1px solid #00eaff33;
+        backdrop-filter: blur(15px);
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    /* ANIMATIONS */
     @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(15px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     </style>
 </head>
 <body>
-
+<div class="wrapper">
 <h2>Generating code…</h2>
 
 <h3>Output</h3>
@@ -86,7 +110,7 @@
 <button onclick="preview()">Preview</button>
 
 <button id="deployBtn">Deploy</button>
-
+</div>
 <script>
 // Read text from URL
 const params = new URLSearchParams(window.location.search);
