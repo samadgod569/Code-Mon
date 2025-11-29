@@ -107,19 +107,42 @@ async function saveFile() {
 
 // Deploy file
 async function deploy() {
-    if (!currentFile) return showError("Select a file first");
+    if (!currentFile) return showError("Select a file first!");
 
-    const res = await fetch(`${API}/api/deploy`, {
-        method: "POST",
-        body: JSON.stringify({ user, filename: currentFile })
-    });
+    try {
+        const res = await fetch("/api/deploy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user,
+                filename: currentFile
+            }),
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
-
-    alert("Deployed!\nURL: " + data.url);
+        if (data.error) {
+            showError("Deploy failed: " + data.error);
+        } else {
+            alert("Deployed!\nLive URL: " + data.kv_url);
+        }
+    } catch (err) {
+        showError("Deploy failed: " + err.message);
+    }
 }
+
+function showError(msg) {
+    const editorArea = document.getElementById("editorArea");
+    let errorDiv = document.getElementById("errorDiv");
+    if (!errorDiv) {
+        errorDiv = document.createElement("div");
+        errorDiv.id = "errorDiv";
+        errorDiv.style.color = "red";
+        errorDiv.style.marginTop = "10px";
+        editorArea.appendChild(errorDiv);
+    }
+    errorDiv.innerText = msg;
+        }
 </script>
 
 </body>
