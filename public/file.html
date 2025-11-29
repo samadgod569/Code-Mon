@@ -1,139 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Code Mon - File Manager</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Manager</title>
+
+<style>
     body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: linear-gradient(135deg, #0a0f24, #111a3a);
-      color: #e0e6ff;
-      margin: 0;
-      padding: 20px;
+        font-family: Arial, sans-serif;
+        background: #f0f0f0;
+        margin: 0;
+        padding: 0;
     }
-    h2 {
-      color: #00eaff;
-      text-shadow: 0 0 10px rgba(0,255,255,0.7);
+    header {
+        background: #333;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 22px;
     }
-    #file-list div {
-      margin: 5px 0;
+    #container {
+        display: flex;
+        height: calc(100vh - 60px);
     }
-    a {
-      color: #00eaff;
-      text-decoration: none;
-      cursor: pointer;
+    #files {
+        width: 260px;
+        background: #fff;
+        border-right: 1px solid #ccc;
+        padding: 15px;
+        overflow-y: auto;
     }
-    a:hover {
-      text-decoration: underline;
+    #editorArea {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
     }
-    textarea {
-      width: 100%;
-      height: 300px;
-      margin-top: 15px;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 14px;
-      border-radius: 8px;
-      border: none;
-      resize: vertical;
+    #editor {
+        width: 100%;
+        height: 100%;
+        padding: 15px;
+        border: 1px solid #ccc;
+        outline: none;
+        resize: none;
+        font-size: 16px;
+        border-radius: 8px;
+        font-family: monospace;
+        background: #fff;
     }
     button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      background: #00eaff;
-      color: #00131a;
-      font-weight: bold;
-      box-shadow: 0 0 15px #00eaff;
-      transition: 0.2s;
+        padding: 12px;
+        margin-top: 10px;
+        cursor: pointer;
+        border: none;
+        background: #333;
+        color: white;
+        border-radius: 6px;
+        font-size: 15px;
     }
-    button:hover {
-      background: #00bcd4;
-      transform: scale(1.05);
+    .fileItem {
+        padding: 10px;
+        margin: 6px 0;
+        background: #eee;
+        cursor: pointer;
+        border-radius: 6px;
     }
-  </style>
+    .fileItem:hover {
+        background: #ddd;
+    }
+</style>
+
 </head>
 <body>
 
-<h2>File Manager</h2>
-<div id="file-list"></div>
-<button onclick="createFile()">+ Create File</button>
+<header>File Manager</header>
 
-<textarea id="editor" placeholder="Select or create a file..."></textarea>
-<br>
-<button onclick="deployFile()">Deploy</button>
+<div id="container">
+
+    <!-- LEFT SIDE (FILE LIST) -->
+    <div id="files">
+        <button onclick="createFile()">+ Create File</button>
+        <div id="fileList"></div>
+    </div>
+
+    <!-- RIGHT SIDE (EDITOR + ACTIONS) -->
+    <div id="editorArea">
+        <textarea id="editor" placeholder="Select or create a file to begin..."></textarea>
+        <button onclick="saveFile()">💾 Save</button>
+        <button onclick="deploy()">🚀 Deploy</button>
+        <button onclick="preview()">🔍 Preview</button>
+    </div>
+
+</div>
 
 <script>
-  const API = "https://<your-worker-url>"; // Replace with your worker URL
-  const user = localStorage.getItem("user");
-  if (!user) window.location.href = "login.html";
+const user = localStorage.getItem("user");
+if (!user) location.href = "login.html";
 
-  // Load all files for this user
-  function loadFiles() {
-    fetch(`${API}/api/list?user=${user}`)
-      .then(res => res.json())
-      .then(files => {
-        const container = document.getElementById("file-list");
-        if(files.length === 0) container.innerHTML = "<i>No files yet.</i>";
-        else container.innerHTML = files.map(f => `
-          <div>
-            <a onclick="openFile('${f}')">${f}</a>
-          </div>
-        `).join('');
-      });
-  }
+let currentFile = null;
 
-  // Create a new file
-  function createFile() {
-    const filename = prompt("File name (with extension: .html, .css, .js, .txt, .json):");
-    if (!filename) return;
-    fetch(`${API}/api/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user, filename, content: "" })
-    }).then(() => loadFiles());
-  }
+// ------------------------------
+// Load all files
+// ------------------------------
+async function loadFiles() {
+    const res = await fetch(`/api/list?user=${user}`);
+    const files = await res.json();
 
-  // Open an existing file
-  function openFile(filename) {
-    fetch(`${API}/api/load?user=${user}&filename=${filename}`)
-      .then(res => res.text())
-      .then(content => {
-        const editor = document.getElementById("editor");
-        editor.value = content;
-        editor.dataset.filename = filename;
-      });
-  }
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
 
-  // Save + Deploy file to KV and GitHub
-  function deployFile() {
-    const editor = document.getElementById("editor");
-    const filename = editor.dataset.filename;
-    if (!filename) return alert("Select a file first!");
-    const content = editor.value;
-
-    // Save to KV
-    fetch(`${API}/api/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user, filename, content })
-    }).then(() => {
-      // Deploy
-      fetch(`${API}/api/deploy`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user, filename })
-      }).then(res => res.json())
-        .then(data => alert(`Deployed!\nKV URL: ${data.kv_url}\nGitHub URL: ${data.github_url}`));
+    files.forEach(filename => {
+        const div = document.createElement("div");
+        div.className = "fileItem";
+        div.innerText = filename;
+        div.onclick = () => loadFile(filename);
+        list.appendChild(div);
     });
-  }
+}
 
-  // Load files on page load
-  loadFiles();
+loadFiles();
+
+
+// ------------------------------
+// Load file content
+// ------------------------------
+async function loadFile(name) {
+    currentFile = name;
+
+    const res = await fetch(`/api/load?user=${user}&filename=${name}`);
+    const text = await res.text();
+
+    document.getElementById("editor").value = text;
+}
+
+
+// ------------------------------
+// Create new file
+// ------------------------------
+async function createFile() {
+    const name = prompt("Enter file name (example: index.html):");
+    if (!name) return;
+
+    // create empty file
+    await fetch("/api/save", {
+        method: "POST",
+        body: JSON.stringify({
+            user,
+            filename: name,
+            content: ""
+        })
+    });
+
+    loadFiles();
+    loadFile(name);  // auto-open the new file
+}
+
+
+// ------------------------------
+// Save file
+// ------------------------------
+async function saveFile() {
+    if (!currentFile) return alert("Select a file first!");
+
+    await fetch("/api/save", {
+        method: "POST",
+        body: JSON.stringify({
+            user,
+            filename: currentFile,
+            content: document.getElementById("editor").value
+        })
+    });
+
+    alert("Saved!");
+}
+
+
+// ------------------------------
+// Deploy file
+// ------------------------------
+async function deploy() {
+    if (!currentFile) return alert("Select a file first!");
+
+    const res = await fetch("/api/deploy", {
+        method: "POST",
+        body: JSON.stringify({
+            user,
+            filename: currentFile
+        }),
+    });
+
+    const data = await res.json();
+    alert("Deployed!\nLive URL: " + data.kv_url);
+}
+
+
+// ------------------------------
+// Preview (KV public URL)
+// ------------------------------
+function preview() {
+    if (!currentFile) return alert("Select a file first!");
+    window.open(`/public/${currentFile}`, "_blank");
+}
+
 </script>
 
 </body>
