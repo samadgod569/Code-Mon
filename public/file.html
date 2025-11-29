@@ -1,25 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>File Manager</title>
 <style>
 body { margin:0; font-family:Arial; background:#f3f3f3; }
 header { background:#222; color:white; padding:15px; text-align:center; }
+#error { color:red; padding:10px; display:none; background:white; border-left:4px solid red; margin:10px; border-radius:5px; }
 #wrap { display:flex; height:calc(100vh - 60px); }
 #files { width:250px; background:white; padding:10px; border-right:1px solid #ccc; }
 #editorArea { flex:1; display:flex; flex-direction:column; padding:10px; }
-#editor { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; }
+#editor { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; resize:none; font-family:monospace; }
 button { margin-top:10px; padding:12px; background:#222; color:white; border:none; border-radius:5px; cursor:pointer; }
 .fileItem { padding:10px; background:#eee; margin:6px 0; border-radius:5px; cursor:pointer; }
 .fileItem:hover { background:#ddd; }
-#error { color:red; padding:10px; display:none; background:white; border-left:4px solid red; margin-bottom:10px; }
 </style>
 </head>
 
 <body>
 <header>File Manager</header>
 
+<!-- ERROR DIV -->
 <div id="error"></div>
 
 <div id="wrap">
@@ -38,111 +39,120 @@ button { margin-top:10px; padding:12px; background:#222; color:white; border:non
 <script>
 const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("user");
-
 if (!user) location.href = "login.html";
 
 let currentFile = null;
 
+// Show error in #error div
 function showError(msg) {
-    const e = document.getElementById("error");
-    e.style.display = "block";
-    e.innerText = msg;
+    const errorDiv = document.getElementById("error");
+    errorDiv.style.display = "block";
+    errorDiv.innerText = msg;
 }
 
-// Load file list
+// Hide error
+function hideError() {
+    const errorDiv = document.getElementById("error");
+    errorDiv.style.display = "none";
+}
+
+// Load files
 async function loadFiles() {
-    const res = await fetch(`${API}/api/list?user=${user}`);
-    const data = await res.json();
+    hideError();
+    try {
+        const res = await fetch(`${API}/api/list?user=${user}`);
+        const data = await res.json();
 
-    const list = document.getElementById("fileList");
-    list.innerHTML = "";
+        const list = document.getElementById("fileList");
+        list.innerHTML = "";
 
-    data.files.forEach(f => {
-        const div = document.createElement("div");
-        div.className = "fileItem";
-        div.innerText = f;
-        div.onclick = () => loadFile(f);
-        list.appendChild(div);
-    });
+        if (data.error) return showError(data.error);
+
+        data.files.forEach(f => {
+            const div = document.createElement("div");
+            div.className = "fileItem";
+            div.innerText = f;
+            div.onclick = () => loadFile(f);
+            list.appendChild(div);
+        });
+    } catch (err) {
+        showError("Failed to load files: " + err.message);
+    }
 }
-loadFiles();
 
-// Load file content
+// Load single file
 async function loadFile(name) {
+    hideError();
     currentFile = name;
-    const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
-    const text = await res.text();
-    document.getElementById("editor").value = text;
+    try {
+        const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
+        const text = await res.text();
+        document.getElementById("editor").value = text;
+    } catch (err) {
+        showError("Failed to load file: " + err.message);
+    }
 }
 
 // Create file
 async function createFile() {
-    const name = prompt("File name:");
+    hideError();
+    const name = prompt("Enter file name:");
     if (!name) return;
 
-    await fetch(`${API}/api/save`, {
-        method: "POST",
-        body: JSON.stringify({ user, filename: name, content: "" })
-    });
-
-    loadFiles();
-    loadFile(name);
+    try {
+        await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: name, content: "" })
+        });
+        loadFiles();
+        loadFile(name);
+    } catch (err) {
+        showError("Failed to create file: " + err.message);
+    }
 }
 
 // Save file
 async function saveFile() {
+    hideError();
     if (!currentFile) return showError("Select a file first");
 
-    await fetch(`${API}/api/save`, {
-        method: "POST",
-        body: JSON.stringify({
-            user,
-            filename: currentFile,
-            content: document.getElementById("editor").value
-        })
-    });
-
-    alert("Saved!");
-}
-
-// Deploy file
-async function deploy() {
-    if (!currentFile) return showError("Select a file first!");
-
     try {
-        const res = await fetch("/api/deploy", {
+        await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 user,
-                filename: currentFile
-            }),
+                filename: currentFile,
+                content: document.getElementById("editor").value
+            })
         });
+        alert("Saved!");
+    } catch (err) {
+        showError("Failed to save file: " + err.message);
+    }
+}
 
+// Deploy file
+async function deploy() {
+    hideError();
+    if (!currentFile) return showError("Select a file first!");
+
+    try {
+        const res = await fetch(`${API}/api/deploy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: currentFile })
+        });
         const data = await res.json();
-
-        if (data.error) {
-            showError("Deploy failed: " + data.error);
-        } else {
-            alert("Deployed!\nLive URL: " + data.kv_url);
-        }
+        if (data.error) showError("Deploy failed: " + data.error);
+        else alert("Deployed!\nLive URL: " + data.url);
     } catch (err) {
         showError("Deploy failed: " + err.message);
     }
 }
 
-function showError(msg) {
-    const editorArea = document.getElementById("editorArea");
-    let errorDiv = document.getElementById("errorDiv");
-    if (!errorDiv) {
-        errorDiv = document.createElement("div");
-        errorDiv.id = "errorDiv";
-        errorDiv.style.color = "red";
-        errorDiv.style.marginTop = "10px";
-        editorArea.appendChild(errorDiv);
-    }
-    errorDiv.innerText = msg;
-        }
+loadFiles();
 </script>
 
 </body>
