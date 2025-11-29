@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code-Mon Generator</title>
+    <style>
+        body {
+            background:#0b0d10;
+            color:white;
+            font-family:monospace;
+            padding:20px;
+        }
+        textarea {
+            width:100%;
+            height:300px;
+            background:#111;
+            color:#0f0;
+            border:1px solid #333;
+            padding:10px;
+            font-size:14px;
+        }
+        button {
+            margin-top:15px;
+            padding:10px 20px;
+            background:#1a73e8;
+            color:white;
+            border:none;
+            cursor:pointer;
+            font-size:16px;
+            display:block;
+        }
+        #deployBtn {
+            background:#28a745; /* green */
+        }
+    </style>
+</head>
+<body>
+
+<h2>Generating code…</h2>
+
+<h3>Output</h3>
+<textarea id="output"></textarea>
+
+<br><br>
+<button onclick="preview()">Preview</button>
+
+<button id="deployBtn">Deploy</button>
+
+<script>
+// Read text from URL
+const params = new URLSearchParams(window.location.search);
+const userQuery = params.get("text") || "";
+
+// AUTO-GENERATE on page load
+window.onload = () => {
+    if (!userQuery) {
+        document.getElementById("output").value = "⚠ No ?text= provided.";
+        return;
+    }
+    generate(userQuery);
+}
+
+async function generate(q) {
+    // EXACT prompt from Node.js bot (unchanged)
+    const prompt = `
+Return ONLY raw HTML code.
+Do NOT include \`\`\`, html\`\`\`, js\`\`\`, css\`\`\`, or any wrappers.
+ONLY return the pure file content:
+also if you are asked to give java script or css or json code or text file then only give.
+
+For HTML requests:
+You are Code Mon.
+Output only raw HTML code.
+The HTML must include inline CSS and inline JavaScript in the same file.
+Do not place CSS or JavaScript in external files.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the full HTML file exactly as it should appear.
+
+For JS requests:
+You are Code Mon.
+Output only raw JavaScript code.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the code.
+
+For CSS requests:
+You are Code Mon.
+Output only raw CSS code.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the code.
+
+For JSON requests:
+You are Code Mon.
+Output only raw JSON.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only valid JSON.
+
+For TXT requests:
+You are Code Mon.
+Output only raw text.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the plain text.
+${q}
+`;
+
+    let res = await fetch(`https://ai.craftersmc-navigators.xyz/query?q=${encodeURIComponent(prompt)}`);
+    let data = await res.json();
+
+    let output = data.answer || "";
+
+    // CLEANING — same as Node.js
+    output = output
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/```/g, "")
+        .replace(/^html|^css|^js|^javascript/gi, "")
+        .replace(/\r/g, "")
+        .trim();
+
+    document.getElementById("output").value = output;
+
+    localStorage.setItem("codeMonGenerated", output);
+}
+
+function preview() {
+    window.location.href = "preview.html";
+}
+</script>
+
+</body>
+</html>
