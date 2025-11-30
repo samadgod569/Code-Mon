@@ -13,10 +13,7 @@ export default {
     };
 
     if (request.method === "OPTIONS") {
-      return new Response("", {
-        status: 204,
-        headers: corsHeaders
-      });
+      return new Response("", { status: 204, headers: corsHeaders });
     }
 
     const json = (obj, status = 200) =>
@@ -55,115 +52,90 @@ export default {
     }
 
     // ---------------------------
-    // SAVE FILE
+    // SAVE FILE (FormData)
     // ---------------------------
-    if (path === "/api/save") {
-      let body;
-      try {
-        body = await request.json();
-      } catch {
-        return json({ error: "Invalid JSON" }, 400);
-      }
+    if (path === "/api/save" && request.method === "POST") {
+      const form = await request.formData();
 
-      const { user, filename, content } = body;
-      if (!user || !filename) return json({ error: "Missing params" }, 400);
+      const user = form.get("user");
+      const filename = form.get("filename");
+      const content = form.get("content");
 
-      await env.FILES.put(`${user}/${filename}`, content ?? "");
+      if (!user || !filename)
+        return json({ error: "Missing params" }, 400);
+
+      await env.FILES.put(`${user}/${filename}`, content || "");
 
       return json({ success: true });
     }
 
     // ---------------------------------------------------
-    // DEPLOY (UPLOAD ONLY TO: Code-Mon-space)
+    // DEPLOY (FormData)
     // ---------------------------------------------------
-    if (path === "/api/deploy") {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Invalid JSON body" }, 400);
-  }
+    if (path === "/api/deploy" && request.method === "POST") {
+      const form = await request.formData();
 
-  const { user, filename } = body;
-  if (!user || !filename) return json({ error: "Missing params" }, 400);
+      const user = form.get("user");
+      const filename = form.get("filename");
 
-  // Load file from KV
-  const stored = await env.FILES.get(`${user}/${filename}`, "text");
-  if (!stored) return json({ error: "File not found" }, 404);
+      if (!user || !filename)
+        return json({ error: "Missing params" }, 400);
 
-  // Save a public copy inside KV
-  await env.FILES.put(`public/${user}/${filename}`, stored);
+      const stored = await env.FILES.get(`${user}/${filename}`, "text");
+      if (!stored)
+        return json({ error: "File not found" }, 404);
 
-  // Load GitHub token
-  const githubToken = await env.FILES.get("GITHUB_TOKEN", "text");
-  if (!githubToken)
-    return json({ error: "GitHub token missing in KV" }, 500);
+      const githubToken = await env.FILES.get("GITHUB_TOKEN", "text");
+      if (!githubToken)
+        return json({ error: "GitHub token missing" }, 500);
 
-  const githubApiUrl =
-    `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
+      const githubApiUrl =
+        `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
 
-  // -------------------------------
-  // Check if file exists to get SHA
-  // -------------------------------
-  let fileSha = null;
-  try {
-    const checkRes = await fetch(githubApiUrl, {
-      headers: {
-        "Authorization": `Bearer ${githubToken}`,
-        "User-Agent": "CodeMon-Deployer"
+      // Check for existing file SHA
+      let fileSha = null;
+      const checkRes = await fetch(githubApiUrl, {
+        headers: {
+          "Authorization": `Bearer ${githubToken}`,
+          "User-Agent": "CodeMon-Deployer"
+        }
+      });
+      if (checkRes.ok) {
+        const old = await checkRes.json();
+        fileSha = old.sha;
       }
-    });
 
-    if (checkRes.ok) {
-      const fileInfo = await checkRes.json();
-      fileSha = fileInfo.sha;
+      const uploadBody = {
+        message: `Deploy ${user}/${filename}`,
+        content: btoa(stored),
+        branch: "main",
+        ...(fileSha ? { sha: fileSha } : {})
+      };
+
+      const ghRes = await fetch(githubApiUrl, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${githubToken}`,
+          "Content-Type": "application/json",
+          "User-Agent": "CodeMon-Deployer"
+        },
+        body: JSON.stringify(uploadBody)
+      });
+
+      const raw = await ghRes.text();
+      let ghJson = {};
+      try { ghJson = JSON.parse(raw); } catch {}
+
+      if (!ghRes.ok)
+        return json({ error: "GitHub error", details: ghJson }, 500);
+
+      return json({
+        success: true,
+        public_url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`,
+        github_url: ghJson.content?.html_url || null
+      });
     }
-  } catch (err) {
-    // ignore errors; assume file doesn't exist
-  }
 
-  // -------------------------------
-  // Upload to GitHub
-  // -------------------------------
-  const uploadBody = {
-    message: `Deploy ${user}/${filename}`,
-    content: btoa(stored),
-    branch: "main",
-    ...(fileSha ? { sha: fileSha } : {}) // include SHA if updating
-  };
-
-  const ghRes = await fetch(githubApiUrl, {
-    method: "PUT",
-    headers: {
-      "Authorization": `Bearer ${githubToken}`,
-      "Content-Type": "application/json",
-      "User-Agent": "CodeMon-Deployer"
-    },
-    body: JSON.stringify(uploadBody)
-  });
-
-  const raw = await ghRes.text();
-  let ghJson;
-  try {
-    ghJson = JSON.parse(raw);
-  } catch {
-    return json({ error: "GitHub invalid JSON", raw }, 500);
-  }
-
-  if (!ghRes.ok) {
-    return json({ error: "GitHub error", details: ghJson }, 500);
-  }
-
-  // SUCCESS
-  return json({
-    success: true,
-    url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`,
-    github: ghJson.content?.html_url ?? null
-  });
-    }
-    // ---------------------------
-    // DEFAULT
-    // ---------------------------
     return new Response("Worker Online", { headers: corsHeaders });
   }
-};
+}
