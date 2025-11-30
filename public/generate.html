@@ -112,6 +112,30 @@
 <button id="deployBtn">Deploy</button>
 </div>
 <script>
+    // Existing generate() function stays the same
+
+// ----------------------
+// DEPLOY BUTTON FUNCTION
+// ----------------------
+const deployBtn = document.getElementById("deployBtn");
+deployBtn.addEventListener("click", async () => {
+    const code = document.getElementById("output").value;
+    if (!code) {
+        alert("No generated code to deploy!");
+        return;
+    }
+
+    try {
+        // Copy to clipboard
+        await navigator.clipboard.writeText(code);
+        alert("Code copied to clipboard!");
+
+        // Redirect to file.html
+        window.location.href = "file.html";
+    } catch (err) {
+        alert("Failed to copy code: " + err);
+    }
+});
 // Read text from URL
 const params = new URLSearchParams(window.location.search);
 const userQuery = params.get("text") || "";
