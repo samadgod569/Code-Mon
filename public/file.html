@@ -31,7 +31,7 @@ header {
 /* MAIN WRAPPER */
 #wrap {
     display: flex;
-    height: calc(100vh - 80px); /* header + some padding */
+    height: calc(100vh - 80px);
 }
 
 /* FILE LIST PANEL */
@@ -45,7 +45,7 @@ header {
     flex-direction: column;
 }
 
-/* Buttons in sidebar */
+/* Sidebar buttons */
 #files button {
     width: 100%;
     padding: 14px;
@@ -64,7 +64,7 @@ header {
     box-shadow: 0 0 25px #22d3ee;
 }
 
-/* File list scroll */
+/* FILE ITEMS */
 #fileList {
     flex: 1;
     overflow-y: auto;
@@ -173,99 +173,132 @@ header {
 </div>
 
 <script>
-const API = "https://code-mon.codemon.workers.dev"; 
+// ---------- ORIGINAL JS ----------
+const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("user");
 if (!user) location.href = "login.html";
 
 let currentFile = null;
-function showError(msg){ const e = document.getElementById("error"); e.style.display="block"; e.innerText=msg; }
-function clearError(){ const e = document.getElementById("error"); e.style.display="none"; e.innerText=""; }
 
-async function loadFiles(selectedFile = null){
+function showError(msg) {
+    const e = document.getElementById("error");
+    e.style.display = "block";
+    e.innerText = msg;
+}
+
+function clearError() {
+    const e = document.getElementById("error");
+    e.style.display = "none";
+    e.innerText = "";
+}
+
+async function loadFiles(selectedFile = null) {
     clearError();
     try {
         const res = await fetch(`${API}/api/list?user=${user}`);
         const text = await res.text();
         let data;
-        try{ data = JSON.parse(text); } catch{ return showError("Failed to load files:\n"+text); }
-        if(data.error) return showError("Failed to load files: "+data.error);
+        try { data = JSON.parse(text); } catch { return showError("Failed to load files:\n" + text); }
+
+        if (data.error) return showError("Failed to load files: " + data.error);
+
         const list = document.getElementById("fileList");
-        list.innerHTML="";
-        data.files.forEach(f=>{
-            const div=document.createElement("div");
-            div.className="fileItem";
-            div.innerText=f;
-            div.onclick=()=>loadFile(f);
+        list.innerHTML = "";
+        data.files.forEach(f => {
+            const div = document.createElement("div");
+            div.className = "fileItem";
+            div.innerText = f;
+            div.onclick = () => loadFile(f);
             list.appendChild(div);
         });
-        if(selectedFile && data.files.includes(selectedFile)) loadFile(selectedFile);
-    } catch(err){ showError("Failed to load files: "+err.message); }
+
+        if (selectedFile && data.files.includes(selectedFile)) loadFile(selectedFile);
+    } catch (err) {
+        showError("Failed to load files: " + err.message);
+    }
 }
 
-async function loadFile(name){
+async function loadFile(name) {
     clearError();
-    currentFile=name;
+    currentFile = name;
     try {
-        const res=await fetch(`${API}/api/load?user=${user}&filename=${name}`);
-        const text=await res.text();
-        document.getElementById("editor").value=text;
-    } catch(err){ showError("Failed to load file: "+err.message); }
+        const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
+        const text = await res.text();
+        document.getElementById("editor").value = text;
+    } catch (err) {
+        showError("Failed to load file: " + err.message);
+    }
 }
 
-async function createFile(){
+async function createFile() {
     clearError();
-    const name=prompt("Enter file name (example: index.html):");
-    if(!name) return;
-    try{
-        const res=await fetch(`${API}/api/save`,{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({user,filename:name,content:""})
+    const name = prompt("Enter file name (example: index.html):");
+    if (!name) return;
+
+    try {
+        const res = await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: name, content: "" })
         });
-        const text=await res.text();
+        const text = await res.text();
         let data;
-        try{ data=JSON.parse(text); } catch{ return showError("Failed to create file:\n"+text); }
-        if(data.error) return showError("Failed to create file: "+data.error);
+        try { data = JSON.parse(text); } catch { return showError("Failed to create file:\n" + text); }
+
+        if (data.error) return showError("Failed to create file: " + data.error);
+
         loadFiles(name);
-    } catch(err){ showError("Failed to create file: "+err.message); }
+    } catch (err) {
+        showError("Failed to create file: " + err.message);
+    }
 }
 
-async function saveFile(){
+async function saveFile() {
     clearError();
-    if(!currentFile) return showError("Select a file first");
-    try{
-        const res=await fetch(`${API}/api/save`,{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({user,filename:currentFile,content:document.getElementById("editor").value})
+    if (!currentFile) return showError("Select a file first");
+
+    try {
+        const res = await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: currentFile, content: document.getElementById("editor").value })
         });
-        const text=await res.text();
+        const text = await res.text();
         let data;
-        try{ data=JSON.parse(text); } catch{ return showError("Failed to save file:\n"+text); }
-        if(data.error) return showError("Failed to save file: "+data.error);
+        try { data = JSON.parse(text); } catch { return showError("Failed to save file:\n" + text); }
+
+        if (data.error) return showError("Failed to save file: " + data.error);
+
         alert("File saved!");
         loadFiles(currentFile);
-    } catch(err){ showError("Failed to save file: "+err.message); }
+    } catch (err) {
+        showError("Failed to save file: " + err.message);
+    }
 }
 
-async function deploy(){
+async function deploy() {
     clearError();
-    if(!currentFile) return showError("Select a file first");
-    try{
-        const res=await fetch(`${API}/api/deploy`,{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({user,filename:currentFile})
+    if (!currentFile) return showError("Select a file first");
+
+    try {
+        const res = await fetch(`${API}/api/deploy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: currentFile })
         });
-        const text=await res.text();
+        const text = await res.text();
         let data;
-        try{ data=JSON.parse(text); } catch{ return showError("Deploy failed:\n"+text); }
-        if(data.error) return showError("Deploy failed: "+JSON.stringify(data));
-        alert("Deployed!\nLive URL: "+data.url + (data.github ? "\nGitHub URL: "+data.github : ""));
-    } catch(err){ showError("Deploy failed: "+err.message); }
+        try { data = JSON.parse(text); } catch { return showError("Deploy failed:\n" + text); }
+
+        if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
+
+        alert("Deployed!\nLive URL: " + data.url + (data.github ? "\nGitHub URL: " + data.github : ""));
+    } catch (err) {
+        showError("Deploy failed: " + err.message);
+    }
 }
 
-// Initial load
+// Load files on page load
 loadFiles();
 </script>
 </body>
