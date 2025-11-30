@@ -7,6 +7,7 @@
 /* GLOBAL */
 
 /* GLOBAL */
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     font-family: 'Roboto', sans-serif;
@@ -90,9 +91,9 @@ header {
     display: flex;
     flex-direction: column;
     padding: 20px;
-    overflow: hidden;
 }
 
+/* Editor scrolls, buttons stay visible */
 #editor {
     flex: 1;
     padding: 20px;
@@ -105,13 +106,21 @@ header {
     font-size: 1rem;
     outline: none;
     resize: none;
-    box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.2);
     overflow-y: auto;
+    box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.2);
+}
+
+/* Button container */
+#editorArea .buttonGroup {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    flex-shrink: 0;
 }
 
 /* Buttons */
 #editorArea button {
-    margin-top: 10px;
+    flex: 1;
     padding: 14px;
     font-family: 'Orbitron';
     font-size: 1rem;
@@ -170,32 +179,29 @@ header {
     #fileList { display: flex; gap: 10px; flex: 1; margin-top: 0; overflow-x: auto; }
     .fileItem { flex: none; margin: 0; padding: 8px 12px; }
     #editorArea { padding: 15px; }
+    #editorArea .buttonGroup { margin-top: 8px; flex-direction: column; }
     #editorArea button { margin-top: 8px; }
-}  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 20px #22d3ee;
-  animation: glow 2s infinite alternate;
+                                }    
+
+#files button:hover {
+    background: #22d3ee;
+    color: #0f0c29;
+    box-shadow: 0 0 25px #22d3ee;
 }
 
-@keyframes glow {
-  from { text-shadow: 0 0 5px #22d3ee; }
-  to   { text-shadow: 0 0 25px #22d3ee; }
+/* FILE ITEMS */
+#fileList {
+    flex: 1;
+    overflow-y: auto;
 }
-
-/* MAIN WRAPPER */
-#wrap {
-  display: flex;
-  height: calc(100vh - 80px);
-  backdrop-filter: blur(10px);
+.fileItem {
+    padding: 12px;
+    margin-top: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: 0.3s;
 }
-
-/* FILE SIDEBAR */
-#files {
-  width: 280px;
-  padding: 20px;
-  background: rgba(30, 41, 59, 0.5);
-  border-right: 2px solid rgba(255,255,255,0.08);
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
 
 
 </style>
@@ -213,9 +219,10 @@ header {
 
   <div id="editorArea">
     <textarea id="editor" placeholder="Select a file..."></textarea>
-    <button onclick="saveFile()">Save</button>
-    <button onclick="deploy()">Deploy</button>
-  </div>
+    <div class="buttonGroup">
+        <button onclick="saveFile()">SAVE FILE</button>
+        <button onclick="deploy()">DEPLOY</button>
+    </div>
 </div>
 
 <script>
