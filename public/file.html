@@ -4,16 +4,152 @@
 <meta charset="UTF-8">
 <title>File Manager</title>
 <style>
-body { margin:0; font-family:Arial; background:#f3f3f3; }
-header { background:#222; color:white; padding:15px; text-align:center; }
-#wrap { display:flex; height:calc(100vh - 60px); }
-#files { width:250px; background:white; padding:10px; border-right:1px solid #ccc; }
-#editorArea { flex:1; display:flex; flex-direction:column; padding:10px; }
-#editor { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; font-family:monospace; resize:none; }
-button { margin-top:10px; padding:12px; background:#222; color:white; border:none; border-radius:5px; cursor:pointer; }
-.fileItem { padding:10px; background:#eee; margin:6px 0; border-radius:5px; cursor:pointer; }
-.fileItem:hover { background:#ddd; }
-#error { color:red; padding:10px; display:none; background:white; border-left:4px solid red; margin-bottom:10px; }
+/* GLOBAL */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: radial-gradient(circle at top, #0a0f24, #111827, #000);
+  color: #fff;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* HEADER */
+header {
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+  padding: 20px;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, #4f46e5, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px #22d3ee;
+  animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 5px #22d3ee; }
+  to   { text-shadow: 0 0 25px #22d3ee; }
+}
+
+/* MAIN WRAPPER */
+#wrap {
+  display: flex;
+  height: calc(100vh - 80px);
+  backdrop-filter: blur(10px);
+}
+
+/* FILE SIDEBAR */
+#files {
+  width: 280px;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.5);
+  border-right: 2px solid rgba(255,255,255,0.08);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+}
+
+#files button {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #22d3ee;
+  background: transparent;
+  color: #22d3ee;
+  font-family: 'Orbitron';
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.3s;
+}
+
+#files button:hover {
+  background: #22d3ee;
+  color: #0f0c29;
+  box-shadow: 0 0 20px #22d3ee;
+}
+
+.fileItem {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+  transition: 0.25s;
+  font-size: 0.95rem;
+}
+
+.fileItem:hover {
+  background: rgba(34,211,238,0.15);
+  box-shadow: 0 0 12px #22d3ee;
+}
+
+/* EDITOR SECTION */
+#editorArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+#editor {
+  flex: 1;
+  padding: 15px;
+  background: rgba(0,0,0,0.3);
+  border: 2px solid rgba(255,255,255,0.1);
+  color: #22d3ee;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: monospace;
+  outline: none;
+  resize: none;
+  transition: 0.3s;
+}
+
+#editor:focus {
+  border-color: #22d3ee;
+  box-shadow: 0 0 20px #22d3ee;
+}
+
+/* BUTTONS */
+#editorArea button {
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: 'Orbitron';
+  background: linear-gradient(90deg, #4f46e5, #22d3ee);
+  border: none;
+  transition: 0.3s;
+}
+
+#editorArea button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px #22d3ee;
+}
+
+/* ERROR BOX */
+#error {
+  background: rgba(255,0,0,0.15);
+  border-left: 4px solid red;
+  padding: 12px;
+  margin: 10px;
+  border-radius: 8px;
+  display: none;
+  font-size: 0.95rem;
+  animation: shake 0.2s;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0);}
+  25% { transform: translateX(-3px);}
+  50% { transform: translateX(3px);}
+  75% { transform: translateX(-2px);}
+  100% { transform: translateX(0);}
+}
+
 </style>
 </head>
 
@@ -22,16 +158,16 @@ button { margin-top:10px; padding:12px; background:#222; color:white; border:non
 <div id="error"></div>
 
 <div id="wrap">
-    <div id="files">
-        <button onclick="createFile()">+ Create</button>
-        <div id="fileList"></div>
-    </div>
+  <div id="files">
+    <button onclick="createFile()">+ Create</button>
+    <div id="fileList"></div>
+  </div>
 
-    <div id="editorArea">
-        <textarea id="editor" placeholder="Select a file..."></textarea>
-        <button onclick="saveFile()">Save</button>
-        <button onclick="deploy()">Deploy</button>
-    </div>
+  <div id="editorArea">
+    <textarea id="editor" placeholder="Select a file..."></textarea>
+    <button onclick="saveFile()">Save</button>
+    <button onclick="deploy()">Deploy</button>
+  </div>
 </div>
 
 <script>
