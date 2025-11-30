@@ -16,7 +16,6 @@ export default {
       return new Response("", { status: 204, headers: corsHeaders });
     }
 
-    // JSON helper
     const json = (data, status = 200) =>
       new Response(JSON.stringify(data), {
         status,
@@ -46,9 +45,10 @@ export default {
 
       if (!user || !filename) return json({ error: "Missing parameters" }, 400);
 
-      const content = await env.FILES.get(`${user}/${filename}`, "text");
+      const stored = await env.FILES.get(`${user}/${filename}`);
+      const content = stored ? await stored.text() : "";
 
-      return new Response(content || "", {
+      return new Response(content, {
         headers: { "Content-Type": "text/plain", ...corsHeaders }
       });
     }
@@ -78,7 +78,7 @@ export default {
     if (path === "/api/deploy") {
       let body;
 
-      // Read request JSON ONCE (fixes "body used" error)
+      // Read body ONCE
       try {
         body = await request.json();
       } catch {
@@ -86,29 +86,27 @@ export default {
       }
 
       const { user, filename } = body;
-
-      if (!user || !filename)
-        return json({ error: "Missing parameters" }, 400);
+      if (!user || !filename) return json({ error: "Missing parameters" }, 400);
 
       try {
-        // Load file CONTENT as TEXT (fixes stream issue)
-        const content = await env.FILES.get(`${user}/${filename}`, "text");
+        // SAFE text read (fixes stream reuse error)
+        const stored = await env.FILES.get(`${user}/${filename}`);
+        const content = stored ? await stored.text() : null;
+
         if (!content) return json({ error: "File not found" }, 404);
 
-        // Save into public folder
+        // Save public file
         await env.FILES.put(`public/${filename}`, content);
 
-        // Load GitHub token from KV (as text)
+        // Load GitHub token
         const githubToken = await env.FILES.get("GITHUB_TOKEN", "text");
         if (!githubToken)
-          return json({ error: "GitHub token not found in KV" }, 500);
+          return json({ error: "GitHub token missing in KV" }, 500);
 
-        // Build GitHub API URL
         const githubUrl =
           `https://api.github.com/repos/samadgod569/Code-Mon/contents/public/${filename}`;
 
-        // Upload to GitHub
-        const res = await fetch(githubUrl, {
+        const uploadRes = await fetch(githubUrl, {
           method: "PUT",
           headers: {
             "Authorization": `Bearer ${githubToken}`,
@@ -116,33 +114,27 @@ export default {
           },
           body: JSON.stringify({
             message: `Deploy ${filename}`,
-            content: btoa(content),   // safe because content is a string
+            content: btoa(content),
             branch: "main"
           })
         });
 
-        // Parse GitHub JSON safely
         let githubData;
         try {
-          githubData = await res.json();
-        } catch (e) {
-          const raw = await res.text();
-          return json({ error: "GitHub returned non-JSON", raw }, 500);
+          githubData = await uploadRes.json();
+        } catch {
+          const raw = await uploadRes.text();
+          return json({ error: "GitHub returned invalid JSON", raw }, 500);
         }
 
-        // GitHub error
-        if (!res.ok) {
-          return json({
-            error: "GitHub error",
-            details: githubData
-          }, 500);
+        if (!uploadRes.ok) {
+          return json({ error: "GitHub error", details: githubData }, 500);
         }
 
-        // SUCCESS
         return json({
           success: true,
           url: `https://code-mon.codemon.workers.dev/public/${filename}`,
-          github: githubData.content?.html_url || null
+          github: githubData.content?.html_url ?? null
         });
 
       } catch (err) {
@@ -151,7 +143,7 @@ export default {
     }
 
     // ---------------------------
-    // DEFAULT RESPONSE
+    // DEFAULT
     // ---------------------------
     return new Response("Worker Online", { headers: corsHeaders });
   }
