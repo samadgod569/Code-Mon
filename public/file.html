@@ -173,8 +173,8 @@ header {
 </div>
 
 <script>
-        const API = "https://code-mon.codemon.workers.dev";
-const CHUNK_SIZE = 150000; // 150 KB per chunk
+// ---------- ORIGINAL JS ----------
+const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("user");
 if (!user) location.href = "login.html";
 
@@ -192,12 +192,14 @@ function clearError() {
     e.innerText = "";
 }
 
-// ---------------- LOAD FILES ----------------
 async function loadFiles(selectedFile = null) {
     clearError();
     try {
         const res = await fetch(`${API}/api/list?user=${user}`);
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Failed to load files:\n" + text); }
+
         if (data.error) return showError("Failed to load files: " + data.error);
 
         const list = document.getElementById("fileList");
@@ -216,35 +218,18 @@ async function loadFiles(selectedFile = null) {
     }
 }
 
-// ---------------- LOAD FILE ----------------
 async function loadFile(name) {
     clearError();
     currentFile = name;
-    let code = "";
     try {
-        // Try normal file
-        let res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
-        if (res.ok) code = await res.text();
-
-        // Check segments if normal file empty
-        if (!code) {
-            let i = 1;
-            while (true) {
-                res = await fetch(`${API}/api/load?user=${user}&filename=${name}-${i}`);
-                if (!res.ok) break;
-                const part = await res.text();
-                if (!part) break;
-                code += part;
-                i++;
-            }
-        }
-        document.getElementById("editor").value = code;
+        const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
+        const text = await res.text();
+        document.getElementById("editor").value = text;
     } catch (err) {
         showError("Failed to load file: " + err.message);
     }
 }
 
-// ---------------- CREATE FILE ----------------
 async function createFile() {
     clearError();
     const name = prompt("Enter file name (example: index.html):");
@@ -256,46 +241,34 @@ async function createFile() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename: name, content: "" })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Failed to create file:\n" + text); }
+
         if (data.error) return showError("Failed to create file: " + data.error);
+
         loadFiles(name);
     } catch (err) {
         showError("Failed to create file: " + err.message);
     }
 }
 
-// ---------------- SAVE FILE ----------------
 async function saveFile() {
     clearError();
     if (!currentFile) return showError("Select a file first");
-    const code = document.getElementById("editor").value;
 
     try {
-        // Delete old chunks
-        let i = 1;
-        while (true) {
-            const res = await fetch(`${API}/api/delete?user=${user}&filename=${currentFile}-${i}`, { method: "POST" });
-            if (!res.ok) break;
-            i++;
-        }
+        const res = await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: currentFile, content: document.getElementById("editor").value })
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Failed to save file:\n" + text); }
 
-        if (code.length <= CHUNK_SIZE) {
-            await fetch(`${API}/api/save`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ user, filename: currentFile, content: code })
-            });
-        } else {
-            const totalChunks = Math.ceil(code.length / CHUNK_SIZE);
-            for (let i = 0; i < totalChunks; i++) {
-                const part = code.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-                await fetch(`${API}/api/save`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ user, filename: `${currentFile}-${i+1}`, content: part })
-                });
-            }
-        }
+        if (data.error) return showError("Failed to save file: " + data.error);
+
         alert("File saved!");
         loadFiles(currentFile);
     } catch (err) {
@@ -303,7 +276,6 @@ async function saveFile() {
     }
 }
 
-// ---------------- DEPLOY FILE ----------------
 async function deploy() {
     clearError();
     if (!currentFile) return showError("Select a file first");
@@ -314,15 +286,19 @@ async function deploy() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename: currentFile })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return showError("Deploy failed:\n" + text); }
+
         if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
+
         alert("Deployed!\nLive URL: " + data.url + (data.github ? "\nGitHub URL: " + data.github : ""));
     } catch (err) {
         showError("Deploy failed: " + err.message);
     }
 }
 
-// ---------------- INITIALIZE ----------------
+// Load files on page load
 loadFiles();
 </script>
 </body>
