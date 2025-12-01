@@ -172,13 +172,11 @@ header {
   </div>
 </div>
 
-<script>
+        <script>
 const API = "https://code-mon.codemon.workers.dev";
-const user = localStorage.getItem("user") || (() => {
-    const u = "user-" + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem("user", u);
-    return u;
-})();
+const user = localStorage.getItem("user");
+if (!user) location.href = "login.html";
+
 let currentFile = null;
 
 function showError(msg) {
@@ -193,16 +191,17 @@ function clearError() {
     e.innerText = "";
 }
 
-/* ---------------- LOAD FILE LIST ---------------- */
 async function loadFiles(selectedFile = null) {
     clearError();
     try {
         const res = await fetch(`${API}/api/list?user=${user}`);
         const data = await res.json();
-        if (data.error) return showError("Failed to load files: " + data.error);
+
+        if (data.error) return showError(data.error);
 
         const list = document.getElementById("fileList");
         list.innerHTML = "";
+
         data.files.forEach(f => {
             const div = document.createElement("div");
             div.className = "fileItem";
@@ -217,83 +216,94 @@ async function loadFiles(selectedFile = null) {
     }
 }
 
-/* ---------------- LOAD FILE ---------------- */
-async function loadFile(filename) {
+async function loadFile(name) {
     clearError();
-    currentFile = filename;
+    currentFile = name;
     try {
-        const res = await fetch(`${API}/api/load?user=${user}&filename=${filename}`);
+        const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
         const text = await res.text();
-        document.getElementById("editor").value = text;
+        editor.value = text;
     } catch (err) {
         showError("Failed to load file: " + err.message);
     }
 }
 
-/* ---------------- CREATE FILE ---------------- */
 async function createFile() {
     clearError();
-    const name = prompt("Enter file name (example: index.html):");
+    const name = prompt("Enter file name:");
     if (!name) return;
 
-    const fd = new FormData();
-    fd.append("user", user);
-    fd.append("filename", name);
-    fd.append("content", "");
-
     try {
-        const res = await fetch(`${API}/api/save`, { method: "POST", body: fd });
+        const res = await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: name, content: "" })
+        });
+
         const data = await res.json();
-        if (data.error) return showError("Failed to create file: " + data.error);
+        if (data.error) return showError(data.error);
+
         loadFiles(name);
     } catch (err) {
         showError("Failed to create file: " + err.message);
     }
 }
 
-/* ---------------- SAVE FILE ---------------- */
 async function saveFile() {
     clearError();
     if (!currentFile) return showError("Select a file first");
 
-    const fd = new FormData();
-    fd.append("user", user);
-    fd.append("filename", currentFile);
-    fd.append("content", document.getElementById("editor").value);
-
     try {
-        const res = await fetch(`${API}/api/save`, { method: "POST", body: fd });
+        const res = await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user,
+                filename: currentFile,
+                content: editor.value
+            })
+        });
+
         const data = await res.json();
-        if (data.error) return showError("Failed to save file: " + data.error);
+        if (data.error) return showError(data.error);
+
         alert("File saved!");
-        loadFiles(currentFile);
     } catch (err) {
         showError("Failed to save file: " + err.message);
     }
 }
 
-/* ---------------- DEPLOY FILE ---------------- */
+/* NEW → DEPLOY SENDS CODE DIRECTLY (NO KV READ) */
 async function deploy() {
     clearError();
     if (!currentFile) return showError("Select a file first");
 
-    const fd = new FormData();
-    fd.append("user", user);
-    fd.append("filename", currentFile);
-
     try {
-        const res = await fetch(`${API}/api/deploy`, { method: "POST", body: fd });
+        const res = await fetch(`${API}/api/deploy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user,
+                filename: currentFile,
+                code: editor.value   // ← DIRECT CODE GOES TO WORKER
+            })
+        });
+
         const data = await res.json();
-        if (data.error) return showError("Deploy failed: " + data.error);
-        alert(`Deployed!\nLive URL: ${data.url}\nGitHub URL: ${data.github ?? "N/A"}`);
+        if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
+
+        alert(
+            "Deployed!\nLive URL: " +
+            data.url +
+            (data.github ? "\nGitHub URL: " + data.github : "")
+        );
     } catch (err) {
         showError("Deploy failed: " + err.message);
     }
 }
 
-// Load files on page load
 loadFiles();
-</script>
+        </script>
 
 </body>
 </html>
