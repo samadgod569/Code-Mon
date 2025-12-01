@@ -1,310 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <title>File Manager</title>
 <style>
-/* GLOBAL */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: 'Roboto', sans-serif;
-    background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
-    color: #fff;
-    height: 100vh;
-    overflow: hidden;
-}
-
-/* HEADER */
-header {
-    text-align: center;
-    padding: 25px;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 2rem;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    color: #22d3ee;
-    text-shadow: 0 0 15px #22d3ee;
-    animation: glitch 2s infinite;
-}
-
-/* MAIN WRAPPER */
-#wrap {
-    display: flex;
-    height: calc(100vh - 80px);
-}
-
-/* FILE LIST PANEL */
-#files {
-    width: 280px;
-    padding: 15px;
-    border-right: 2px solid rgba(34, 211, 238,0.5);
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(14px);
-    display: flex;
-    flex-direction: column;
-}
-
-/* Sidebar buttons */
-#files button {
-    width: 100%;
-    padding: 14px;
-    font-family: 'Orbitron';
-    border-radius: 50px;
-    border: 2px solid #22d3ee;
-    background: transparent;
-    color: #22d3ee;
-    cursor: pointer;
-    transition: 0.3s;
-    margin-bottom: 15px;
-}
-#files button:hover {
-    background: #22d3ee;
-    color: #0f0c29;
-    box-shadow: 0 0 25px #22d3ee;
-}
-
-/* FILE ITEMS */
-#fileList {
-    flex: 1;
-    overflow-y: auto;
-}
-.fileItem {
-    padding: 12px;
-    margin-top: 12px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.08);
-    cursor: pointer;
-    transition: 0.3s;
-}
-.fileItem:hover {
-    background: rgba(34, 211, 238, 0.25);
-    transform: translateX(5px);
-    font-weight: bold;
-}
-
-/* EDITOR AREA */
-#editorArea {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-}
-
-/* Editor scrolls */
-#editor {
-    flex: 1;
-    padding: 20px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(34,211,238,0.5);
-    border-radius: 12px;
-    color: #22d3ee;
-    font-family: monospace;
-    font-size: 1rem;
-    outline: none;
-    resize: none;
-    overflow-y: auto;
-    box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.2);
-}
-
-/* ERROR BOX */
-#error {
-    display: none;
-    background: rgba(255,0,0,0.15);
-    border-left: 4px solid red;
-    padding: 10px;
-    margin: 10px 20px;
-    border-radius: 8px;
-    color: #ff8a8a;
-    font-family: 'Roboto';
-    font-weight: bold;
-}
-
-/* SCROLLBARS */
-#fileList::-webkit-scrollbar, #editor::-webkit-scrollbar {
-    width: 10px;
-}
-#fileList::-webkit-scrollbar-thumb, #editor::-webkit-scrollbar-thumb {
-    background: rgba(34,211,238,0.5);
-    border-radius: 10px;
-}
-#fileList::-webkit-scrollbar-thumb:hover, #editor::-webkit-scrollbar-thumb:hover {
-    background: #22d3ee;
-}
-
-/* GLITCH HEADER EFFECT */
-@keyframes glitch {
-    0% { text-shadow: 0 0 10px #22d3ee; }
-    20% { text-shadow: 2px 2px 6px #22d3ee; }
-    40% { text-shadow: -2px -2px 6px #22d3ee; }
-    60% { text-shadow: 2px -2px 6px #22d3ee; }
-    80% { text-shadow: -2px 2px 6px #22d3ee; }
-    100% { text-shadow: 0 0 10px #22d3ee; }
-}
-
-/* Responsive */
-@media(max-width: 900px){
-    #wrap { flex-direction: column; height: auto; }
-    #files { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 2px solid rgba(34,211,238,0.5); }
-    #fileList { display: flex; gap: 10px; flex: 1; margin-top: 0; overflow-x: auto; }
-    .fileItem { flex: none; margin: 0; padding: 8px 12px; }
-    #editorArea { padding: 15px; }
-    #editorArea button { margin-top: 8px; }
-}
+body { font-family: Arial; display:flex; gap:20px; }
+#fileList { width:200px; border:1px solid #ccc; padding:10px; }
+.fileItem { padding:5px; cursor:pointer; border-bottom:1px solid #eee; }
+.fileItem:hover { background:#f0f0f0; }
+#error { color:red; margin-top:10px; }
+textarea { width:600px; height:400px; }
 </style>
 </head>
-
 <body>
-<header>File Manager</header>
-<div id="error"></div>
 
-<div id="wrap">
-  <div id="files">
-    <button onclick="createFile()">+ Create</button>
-    <button onclick="saveFile()">SAVE FILE</button>
-    <button onclick="deploy()">DEPLOY</button>
-    <div id="fileList"></div>
-  </div>
+<div id="fileList"></div>
 
-  <div id="editorArea">
-    <textarea id="editor" placeholder="Select a file..."></textarea>
-  </div>
+<div>
+    <textarea id="editor"></textarea><br><br>
+    <button onclick="createFile()">Create File</button>
+    <button onclick="saveFile()">Save</button>
+    <button onclick="deploy()">Deploy</button>
+
+    <div id="error"></div>
 </div>
 
-        <script>
-            const editor = document.getElementById("editor");
+<script>
 const API = "https://code-mon.codemon.workers.dev";
-const user = localStorage.getItem("user");
-if (!user) location.href = "login.html";
-
+const user = localStorage.getItem("user") || "defaultUser";
 let currentFile = null;
 
 function showError(msg) {
     const e = document.getElementById("error");
-    e.style.display = "block";
     e.innerText = msg;
+    e.style.display = "block";
 }
-
 function clearError() {
     const e = document.getElementById("error");
     e.style.display = "none";
-    e.innerText = "";
 }
 
-async function loadFiles(selectedFile = null) {
-    clearError();
-    try {
-        const res = await fetch(`${API}/api/list?user=${user}`);
-        const data = await res.json();
-
-        if (data.error) return showError(data.error);
-
-        const list = document.getElementById("fileList");
-        list.innerHTML = "";
-
-        data.files.forEach(f => {
-            const div = document.createElement("div");
-            div.className = "fileItem";
-            div.innerText = f;
-            div.onclick = () => loadFile(f);
-            list.appendChild(div);
-        });
-
-        if (selectedFile && data.files.includes(selectedFile)) loadFile(selectedFile);
-    } catch (err) {
-        showError("Failed to load files: " + err.message);
-    }
+async function loadFiles() {
+    const res = await fetch(`${API}/api/list?user=${user}`);
+    const data = await res.json();
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
+    data.files.forEach(name => {
+        const div = document.createElement("div");
+        div.className = "fileItem";
+        div.innerText = name;
+        div.onclick = () => loadFile(name);
+        list.appendChild(div);
+    });
 }
-
-async function loadFile(name) {
-    clearError();
-    currentFile = name;
-    try {
-        const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
-        const text = await res.text();
-        editor.value = text;
-    } catch (err) {
-        showError("Failed to load file: " + err.message);
-    }
+async function loadFile(filename) {
+    currentFile = filename;
+    const res = await fetch(`${API}/api/load?user=${user}&filename=${filename}`);
+    document.getElementById("editor").value = await res.text();
 }
 
 async function createFile() {
-    clearError();
-    const name = prompt("Enter file name:");
+    const name = prompt("File name:");
     if (!name) return;
 
-    try {
-        const res = await fetch(`${API}/api/save`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user, filename: name, content: "" })
-        });
+    await fetch(`${API}/api/save`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ user, filename:name, content:"" })
+    });
 
-        const data = await res.json();
-        if (data.error) return showError(data.error);
-
-        loadFiles(name);
-    } catch (err) {
-        showError("Failed to create file: " + err.message);
-    }
+    loadFiles();
 }
 
 async function saveFile() {
-    clearError();
-    if (!currentFile) return showError("Select a file first");
+    if (!currentFile) return showError("Select a file");
 
-    try {
-        const res = await fetch(`${API}/api/save`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                user,
-                filename: currentFile,
-                content: editor.value
-            })
-        });
+    await fetch(`${API}/api/save`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+            user,
+            filename:currentFile,
+            content:document.getElementById("editor").value
+        })
+    });
 
-        const data = await res.json();
-        if (data.error) return showError(data.error);
-
-        alert("File saved!");
-    } catch (err) {
-        showError("Failed to save file: " + err.message);
-    }
+    alert("Saved!");
 }
 
-/* NEW → DEPLOY SENDS CODE DIRECTLY (NO KV READ) */
 async function deploy() {
-    clearError();
-    if (!currentFile) return showError("Select a file first");
+    await fetch(`${API}/api/add-deploy`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ user })
+    });
 
-    try {
-        const res = await fetch(`${API}/api/deploy`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                user,
-                filename: currentFile,
-                code: editor.value   // ← DIRECT CODE GOES TO WORKER
-            })
-        });
-
-        const data = await res.json();
-        if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
-
-        alert(
-            "Deployed!\nLive URL: " +
-            data.url +
-            (data.github ? "\nGitHub URL: " + data.github : "")
-        );
-    } catch (err) {
-        showError("Deploy failed: " + err.message);
-    }
+    alert("Deploy request queued!");
 }
 
 loadFiles();
-        </script>
-
+</script>
 </body>
 </html>
