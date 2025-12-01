@@ -13,13 +13,17 @@ export default {
     };
 
     if (request.method === "OPTIONS") {
-      return new Response("", { status: 204, headers: corsHeaders });
+      return new Response("", {
+        status: 204,
+        headers: corsHeaders
+      });
     }
 
     const json = (obj, status = 200) =>
-      new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
-
-    const CHUNK_SIZE = 150000; // 150 KB per chunk
+      new Response(JSON.stringify(obj), {
+        status,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
 
     // ---------------------------
     // LIST FILES
@@ -29,15 +33,10 @@ export default {
       if (!user) return json({ error: "Missing user" }, 400);
 
       const list = await env.FILES.list({ prefix: `${user}/` });
-      const files = [];
 
-      for (const k of list.keys) {
-        // Remove segment suffix if exists
-        const name = k.name.replace(`${user}/`, "").replace(/-\d+$/, "");
-        if (!files.includes(name)) files.push(name);
-      }
-
-      return json({ files });
+      return json({
+        files: list.keys.map(k => k.name.replace(`${user}/`, ""))
+      });
     }
 
     // ---------------------------
@@ -46,24 +45,13 @@ export default {
     if (path === "/api/load") {
       const user = url.searchParams.get("user");
       const filename = url.searchParams.get("filename");
+
       if (!user || !filename) return json({ error: "Missing params" }, 400);
 
-      // Try normal file first
-      let content = await env.FILES.get(`${user}/${filename}`, "text");
-
-      // If empty, check chunks
-      if (!content) {
-        let i = 1, part = "";
-        content = "";
-        while (true) {
-          part = await env.FILES.get(`${user}/${filename}-${i}`, "text");
-          if (!part) break;
-          content += part;
-          i++;
-        }
-      }
-
-      return new Response(content || "", { headers: { "Content-Type": "text/plain", ...corsHeaders } });
+      const stored = await env.FILES.get(`${user}/${filename}`, "text");
+      return new Response(stored || "", {
+        headers: { "Content-Type": "text/plain", ...corsHeaders }
+      });
     }
 
     // ---------------------------
@@ -71,101 +59,111 @@ export default {
     // ---------------------------
     if (path === "/api/save") {
       let body;
-      try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "Invalid JSON" }, 400);
+      }
 
       const { user, filename, content } = body;
       if (!user || !filename) return json({ error: "Missing params" }, 400);
 
-      // Delete old chunks
-      let i = 1;
-      while (true) {
-        const res = await env.FILES.delete(`${user}/${filename}-${i}`);
-        if (!res) break; // if nothing to delete
-        i++;
-      }
-
-      // Save small file normally
-      if (content.length <= CHUNK_SIZE) {
-        await env.FILES.put(`${user}/${filename}`, content ?? "");
-      } else {
-        // Save in chunks
-        const totalChunks = Math.ceil(content.length / CHUNK_SIZE);
-        for (let i = 0; i < totalChunks; i++) {
-          const part = content.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-          await env.FILES.put(`${user}/${filename}-${i + 1}`, part);
-        }
-      }
+      await env.FILES.put(`${user}/${filename}`, content ?? "");
 
       return json({ success: true });
     }
 
-    // ---------------------------
-    // DEPLOY FILE
-    // ---------------------------
+    // ---------------------------------------------------
+    // DEPLOY (UPLOAD ONLY TO: Code-Mon-space)
+    // ---------------------------------------------------
     if (path === "/api/deploy") {
-      let body;
-      try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
 
-      const { user, filename } = body;
-      if (!user || !filename) return json({ error: "Missing params" }, 400);
+  const { user, filename } = body;
+  if (!user || !filename) return json({ error: "Missing params" }, 400);
 
-      // Load main file
-      let content = await env.FILES.get(`${user}/${filename}`, "text") || "";
+  // Load file from KV
+  const stored = await env.FILES.get(`${user}/${filename}`, "text");
+  if (!stored) return json({ error: "File not found" }, 404);
 
-      // Merge chunks if they exist
-      let i = 1, part = "";
-      while (true) {
-        part = await env.FILES.get(`${user}/${filename}-${i}`, "text");
-        if (!part) break;
-        content += part;
-        i++;
+  // Save a public copy inside KV
+  await env.FILES.put(`public/${user}/${filename}`, stored);
+
+  // Load GitHub token
+  const githubToken = await env.FILES.get("GITHUB_TOKEN", "text");
+  if (!githubToken)
+    return json({ error: "GitHub token missing in KV" }, 500);
+
+  const githubApiUrl =
+    `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
+
+  // -------------------------------
+  // Check if file exists to get SHA
+  // -------------------------------
+  let fileSha = null;
+  try {
+    const checkRes = await fetch(githubApiUrl, {
+      headers: {
+        "Authorization": `Bearer ${githubToken}`,
+        "User-Agent": "CodeMon-Deployer"
       }
+    });
 
-      if (!content) return json({ error: "File not found" }, 404);
-
-      // Save public KV copy
-      await env.FILES.put(`public/${user}/${filename}`, content);
-
-      // Upload to GitHub
-      const githubToken = await env.FILES.get("GITHUB_TOKEN", "text");
-      if (!githubToken) return json({ error: "GitHub token missing in KV" }, 500);
-
-      const githubApiUrl = `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
-
-      // Check SHA if file exists
-      let fileSha = null;
-      try {
-        const checkRes = await fetch(githubApiUrl, { headers: { "Authorization": `Bearer ${githubToken}` } });
-        if (checkRes.ok) fileSha = (await checkRes.json()).sha;
-      } catch {}
-
-      // Upload to GitHub
-      const uploadBody = {
-        message: `Deploy ${user}/${filename}`,
-        content: btoa(content),
-        branch: "main",
-        ...(fileSha ? { sha: fileSha } : {})
-      };
-
-      const ghRes = await fetch(githubApiUrl, {
-        method: "PUT",
-        headers: { "Authorization": `Bearer ${githubToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify(uploadBody)
-      });
-
-      const raw = await ghRes.text();
-      let ghJson;
-      try { ghJson = JSON.parse(raw); } catch { return json({ error: "GitHub invalid JSON", raw }, 500); }
-
-      if (!ghRes.ok) return json({ error: "GitHub error", details: ghJson }, 500);
-
-      return json({
-        success: true,
-        url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`,
-        github: ghJson.content?.html_url ?? null
-      });
+    if (checkRes.ok) {
+      const fileInfo = await checkRes.json();
+      fileSha = fileInfo.sha;
     }
+  } catch (err) {
+    // ignore errors; assume file doesn't exist
+  }
 
+  // -------------------------------
+  // Upload to GitHub
+  // -------------------------------
+  const uploadBody = {
+    message: `Deploy ${user}/${filename}`,
+    content: btoa(stored),
+    branch: "main",
+    ...(fileSha ? { sha: fileSha } : {}) // include SHA if updating
+  };
+
+  const ghRes = await fetch(githubApiUrl, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${githubToken}`,
+      "Content-Type": "application/json",
+      "User-Agent": "CodeMon-Deployer"
+    },
+    body: JSON.stringify(uploadBody)
+  });
+
+  const raw = await ghRes.text();
+  let ghJson;
+  try {
+    ghJson = JSON.parse(raw);
+  } catch {
+    return json({ error: "GitHub invalid JSON", raw }, 500);
+  }
+
+  if (!ghRes.ok) {
+    return json({ error: "GitHub error", details: ghJson }, 500);
+  }
+
+  // SUCCESS
+  return json({
+    success: true,
+    url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`,
+    github: ghJson.content?.html_url ?? null
+  });
+    }
+    // ---------------------------
+    // DEFAULT
+    // ---------------------------
     return new Response("Worker Online", { headers: corsHeaders });
   }
 };
