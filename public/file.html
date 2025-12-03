@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>File Manager</title>
+
 <style>
 /* GLOBAL */
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -121,43 +122,80 @@ header {
     font-weight: bold;
 }
 
-/* SCROLLBARS */
-#fileList::-webkit-scrollbar, #editor::-webkit-scrollbar {
-    width: 10px;
-}
-#fileList::-webkit-scrollbar-thumb, #editor::-webkit-scrollbar-thumb {
-    background: rgba(34,211,238,0.5);
-    border-radius: 10px;
-}
-#fileList::-webkit-scrollbar-thumb:hover, #editor::-webkit-scrollbar-thumb:hover {
-    background: #22d3ee;
-}
-
-/* GLITCH HEADER EFFECT */
-@keyframes glitch {
-    0% { text-shadow: 0 0 10px #22d3ee; }
-    20% { text-shadow: 2px 2px 6px #22d3ee; }
-    40% { text-shadow: -2px -2px 6px #22d3ee; }
-    60% { text-shadow: 2px -2px 6px #22d3ee; }
-    80% { text-shadow: -2px 2px 6px #22d3ee; }
-    100% { text-shadow: 0 0 10px #22d3ee; }
+/* SUCCESS BOX */
+#success {
+    display: none;
+    background: rgba(0,255,130,0.15);
+    border-left: 4px solid #00ff9d;
+    padding: 10px;
+    margin: 10px 20px;
+    border-radius: 8px;
+    color: #9affd6;
+    font-family: 'Roboto';
+    font-weight: bold;
+    position: relative;
+    top: -80px;
+    animation: slideDown 0.4s forwards;
 }
 
-/* Responsive */
-@media(max-width: 900px){
-    #wrap { flex-direction: column; height: auto; }
-    #files { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 2px solid rgba(34,211,238,0.5); }
-    #fileList { display: flex; gap: 10px; flex: 1; margin-top: 0; overflow-x: auto; }
-    .fileItem { flex: none; margin: 0; padding: 8px 12px; }
-    #editorArea { padding: 15px; }
-    #editorArea button { margin-top: 8px; }
+/* CREATE FILE POPUP */
+#createBox {
+    display: none;
+    position: absolute;
+    top: -150px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,255,130,0.15);
+    border: 2px solid #00ff9d;
+    padding: 20px;
+    border-radius: 12px;
+    width: 300px;
+    backdrop-filter: blur(12px);
+    animation: slideDown 0.4s forwards;
 }
+#createBox input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #00ff9d;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+#createBox button {
+    margin-top: 12px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #00ff9d;
+    background: #00ff9d;
+    color: #0f0c29;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* Animation */
+@keyframes slideDown {
+    from { top: -80px; opacity: 0; }
+    to { top: 0; opacity: 1; }
+}
+
 </style>
 </head>
 
 <body>
+
 <header>File Manager</header>
+
 <div id="error"></div>
+<div id="success"></div>
+
+<!-- CREATE FILE BOX -->
+<div id="createBox">
+    <h3 style="color:#00ff9d;">Create New File</h3>
+    <input id="createFilename" placeholder="example: index.html">
+    <button onclick="confirmCreate()">Create</button>
+</div>
 
 <div id="wrap">
   <div id="files">
@@ -173,7 +211,6 @@ header {
 </div>
 
 <script>
-// ---------- ORIGINAL JS ----------
 const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("user");
 if (!user) location.href = "login.html";
@@ -184,26 +221,32 @@ function showError(msg) {
     const e = document.getElementById("error");
     e.style.display = "block";
     e.innerText = msg;
+    setTimeout(() => e.style.display = "none", 4000);
+}
+
+function showSuccess(msg) {
+    const s = document.getElementById("success");
+    s.style.display = "block";
+    s.innerText = msg;
+    setTimeout(() => s.style.display = "none", 3000);
 }
 
 function clearError() {
-    const e = document.getElementById("error");
-    e.style.display = "none";
-    e.innerText = "";
+    document.getElementById("error").style.display = "none";
 }
 
+/* LOAD FILES */
 async function loadFiles(selectedFile = null) {
     clearError();
     try {
         const res = await fetch(`${API}/api/list?user=${user}`);
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { return showError("Failed to load files:\n" + text); }
+        const data = await res.json();
 
         if (data.error) return showError("Failed to load files: " + data.error);
 
         const list = document.getElementById("fileList");
         list.innerHTML = "";
+
         data.files.forEach(f => {
             const div = document.createElement("div");
             div.className = "fileItem";
@@ -213,27 +256,35 @@ async function loadFiles(selectedFile = null) {
         });
 
         if (selectedFile && data.files.includes(selectedFile)) loadFile(selectedFile);
+
     } catch (err) {
         showError("Failed to load files: " + err.message);
     }
 }
 
+/* LOAD SINGLE FILE */
 async function loadFile(name) {
-    clearError();
     currentFile = name;
     try {
         const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
-        const text = await res.text();
-        document.getElementById("editor").value = text;
+        document.getElementById("editor").value = await res.text();
+
     } catch (err) {
         showError("Failed to load file: " + err.message);
     }
 }
 
-async function createFile() {
-    clearError();
-    const name = prompt("Enter file name (example: index.html):");
-    if (!name) return;
+/* OPEN CREATE FILE BOX */
+function createFile() {
+    document.getElementById("createBox").style.display = "block";
+}
+
+/* CONFIRM CREATE FILE */
+async function confirmCreate() {
+    const name = document.getElementById("createFilename").value.trim();
+    document.getElementById("createBox").style.display = "none";
+
+    if (!name) return showError("Filename cannot be empty");
 
     try {
         const res = await fetch(`${API}/api/save`, {
@@ -241,43 +292,46 @@ async function createFile() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename: name, content: "" })
         });
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { return showError("Failed to create file:\n" + text); }
 
+        const data = await res.json();
         if (data.error) return showError("Failed to create file: " + data.error);
 
+        showSuccess("File created!");
         loadFiles(name);
+
     } catch (err) {
         showError("Failed to create file: " + err.message);
     }
 }
 
+/* SAVE FILE */
 async function saveFile() {
-    clearError();
     if (!currentFile) return showError("Select a file first");
 
     try {
         const res = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user, filename: currentFile, content: document.getElementById("editor").value })
+            body: JSON.stringify({
+                user,
+                filename: currentFile,
+                content: document.getElementById("editor").value
+            })
         });
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { return showError("Failed to save file:\n" + text); }
 
+        const data = await res.json();
         if (data.error) return showError("Failed to save file: " + data.error);
 
-        alert("File saved!");
+        showSuccess("File saved!");
         loadFiles(currentFile);
+
     } catch (err) {
         showError("Failed to save file: " + err.message);
     }
 }
 
+/* DEPLOY */
 async function deploy() {
-    clearError();
     if (!currentFile) return showError("Select a file first");
 
     try {
@@ -286,20 +340,26 @@ async function deploy() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename: currentFile })
         });
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { return showError("Deploy failed:\n" + text); }
 
-        if (data.error) return showError("Deploy failed: " + JSON.stringify(data));
+        const data = await res.json();
 
-        alert("Deployed!\nLive URL: " + data.url + (data.github ? "\nGitHub URL: " + data.github : ""));
+        if (data.error)
+            return showError("Deploy failed: " + JSON.stringify(data));
+
+        showSuccess("Deployed Successfully!");
+
     } catch (err) {
-        showError("Deploy failed: " + err.message);
+        /* SPECIAL MESSAGE FOR FAILED-TO-FETCH */
+        showError(
+            "Ooops! Seems like you have reached your file CPU limit (Beta).\n" +
+            "You can convert the file or visit our Discord to deploy large files."
+        );
     }
 }
 
-// Load files on page load
+/* LOAD ON START */
 loadFiles();
 </script>
+
 </body>
 </html>
