@@ -81,7 +81,49 @@ if (path === "/api/load") {
 
       return json({ success: true });
     }
+// ---------------------------
+// LOGIN
+// ---------------------------
+if (path === "/api/pass") {
+  const username = url.searchParams.get("username");
+  const pass = url.searchParams.get("pass");
 
+  if (!username || !pass)
+    return json({ success: false, error: "Missing username or password" }, 400);
+
+  // Get stored pass
+  const storedPass = await env.Pass.get(username, "text");
+
+  if (!storedPass)
+    return json({ success: false, error: "Username not found" }, 404);
+
+  // Check password
+  if (storedPass !== pass)
+    return json({ success: false, error: "Incorrect username or password" }, 403);
+
+  return json({ success: true });
+}
+    // ---------------------------
+// SIGNUP
+// ---------------------------
+if (path === "/api/pass-deploy") {
+  const username = url.searchParams.get("username");
+  const pass = url.searchParams.get("pass");
+
+  if (!username || !pass)
+    return json({ success: false, error: "Missing username or password" }, 400);
+
+  // Check if already exists
+  const existing = await env.Pass.get(username, "text");
+
+  if (existing)
+    return json({ success: false, error: "Username already exists" }, 409);
+
+  // Save to KV
+  await env.Pass.put(username, pass);
+
+  return json({ success: true });
+}
     // ---------------------------------------------------
     // DEPLOY (UPLOAD ONLY TO: Code-Mon-space)
     // ---------------------------------------------------
