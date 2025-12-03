@@ -1,0 +1,267 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<title>CodeSpace | CodeMon</title>  
+  
+<style>  
+* { margin: 0; padding: 0; box-sizing: border-box; }  
+body {  
+    font-family: "Roboto", sans-serif;  
+    background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);  
+    height: 100vh;  
+    color: #fff;  
+    display: flex;  
+    flex-direction: column;  
+}
+
+/* Message Box */
+#msgBar {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: 0.35s;
+    width: 80%;
+    max-width: 450px;
+    text-align: center;
+    z-index: 1000;
+}
+
+.successBox {
+    background: rgba(0,255,0,0.18);
+    border-left: 4px solid lime;
+    color: #c8ffc8;
+}
+
+.errorBox {
+    background: rgba(255,0,0,0.18);
+    border-left: 4px solid red;
+    color: #ffb3b3;
+}
+  
+/* Top Bar */  
+.topbar {  
+    width: 100%;  
+    background: rgba(34,211,238,0.12);  
+    padding: 15px;  
+    font-family: Orbitron, sans-serif;  
+    font-size: 1.2rem;  
+    display: flex;  
+    justify-content: space-between;  
+    align-items: center;  
+    border-bottom: 1px solid #22d3ee;  
+}  
+  
+#usernameBox {  
+    color: #22d3ee;  
+    text-shadow: 0 0 10px #22d3ee;  
+}  
+  
+/* Layout */  
+.main {  
+    display: flex;  
+    height: calc(100vh - 60px);  
+}  
+  
+.sidebar {  
+    width: 260px;  
+    background: rgba(255,255,255,0.03);  
+    border-right: 1px solid rgba(255,255,255,0.15);  
+    padding: 15px;  
+    overflow-y: auto;  
+}  
+  
+.sidebar h3 {  
+    color: #22d3ee;  
+    margin-bottom: 10px;  
+}  
+  
+.fileItem {  
+    padding: 8px;  
+    cursor: pointer;  
+    border-radius: 6px;  
+    margin-bottom: 5px;  
+    transition: 0.25s;  
+}  
+  
+.fileItem:hover {  
+    background: rgba(34,211,238,0.2);  
+}  
+  
+#editorArea {  
+    flex: 1;  
+    padding: 15px;  
+    display: flex;  
+    flex-direction: column;  
+}  
+  
+textarea {  
+    flex: 1;  
+    width: 100%;  
+    border-radius: 10px;  
+    background: rgba(255,255,255,0.05);  
+    border: 1px solid #22d3ee;  
+    color: #22d3ee;  
+    padding: 15px;  
+    font-size: 1rem;  
+    outline: none;  
+    resize: none;  
+}  
+  
+/* Buttons */  
+.btnBox {  
+    display: flex;  
+    gap: 10px;  
+    margin-top: 10px;  
+}  
+  
+button {  
+    padding: 12px 18px;  
+    border-radius: 8px;  
+    border: none;  
+    cursor: pointer;  
+    font-family: Orbitron;  
+    font-size: 1rem;  
+    background: #22d3ee;  
+    color: #0f0c29;  
+    transition: 0.3s;  
+}  
+  
+button:hover {  
+    box-shadow: 0 0 20px #22d3ee;  
+}  
+  
+.saveBtn { background: #22d3ee; }  
+.previewBtn { background: #34d399; }  
+</style>  
+</head>  
+  
+<body>  
+
+<div id="msgBar"></div>
+  
+<!-- TOP -->  
+<div class="topbar">  
+    <div>CodeSpace</div>  
+    <div id="usernameBox"></div>  
+</div>  
+  
+<!-- MAIN -->  
+<div class="main">  
+  
+    <!-- SIDEBAR -->  
+    <div class="sidebar">  
+        <h3>Your Files</h3>  
+        <div id="fileList">Loading...</div>  
+    </div>  
+  
+    <!-- EDITOR -->  
+    <div id="editorArea">  
+        <textarea id="editor" placeholder="Select a file to begin..."></textarea>  
+  
+        <div class="btnBox">  
+            <button class="saveBtn" onclick="saveFile()">Save</button>  
+            <button class="previewBtn" onclick="previewFile()">Preview</button>  
+        </div>  
+    </div>  
+  
+</div>  
+  
+<script>  
+const API = "https://code-mon.codemon.workers.dev";  
+let currentFile = "";  
+let username = localStorage.getItem("code-mon-username");  
+let pass = localStorage.getItem("code-mon-pass");  
+
+/* MSG BAR */
+function showMsg(msg, success = true) {
+    const bar = document.getElementById("msgBar");
+    bar.innerText = msg;
+    bar.className = success ? "successBox" : "errorBox";
+    bar.style.top = "20px";
+
+    setTimeout(() => bar.style.top = "-100px", 2600);
+}
+  
+/* AUTH CHECK */  
+(async function() {  
+    if (!username || !pass) {
+        location.href = "login.html";  
+        return;  
+    }  
+
+    const res = await fetch(`${API}/api/pass?username=${username}&pass=${pass}`);  
+    const data = await res.json();  
+
+    if (!data.success) {  
+        localStorage.clear();  
+        location.href = "login.html";  
+        return;  
+    }  
+
+    document.getElementById("usernameBox").innerText = username;  
+})();  
+  
+/* LOAD FILE LIST */  
+async function loadFiles() {  
+    const res = await fetch(`${API}/api/list?user=${username}`);  
+    const data = await res.json();  
+
+    const list = document.getElementById("fileList");  
+    list.innerHTML = "";  
+
+    data.files.forEach(file => {  
+        const div = document.createElement("div");  
+        div.className = "fileItem";  
+        div.innerText = file;  
+        div.onclick = () => loadFile(file);  
+        list.appendChild(div);  
+    });  
+}  
+  
+/* LOAD FILE CONTENT */  
+async function loadFile(filename) {  
+    currentFile = filename;  
+    const res = await fetch(`${API}/api/load?user=${username}&filename=${filename}`);  
+    const text = await res.text();  
+    document.getElementById("editor").value = text;  
+}  
+  
+/* SAVE FILE */  
+async function saveFile() {  
+    if (!currentFile) return showMsg("Select a file first!", false);  
+
+    const content = document.getElementById("editor").value;  
+
+    await fetch(`${API}/api/save`, {  
+        method: "POST",  
+        body: JSON.stringify({  
+            user: username,  
+            filename: currentFile,  
+            content  
+        })  
+    });  
+
+    showMsg("Saved Successfully!");
+}  
+  
+/* PREVIEW BUTTON */
+function previewFile() {
+    const content = document.getElementById("editor").value;
+
+    // Save into localStorage
+    localStorage.setItem("codeMonGenerated", content);
+window.location.href = "preview.html";
+    // (No alert, no redirect, no fetch)
+  }
+  
+/* INIT */  
+loadFiles();  
+</script>  
+  
+</body>  
+          </html>
