@@ -124,6 +124,56 @@ if (path === "/api/pass-deploy") {
 
   return json({ success: true });
 }
+   
+    if (path === "/api/img") {
+    const username = url.searchParams.get("user");
+    const base = url.searchParams.get("base");
+    let name = url.searchParams.get("name");
+
+    if (!username || !base) {
+        return json({ error: "Missing required parameters" }, 400);
+    }
+
+    // Detect MIME type from base64
+    // Expected: data:image/png;base64,AAA...
+    let mimeMatch = base.match(/^data:(image\/[a-zA-Z]+);base64,/);
+
+    if (!mimeMatch) {
+        return json({ error: "Invalid base64 image format" }, 400);
+    }
+
+    const mime = mimeMatch[1]; // image/png, image/jpeg, etc.
+    const ext = mime.split("/")[1]; // png, jpeg, jpg, webp
+
+    // Remove the data:image/...;base64, prefix
+    const cleanBase64 = base.replace(/^data:image\/[a-zA-Z]+;base64,/, "");
+
+    // If no name provided → auto-generate
+    if (!name || name.trim() === "") {
+        name = "img_" + Math.random().toString(36).slice(2, 10);
+    }
+
+    // Ensure extension
+    const finalName = `${name}.${ext}`;
+
+    try {
+        await env.FILES.put(`${username}/${finalName}`, cleanBase64, {
+            base64: true
+        });
+
+        return json({
+            success: true,
+            stored: `${username}/${finalName}`,
+            ext,
+            mime
+        });
+    } catch (err) {
+        return json({
+            error: "Failed to store image",
+            message: err.message
+        }, 500);
+    }
+    }
     // ---------------------------------------------------
     // DEPLOY (UPLOAD ONLY TO: Code-Mon-space)
     // ---------------------------------------------------
