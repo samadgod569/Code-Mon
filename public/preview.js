@@ -8,78 +8,67 @@ if (!raw) {
     throw new Error("No data in localStorage");
 }
 
-// Fix relative paths for images
-raw = raw.replace(/src="img\//g, 'src="./img/')
-         .replace(/href="img\//g, 'href="./img/');
-
-// Clear the body
-document.body.innerHTML = "";
+// Fix relative paths for images and links
+raw = raw.replace(/(src|href)="img\//g, '$1="./img/');
 
 // -------------------------------
-// 1. INJECT HEAD ELEMENTS (styles & link)
+// PARSE HEAD
 // -------------------------------
 const headMatch = raw.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
 if (headMatch) {
     const headContent = headMatch[1];
 
-    // Inline styles
+    // Inline <style>
     [...headContent.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].forEach(match => {
         const style = document.createElement("style");
         style.textContent = match[1];
         document.head.appendChild(style);
     });
 
-    // External stylesheets
+    // <link> tags
     [...headContent.matchAll(/<link[^>]+href="([^"]+)"[^>]*>/gi)].forEach(match => {
-        const href = match[1];
         const linkEl = document.createElement("link");
         linkEl.rel = "stylesheet";
-        // Fix relative path
-        linkEl.href = href.startsWith("http") ? href : "./" + href.replace(/^\/?/, "");
+        linkEl.href = match[1];
         document.head.appendChild(linkEl);
+    });
+
+    // <meta>, <title>, etc.
+    [...headContent.matchAll(/<(meta|title)[^>]*>[\s\S]*?<\/title>?/gi)].forEach(match => {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = match[0];
+        Array.from(tempDiv.children).forEach(el => document.head.appendChild(el));
     });
 }
 
 // -------------------------------
-// 2. INJECT BODY CONTENT
+// PARSE BODY
 // -------------------------------
 const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-const bodyContent = bodyMatch ? bodyMatch[1] : "";
-const container = document.createElement("div");
-container.innerHTML = bodyContent;
-document.body.appendChild(container);
+let bodyContent = bodyMatch ? bodyMatch[1] : raw;
+
+// Clear existing body
+document.body.innerHTML = "";
+
+// Inject body content once
+document.body.innerHTML = bodyContent;
 
 // -------------------------------
-// 3. EXECUTE INLINE SCRIPTS
+// EXTERNAL SCRIPT SRC
+// -------------------------------
+[...raw.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/gi)].forEach(match => {
+    const script = document.createElement("script");
+    script.src = match[1];
+    script.defer = true;
+    document.body.appendChild(script);
+});
+
+// -------------------------------
+// INLINE SCRIPTS
 // -------------------------------
 [...raw.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].forEach(match => {
-    if (match[0].includes("src=")) return; // skip external
+    if (match[0].includes('src=')) return; // skip external
     const script = document.createElement("script");
     script.textContent = match[1];
     document.body.appendChild(script);
-});
-
-// -------------------------------
-// 4. LOAD EXTERNAL SCRIPTS
-// -------------------------------
-[...raw.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/gi)].forEach(match => {
-    const src = match[1];
-    const script = document.createElement("script");
-    script.src = src;
-    script.defer = true; // ensure DOM is ready
-    document.body.appendChild(script);
-});
-
-// -------------------------------
-// 5. RENDER BASE64 IMAGES (from textareas if any)
-// -------------------------------
-document.querySelectorAll("textarea").forEach(textarea => {
-    const content = textarea.value.trim();
-    if (content.startsWith("data:image/")) {
-        const img = document.createElement("img");
-        img.src = content;
-        img.style.maxWidth = "100%";
-        img.style.display = "block";
-        textarea.parentNode.replaceChild(img, textarea);
-    }
 });
