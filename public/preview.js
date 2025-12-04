@@ -1,3 +1,5 @@
+// preview.js
+
 // LOAD STORED HTML
 let raw = localStorage.getItem("codeMonGenerated");
 
@@ -6,74 +8,82 @@ if (!raw) {
     throw new Error("No data in localStorage");
 }
 
-
 // -------------------------------
 // 0. FIX RELATIVE PATHS FOR PREVIEW
 // -------------------------------
-// Convert "img/" → "./img/" so browser loads it correctly
 raw = raw.replace(/src="img\//g, 'src="./img/')
          .replace(/href="img\//g, 'href="./img/');
 
+// -------------------------------
+// 1. CLEAR BODY AND CREATE PREVIEW CONTAINER
+// -------------------------------
+document.body.innerHTML = ""; // clear existing body
+const preview = document.createElement("div");
+preview.id = "previewContainer";
+document.body.appendChild(preview);
 
 // -------------------------------
-// 1. EXTRACT BODY CONTENT
+// 2. EXTRACT AND INSERT BODY CONTENT
 // -------------------------------
 let bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
 let bodyContent = bodyMatch ? bodyMatch[1] : "";
-
-document.body.innerHTML = bodyContent;
-
+preview.innerHTML = bodyContent;
 
 // -------------------------------
-// 2. EXTRACT AND INJECT INLINE STYLES
+// 3. INJECT INLINE STYLES
 // -------------------------------
-let styleMatches = [...raw.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)];
-
-styleMatches.forEach(match => {
-    let style = document.createElement("style");
+[...raw.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].forEach(match => {
+    const style = document.createElement("style");
     style.textContent = match[1];
     document.head.appendChild(style);
 });
 
-
 // -------------------------------
-// 3. EXTRACT & INJECT EXTERNAL CSS
+// 4. INJECT EXTERNAL CSS (LINK TAGS)
 // -------------------------------
-let linkMatches = [...raw.matchAll(/<link[^>]+href="([^"]+)"[^>]*>/gi)];
+[...raw.matchAll(/<link[^>]+href="([^"]+)"[^>]*>/gi)].forEach(match => {
+    const href = match[1];
 
-linkMatches.forEach(match => {
-    let href = match[1];
+    // Fix relative paths
+    const fixedHref = href.startsWith("http") ? href : "./" + href.replace(/^\/?/, "");
 
-    let linkEl = document.createElement("link");
+    const linkEl = document.createElement("link");
     linkEl.rel = "stylesheet";
-    linkEl.href = href;
-
+    linkEl.href = fixedHref;
     document.head.appendChild(linkEl);
 });
 
-
 // -------------------------------
-// 4. EXTRACT & INJECT EXTERNAL SCRIPT SRC
+// 5. INJECT INLINE SCRIPTS
 // -------------------------------
-let scriptSrcMatches = [...raw.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/gi)];
-
-scriptSrcMatches.forEach(match => {
-    let src = match[1];
-
-    let script = document.createElement("script");
-    script.src = src;
+[...raw.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].forEach(match => {
+    if (match[0].includes("src=")) return; // skip external
+    const script = document.createElement("script");
+    script.textContent = match[1];
     document.body.appendChild(script);
 });
 
-
 // -------------------------------
-// 5. EXTRACT & EXECUTE INLINE SCRIPTS
+// 6. INJECT EXTERNAL SCRIPTS
 // -------------------------------
-let scriptInlineMatches = [...raw.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)];
-
-scriptInlineMatches.forEach(match => {
-    if (match[0].includes("src=")) return; // skip external
-    let script = document.createElement("script");
-    script.textContent = match[1];
+[...raw.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/gi)].forEach(match => {
+    const src = match[1];
+    const script = document.createElement("script");
+    script.src = src;
+    script.defer = true; // ensure scripts run after DOM is parsed
     document.body.appendChild(script);
+});
+
+// -------------------------------
+// 7. RENDER BASE64 IMAGES (from <textarea> content)
+// -------------------------------
+document.querySelectorAll("textarea").forEach(textarea => {
+    const content = textarea.value;
+    if (content.startsWith("data:image/")) {
+        const img = document.createElement("img");
+        img.src = content;
+        img.style.maxWidth = "100%";
+        img.style.display = "block";
+        textarea.parentNode.replaceChild(img, textarea);
+    }
 });
