@@ -199,29 +199,11 @@ header {
     <button onclick="confirmCreate()">Create</button>
 </div>
 <!-- UPLOAD IMAGE BOX -->
-<div id="uploadImgBox" style="display:none; position:absolute; top:-150px; left:50%; transform:translateX(-50%);
-     background:rgba(0,150,255,0.15); border:2px solid #22d3ee; padding:20px; border-radius:12px; width:320px;
-     backdrop-filter:blur(12px); animation:slideDown 0.4s forwards; z-index:12;">
 
-    <h3 style="color:#22d3ee;">Upload Image</h3>
-
-    <input id="imgFilename" placeholder="Image name (without extension)"
-           style="width:100%; padding:10px; margin-top:10px; background:rgba(255,255,255,0.1); color:white;
-           border:1px solid #22d3ee; border-radius:6px;">
-
-    <input type="file" id="imgFile" accept="image/*"
-           style="width:100%; margin-top:10px; color:white;">
-
-    <button onclick="confirmImageUpload()"
-            style="margin-top:15px; width:100%; padding:10px; border-radius:6px; background:#22d3ee;
-            color:#0f0c29; font-weight:bold; cursor:pointer;">
-        Upload
-    </button>
-</div>
 <div id="wrap">
   <div id="files">
     <button onclick="createFile()">+ Create</button>
-      <button onclick="openImageUpload()">Upload Image</button>
+      
     <button onclick="saveFile()">SAVE FILE</button>
     <button onclick="deploy()">PREVIEW</button>
     <div id="fileList"></div>
@@ -392,64 +374,7 @@ async function saveFile() {
     }
 }
 /* OPEN IMAGE UPLOAD BOX */
-function openImageUpload() {
-    document.getElementById("uploadImgBox").style.display = "block";
-}
 
-/* CONFIRM IMAGE UPLOAD */
-async function confirmImageUpload() {
-    const fileInput = document.getElementById("imgFile");
-    const nameInput = document.getElementById("imgFilename");
-
-    const file = fileInput.files[0];
-    if (!file) return showError("Please select an image file");
-
-    let name = nameInput.value.trim();
-    if (!name) return showError("File name cannot be empty");
-
-    // Remove extension
-    name = name.replace(/\.[a-zA-Z0-9]+$/, "");
-
-    // Convert to base64
-    const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result); 
-        reader.onerror = reject;
-        reader.readAsDataURL(file); // gives data:image/jpeg;base64,...
-    });
-
-    // Extract extension automatically
-    const mimeMatch = base64.match(/^data:(.*);base64,/);
-    if (!mimeMatch) return showError("Invalid image format");
-
-    const ext = mimeMatch[1].split("/")[1]; // png, jpg, webp,...
-
-    const finalFilename = `${name}.${ext}`;
-
-    try {
-        const res = await fetch(`${API}/api/save`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                user,
-                filename: finalFilename,
-                content: base64
-            })
-        });
-
-        const data = await res.json();
-
-        if (data.error) return showError("Image upload failed: " + data.error);
-
-        showSuccess("Image uploaded!");
-        document.getElementById("uploadImgBox").style.display = "none";
-
-        loadFiles(finalFilename);
-
-    } catch (err) {
-        showError("Upload failed: " + err.message);
-    }
-    }
 /* DEPLOY */
 async function deploy() {
         const content = document.getElementById("editor").value;
