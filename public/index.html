@@ -6,6 +6,7 @@
   <title>Code Mon - AI Web Generator</title>
   <link rel="icon" type="image/png" href="img/icon.png">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
   <style>
     /* Global */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,7 +24,29 @@
       padding: 6rem 1rem 4rem;
       background: linear-gradient(90deg, #4f46e5, #22d3ee);
       clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
+      position: relative;
     }
+
+    /* Menu Button */
+    #menu-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #22d3ee;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #22d3ee;
+      backdrop-filter: blur(8px);
+      transition: 0.3s;
+    }
+    #menu-btn:hover {
+      background: rgba(34,211,238,0.3);
+      box-shadow: 0 0 15px #22d3ee;
+    }
+
     header h1 {
       font-family: 'Orbitron', sans-serif;
       font-size: 4rem;
@@ -31,11 +54,13 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 1rem;
+      animation: glitch 2s infinite;
     }
     header p {
       font-size: 1.4rem;
       color: #cbd5e1;
     }
+
     .cta-button {
       display: inline-block;
       margin-top: 2rem;
@@ -51,6 +76,67 @@
       background: #22d3ee;
       color: #0f0c29;
       box-shadow: 0 0 20px #22d3ee;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100%;
+      background: rgba(10, 10, 25, 0.9);
+      backdrop-filter: blur(12px);
+      border-right: 2px solid #22d3ee;
+      padding: 2rem 1rem;
+      transition: left 0.35s ease;
+      z-index: 99999;
+      box-shadow: 0 0 20px #22d3ee;
+    }
+
+    #sidebar.open {
+      left: 0;
+    }
+
+    #sidebar h2 {
+      font-family: 'Orbitron', sans-serif;
+      color: #22d3ee;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    #sidebar a {
+      display: block;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #22d3ee;
+      color: #22d3ee;
+      transition: 0.3s;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #sidebar a:hover {
+      background: #22d3ee;
+      color: #0f0c29;
+      box-shadow: 0 0 15px #22d3ee;
+    }
+
+    #close-sidebar {
+      display: block;
+      margin: 0 auto 2rem;
+      padding: 10px 20px;
+      border: none;
+      background: #22d3ee;
+      color: #0f0c29;
+      font-family: Orbitron;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #close-sidebar:hover {
+      box-shadow: 0 0 15px #22d3ee;
     }
 
     /* Main */
@@ -118,7 +204,7 @@
       border-top: 1px solid rgba(255,255,255,0.1);
     }
 
-    /* Glitch effect on h1 */
+    /* Glitch effect */
     @keyframes glitch {
       0% { transform: translate(0);}
       20% { transform: translate(-2px,2px);}
@@ -127,19 +213,30 @@
       80% { transform: translate(1px,-1px);}
       100% { transform: translate(0);}
     }
-    header h1 {
-      animation: glitch 2s infinite;
-    }
 
-    /* Responsive */
     @media (max-width: 600px){
       header h1 { font-size: 2.5rem; }
       header p { font-size: 1rem; }
     }
+
   </style>
 </head>
+
 <body>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <button id="close-sidebar">Close</button>
+    <h2>Navigation</h2>
+    <a href="file.html">Files</a>
+    <a href="code-space.html">Code Space</a>
+    <a href="generate.html">Generate</a>
+    <a href="login.html">Login</a>
+  </div>
+
   <header>
+    <button id="menu-btn">☰ Menu</button>
+
     <h1>Code Mon</h1>
     <p>The AI that generates websites from your imagination</p>
     <a href="#create" class="cta-button">Generate a Website</a>
@@ -166,8 +263,8 @@
       <h2>Start Creating</h2>
       <p>Type your website idea below and watch Code Mon bring it to life:</p>
       <form action="/query" method="GET">
-        <input id ="inp" type="text" name="text" placeholder="Describe your website..." required>
-        <button type="submit" class="cta-button" id ="btn">Generate</button>
+        <input id="inp" type="text" name="text" placeholder="Describe your website..." required>
+        <button type="submit" class="cta-button" id="btn">Generate</button>
       </form>
     </section>
   </main>
@@ -175,18 +272,28 @@
   <footer>
     &copy; 2025 Code Mon • Powered by AI • All rights reserved
   </footer>
+
   <script>
-  
-  const btn = document.getElementById('btn');
+    // Generate button
+    const btn = document.getElementById('btn');
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      const inp = document.getElementById('inp').value;
+      window.location.href = `generate.html?text=${encodeURIComponent(inp)}`;
+    });
 
-  btn.addEventListener('click', (event) => {
-    event.preventDefault(); // stop form from submitting normally
+    // Sidebar logic
+    const sidebar = document.getElementById("sidebar");
+    const menuBtn = document.getElementById("menu-btn");
+    const closeBtn = document.getElementById("close-sidebar");
 
-    const inp = document.getElementById('inp').value;
-
-    window.location.href = `generate.html?text=${encodeURIComponent(inp)}`;
-  });
-
+    menuBtn.onclick = () => {
+      sidebar.classList.add("open");
+    };
+    closeBtn.onclick = () => {
+      sidebar.classList.remove("open");
+    };
   </script>
+
 </body>
 </html>
