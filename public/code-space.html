@@ -1,267 +1,389 @@
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<title>CodeSpace | CodeMon</title>  
-  <link rel="icon" type="image/png" href="img/icon.png" />
-<style>  
-* { margin: 0; padding: 0; box-sizing: border-box; }  
-body {  
-    font-family: "Roboto", sans-serif;  
-    background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);  
-    height: 100vh;  
-    color: #fff;  
-    display: flex;  
-    flex-direction: column;  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Code-Space</title>
+<link rel="icon" type="image/png" href="img/icon.png">
+<style>
+/* GLOBAL */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Roboto', sans-serif;
+    background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
+    color: #fff;
+    height: 100vh;
+    overflow: hidden;
 }
 
-/* Message Box */
-#msgBar {
-    position: fixed;
-    top: -100px;
+/* HEADER */
+header {
+    text-align: center;
+    padding: 25px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: #22d3ee;
+    text-shadow: 0 0 15px #22d3ee;
+    animation: glitch 2s infinite;
+}
+
+/* MAIN WRAPPER */
+#wrap {
+    display: flex;
+    height: calc(100vh - 80px);
+}
+
+/* FILE LIST PANEL */
+#files {
+    width: 280px;
+    padding: 15px;
+    border-right: 2px solid rgba(34, 211, 238,0.5);
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Sidebar buttons */
+#files button {
+    width: 100%;
+    padding: 14px;
+    font-family: 'Orbitron';
+    border-radius: 50px;
+    border: 2px solid #22d3ee;
+    background: transparent;
+    color: #22d3ee;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-bottom: 15px;
+}
+#files button:hover {
+    background: #22d3ee;
+    color: #0f0c29;
+    box-shadow: 0 0 25px #22d3ee;
+}
+
+/* FILE ITEMS */
+#fileList {
+    flex: 1;
+    overflow-y: auto;
+}
+.fileItem {
+    padding: 12px;
+    margin-top: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: 0.3s;
+}
+.fileItem:hover {
+    background: rgba(34, 211, 238, 0.25);
+    transform: translateX(5px);
+    font-weight: bold;
+}
+
+/* EDITOR AREA */
+#editorArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    z-index: 10;
+}
+
+/* Editor scrolls */
+#editor {
+    flex: 1;
+    padding: 20px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(34,211,238,0.5);
+    border-radius: 12px;
+    color: #22d3ee;
+    font-family: monospace;
+    font-size: 1rem;
+    outline: none;
+    resize: none;
+    overflow-y: auto;
+    box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.2);
+}
+
+/* ERROR BOX */
+#error {
+    display: none;
+    background: rgba(255,0,0,0.15);
+    border-left: 4px solid red;
+    padding: 10px;
+    margin: 10px 20px;
+    border-radius: 8px;
+    color: #ff8a8a;
+    font-family: 'Roboto';
+    font-weight: bold;
+}
+
+/* SUCCESS BOX */
+#success {
+    display: none;
+    background: rgba(0,255,130,0.15);
+    border-left: 4px solid #00ff9d;
+    padding: 10px;
+    margin: 10px 20px;
+    border-radius: 8px;
+    color: #9affd6;
+    font-family: 'Roboto';
+    font-weight: bold;
+    position: relative;
+    top: -80px;
+    animation: slideDown 0.4s forwards;
+}
+
+/* CREATE FILE POPUP */
+#createBox {
+    display: none;
+    position: absolute;
+    top: -150px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 14px 20px;
-    border-radius: 8px;
+    background: rgba(0,255,130,0.15);
+    border: 2px solid #00ff9d;
+    padding: 20px;
+    border-radius: 12px;
+    width: 300px;
+    backdrop-filter: blur(12px);
+    animation: slideDown 0.4s forwards;
+    z-index: 11;
+}
+#createBox input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #00ff9d;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+#createBox button {
+    margin-top: 12px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #00ff9d;
+    background: #00ff9d;
+    color: #0f0c29;
+    cursor: pointer;
     font-weight: bold;
-    transition: 0.35s;
-    width: 80%;
-    max-width: 450px;
-    text-align: center;
-    z-index: 1000;
 }
 
-.successBox {
-    background: rgba(0,255,0,0.18);
-    border-left: 4px solid lime;
-    color: #c8ffc8;
+/* Animation */
+@keyframes slideDown {
+    from { top: -80px; opacity: 0; }
+    to { top: 0; opacity: 1; }
 }
 
-.errorBox {
-    background: rgba(255,0,0,0.18);
-    border-left: 4px solid red;
-    color: #ffb3b3;
+</style>
+</head>
+
+<body>
+
+<header>Code Space</header>
+
+<div id="error"></div>
+<div id="success"></div>
+
+<!-- CREATE FILE BOX -->
+<div id="createBox">
+    <h3 style="color:#00ff9d;">Create New File</h3>
+    <input id="createFilename" placeholder="example: index.html">
+    <button onclick="confirmCreate()">Create</button>
+</div>
+
+<div id="wrap">
+  <div id="files">
+    <button onclick="createFile()">+ Create</button>
+    <button onclick="saveFile()">SAVE FILE</button>
+    <button onclick="deploy()">PREVIEW</button>
+    <div id="fileList"></div>
+  </div>
+
+  <div id="editorArea">
+    <textarea id="editor" placeholder="Select a file..."></textarea>
+  </div>
+</div>
+
+<script>
+
+
+(async function() {
+    const API = "https://code-mon.codemon.workers.dev";
+
+    const username = localStorage.getItem("code-mon-username");
+    const password = localStorage.getItem("code-mon-pass");
+
+    //  No credentials → go to login
+    if (!username || !password) {
+        localStorage.clear();
+        location.href = "login.html";
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/api/pass?username=${username}&pass=${password}`);
+        const data = await res.json();
+
+        //  Wrong password / user not found
+        if (!data.success) {
+            localStorage.removeItem("code-mon-username");
+            localStorage.removeItem("code-mon-pass");
+            localStorage.removeItem("user");
+
+            location.href = "login.html";
+            return;
+        }
+
+        //  Auth success → continue loading file.html normally
+        console.log("User authenticated:", username);
+
+    } catch (err) {
+        // Network failure = prevent access
+        localStorage.clear();
+        location.href = "login.html";
+    }
+})();
+
+    
+const API = "https://code-mon.codemon.workers.dev";
+const user = localStorage.getItem("user");
+if (!user) location.href = "login.html";
+
+let currentFile = null;
+
+function showError(msg) {
+    const e = document.getElementById("error");
+    e.style.display = "block";
+    e.innerText = msg;
+    setTimeout(() => e.style.display = "none", 4000);
 }
-  
-/* Top Bar */  
-.topbar {  
-    width: 100%;  
-    background: rgba(34,211,238,0.12);  
-    padding: 15px;  
-    font-family: Orbitron, sans-serif;  
-    font-size: 1.2rem;  
-    display: flex;  
-    justify-content: space-between;  
-    align-items: center;  
-    border-bottom: 1px solid #22d3ee;  
-}  
-  
-#usernameBox {  
-    color: #22d3ee;  
-    text-shadow: 0 0 10px #22d3ee;  
-}  
-  
-/* Layout */  
-.main {  
-    display: flex;  
-    height: calc(100vh - 60px);  
-}  
-  
-.sidebar {  
-    width: 260px;  
-    background: rgba(255,255,255,0.03);  
-    border-right: 1px solid rgba(255,255,255,0.15);  
-    padding: 15px;  
-    overflow-y: auto;  
-}  
-  
-.sidebar h3 {  
-    color: #22d3ee;  
-    margin-bottom: 10px;  
-}  
-  
-.fileItem {  
-    padding: 8px;  
-    cursor: pointer;  
-    border-radius: 6px;  
-    margin-bottom: 5px;  
-    transition: 0.25s;  
-}  
-  
-.fileItem:hover {  
-    background: rgba(34,211,238,0.2);  
-}  
-  
-#editorArea {  
-    flex: 1;  
-    padding: 15px;  
-    display: flex;  
-    flex-direction: column;  
-}  
-  
-textarea {  
-    flex: 1;  
-    width: 100%;  
-    border-radius: 10px;  
-    background: rgba(255,255,255,0.05);  
-    border: 1px solid #22d3ee;  
-    color: #22d3ee;  
-    padding: 15px;  
-    font-size: 1rem;  
-    outline: none;  
-    resize: none;  
-}  
-  
-/* Buttons */  
-.btnBox {  
-    display: flex;  
-    gap: 10px;  
-    margin-top: 10px;  
-}  
-  
-button {  
-    padding: 12px 18px;  
-    border-radius: 8px;  
-    border: none;  
-    cursor: pointer;  
-    font-family: Orbitron;  
-    font-size: 1rem;  
-    background: #22d3ee;  
-    color: #0f0c29;  
-    transition: 0.3s;  
-}  
-  
-button:hover {  
-    box-shadow: 0 0 20px #22d3ee;  
-}  
-  
-.saveBtn { background: #22d3ee; }  
-.previewBtn { background: #34d399; }  
-</style>  
-</head>  
-  
-<body>  
 
-<div id="msgBar"></div>
-  
-<!-- TOP -->  
-<div class="topbar">  
-    <div>CodeSpace</div>  
-    <div id="usernameBox"></div>  
-</div>  
-  
-<!-- MAIN -->  
-<div class="main">  
-  
-    <!-- SIDEBAR -->  
-    <div class="sidebar">  
-        <h3>Your Files</h3>  
-        <div id="fileList">Loading...</div>  
-    </div>  
-  
-    <!-- EDITOR -->  
-    <div id="editorArea">  
-        <textarea id="editor" placeholder="Select a file to begin..."></textarea>  
-  
-        <div class="btnBox">  
-            <button class="saveBtn" onclick="saveFile()">Save</button>  
-            <button class="previewBtn" onclick="previewFile()">Preview</button>  
-        </div>  
-    </div>  
-  
-</div>  
-  
-<script>  
-const API = "https://code-mon.codemon.workers.dev";  
-let currentFile = "";  
-let username = localStorage.getItem("code-mon-username");  
-let pass = localStorage.getItem("code-mon-pass");  
-
-/* MSG BAR */
-function showMsg(msg, success = true) {
-    const bar = document.getElementById("msgBar");
-    bar.innerText = msg;
-    bar.className = success ? "successBox" : "errorBox";
-    bar.style.top = "20px";
-
-    setTimeout(() => bar.style.top = "-100px", 2600);
+function showSuccess(msg) {
+    const s = document.getElementById("success");
+    s.style.display = "block";
+    s.innerText = msg;
+    setTimeout(() => s.style.display = "none", 3000);
 }
-  
-/* AUTH CHECK */  
-(async function() {  
-    if (!username || !pass) {
-        location.href = "login.html";  
-        return;  
-    }  
 
-    const res = await fetch(`${API}/api/pass?username=${username}&pass=${pass}`);  
-    const data = await res.json();  
+function clearError() {
+    document.getElementById("error").style.display = "none";
+}
 
-    if (!data.success) {  
-        localStorage.clear();  
-        location.href = "login.html";  
-        return;  
-    }  
+/* LOAD FILES */
+async function loadFiles(selectedFile = null) {
+    clearError();
+    try {
+        const res = await fetch(`${API}/api/list?user=${user}`);
+        const data = await res.json();
 
-    document.getElementById("usernameBox").innerText = username;  
-})();  
-  
-/* LOAD FILE LIST */  
-async function loadFiles() {  
-    const res = await fetch(`${API}/api/list?user=${username}`);  
-    const data = await res.json();  
+        if (data.error) return showError("Failed to load files: " + data.error);
 
-    const list = document.getElementById("fileList");  
-    list.innerHTML = "";  
+        const list = document.getElementById("fileList");
+        list.innerHTML = "";
 
-    data.files.forEach(file => {  
-        const div = document.createElement("div");  
-        div.className = "fileItem";  
-        div.innerText = file;  
-        div.onclick = () => loadFile(file);  
-        list.appendChild(div);  
-    });  
-}  
-  
-/* LOAD FILE CONTENT */  
-async function loadFile(filename) {  
-    currentFile = filename;  
-    const res = await fetch(`${API}/api/load?user=${username}&filename=${filename}`);  
-    const text = await res.text();  
-    document.getElementById("editor").value = text;  
-}  
-  
-/* SAVE FILE */  
-async function saveFile() {  
-    if (!currentFile) return showMsg("Select a file first!", false);  
+        data.files.forEach(f => {
+            const div = document.createElement("div");
+            div.className = "fileItem";
+            div.innerText = f;
+            div.onclick = () => loadFile(f);
+            list.appendChild(div);
+        });
 
-    const content = document.getElementById("editor").value;  
+        if (selectedFile && data.files.includes(selectedFile)) loadFile(selectedFile);
 
-    await fetch(`${API}/api/save`, {  
-        method: "POST",  
-        body: JSON.stringify({  
-            user: username,  
-            filename: currentFile,  
-            content  
-        })  
-    });  
+    } catch (err) {
+        showError("Failed to load files: " + err.message);
+    }
+}
 
-    showMsg("Saved Successfully!");
-}  
-  
-/* PREVIEW BUTTON */
-function previewFile() {
-    const content = document.getElementById("editor").value;
+/* LOAD SINGLE FILE */
+async function loadFile(name) {
+    currentFile = name;
+    try {
+        const res = await fetch(`${API}/api/load?user=${user}&filename=${name}`);
+        document.getElementById("editor").value = await res.text();
+
+    } catch (err) {
+        showError("Failed to load file: " + err.message);
+    }
+}
+
+/* OPEN CREATE FILE BOX */
+function createFile() {
+    document.getElementById("createBox").style.display = "block";
+}
+
+/* CONFIRM CREATE FILE */
+async function confirmCreate() {
+    const name = document.getElementById("createFilename").value.trim();
+    document.getElementById("createBox").style.display = "none";
+
+    if (!name) return showError("Filename cannot be empty");
+
+    try {
+        const res = await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename: name, content: "" })
+        });
+
+        const data = await res.json();
+        if (data.error) return showError("Failed to create file: " + data.error);
+
+        showSuccess("File created!");
+        loadFiles(name);
+
+    } catch (err) {
+        showError("Failed to create file: " + err.message);
+    }
+}
+
+/* SAVE FILE */
+async function saveFile() {
+    if (!currentFile) return showError("Select a file first");
+
+    try {
+        const res = await fetch(`${API}/api/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user,
+                filename: currentFile,
+                content: document.getElementById("editor").value
+            })
+        });
+
+        const data = await res.json();
+        if (data.error) return showError("Failed to save file: " + data.error);
+
+        showSuccess("File saved!");
+        loadFiles(currentFile);
+
+    } catch (err) {
+        showError("Failed to save file: " + err.message);
+    }
+}
+
+/* DEPLOY */
+async function deploy() {
+        const content = document.getElementById("editor").value;
 
     // Save into localStorage
     localStorage.setItem("codeMonGenerated", content);
 window.location.href = "preview.html";
-    // (No alert, no redirect, no fetch)
-  }
-  
-/* INIT */  
-loadFiles();  
-</script>  
-  
-</body>  
-          </html>
+}
+
+/* LOAD ON START */
+loadFiles();
+</script>
+
+</body>
+</html>
