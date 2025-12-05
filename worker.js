@@ -42,163 +42,123 @@ export default {
     // ---------------------------
     // LOAD FILE
     // ---------------------------
-    // ---------------------------
-// LOAD FILE
-// ---------------------------
-if (path === "/api/load") {
-  const user = url.searchParams.get("user");
-  const filename = url.searchParams.get("filename");
+    if (path === "/api/load") {
+      const user = url.searchParams.get("user");
+      const filename = url.searchParams.get("filename");
 
-  if (!user || !filename) 
-    return json({ error: "Missing params" }, 400);
+      if (!user || !filename)
+        return json({ error: "Missing params" }, 400);
 
-  // FIXED: Cloudflare KV MUST use { type: "text" }
-  const stored = await env.FILES.get(`${user}/${filename}`, { type: "text" });
+      const stored = await env.FILES.get(`${user}/${filename}`, { type: "text" });
 
-  return new Response(stored || "", {
-    headers: { 
-      "Content-Type": "text/plain",
-      ...corsHeaders 
+      return new Response(stored || "", {
+        headers: {
+          "Content-Type": "text/plain",
+          ...corsHeaders
+        }
+      });
     }
-  });
-                      }
-// ---------------------------------------------------------
-// /api/pro-api
-// Verify if stored API key value matches supplied value
-// ---------------------------------------------------------
-if (pathname === "/api/pro-api") {
 
-    const username = url.searchParams.get("username");
-    const key = url.searchParams.get("key");
-    const value = url.searchParams.get("value");
+    // ---------------------------------------------------------
+    // /api/pro-api  (Check stored API key)
+    // ---------------------------------------------------------
+    if (path === "/api/pro-api") {
+      const username = url.searchParams.get("username");
+      const key = url.searchParams.get("key");
+      const value = url.searchParams.get("value");
 
-    if (!username || !key || !value) {
+      if (!username || !key || !value)
         return json({ success: false, error: "Missing username, key or value" }, 400);
-    }
 
-    // Key where the secret/value is stored
-    const storageKey = `${username}/${key}`;
+      const storageKey = `${username}/${key}`;
+      const storedValue = await env.API.get(storageKey, { type: "text" });
 
-    // Load stored value
-    const storedValue = await env.API.get(storageKey, "text");
-
-    if (!storedValue) {
+      if (!storedValue)
         return json({ success: false, error: "Key not found" }, 404);
+
+      return json({ success: storedValue === value });
     }
 
-    // Compare values
-    if (storedValue === value) {
-        return json({ success: true });
-    }
+    // ---------------------------------------------------------
+    // /api/pb-api-pro  (Login + read text)
+    // ---------------------------------------------------------
+    if (path === "/api/pb-api-pro") {
+      const username = url.searchParams.get("username");
+      const pass = url.searchParams.get("pass");
+      const textKey = url.searchParams.get("text");
 
-    return json({ success: false });
-}
-    // -------------------------------------------
-// /api/pb-api-pro
-// -------------------------------------------
-if (path === "/api/pb-api-pro") {
-
-    const username = url.searchParams.get("username");
-    const pass = url.searchParams.get("pass");
-    const textKey = url.searchParams.get("text");
-
-    if (!username || !pass || !textKey) {
+      if (!username || !pass || !textKey) {
         return json({ success: false, error: "Missing parameters" }, 400);
-    }
+      }
 
-    // 1️⃣ Check password (reuse your login logic)
-    const storedPass = await env.Pass.get(username, "text");
+      const storedPass = await env.Pass.get(username, { type: "text" });
 
-    if (!storedPass) {
+      if (!storedPass)
         return json({ success: false, error: "Username not found" }, 404);
-    }
 
-    if (storedPass !== pass) {
+      if (storedPass !== pass)
         return json({ success: false, error: "Incorrect username or password" }, 403);
-    }
 
-    // 2️⃣ Fetch stored value under "username/text"
-    const storageKey = `${username}/${textKey}`;
-    const storedValue = await env.FILES.get(storageKey, "text");
+      const storageKey = `${username}/${textKey}`;
+      const storedValue = await env.FILES.get(storageKey, { type: "text" });
 
-    if (!storedValue) {
+      if (!storedValue)
         return json({ success: false, value: null, message: "Key not found" }, 404);
-    }
 
-    // 3️⃣ Success → return value
-    return json({
+      return json({
         success: true,
         key: textKey,
         value: storedValue
-    });
-}
-    // -------------------------------------------
-// /api/pb-api  (simple KV read/write/list)
-// -------------------------------------------
-if (path === "/api/pb-api") {
+      });
+    }
 
-    const username = url.searchParams.get("username");
-    const method = url.searchParams.get("method");
-    const name = url.searchParams.get("name");   // GET/POST only
-    const key = url.searchParams.get("key");     // LIST only (optional)
-    const value = url.searchParams.get("value");
+    // ---------------------------------------------------------
+    // /api/pb-api (simple KV read/write/list)
+    // ---------------------------------------------------------
+    if (path === "/api/pb-api") {
+      const username = url.searchParams.get("username");
+      const method = url.searchParams.get("method");
+      const name = url.searchParams.get("name");
+      const value = url.searchParams.get("value");
 
-    if (!username || !method) {
+      if (!username || !method)
         return json({ error: "Missing parameters" }, 400);
-    }
 
-    // --------------------------
-    // POST → Save value
-    // --------------------------
-    if (method.toUpperCase() === "POST") {
-
+      // POST
+      if (method.toUpperCase() === "POST") {
         if (!name || !value)
-            return json({ error: "Missing name or value" }, 400);
+          return json({ error: "Missing name or value" }, 400);
 
-        const storageKey = `${username}/${name}`;
-
-        await env.FILES.put(storageKey, value);
-
+        await env.FILES.put(`${username}/${name}`, value);
         return json({ success: true });
-    }
+      }
 
-    // --------------------------
-    // GET → Read a value
-    // --------------------------
-    if (method.toUpperCase() === "GET") {
-
+      // GET
+      if (method.toUpperCase() === "GET") {
         if (!name)
-            return json({ error: "Missing name for GET" }, 400);
+          return json({ error: "Missing name for GET" }, 400);
 
-        const storageKey = `${username}/${name}`;
-        const stored = await env.FILES.get(storageKey);
+        const stored = await env.FILES.get(`${username}/${name}`, { type: "text" });
 
         return json({
-            success: stored !== null,
-            value: stored
+          success: stored !== null,
+          value: stored
         });
-    }
+      }
 
-    // --------------------------
-    // LIST → Return all keys of user
-    // --------------------------
-    if (method.toUpperCase() === "LIST") {
-
+      // LIST
+      if (method.toUpperCase() === "LIST") {
         const prefix = `${username}/`;
-
         const list = await env.FILES.list({ prefix });
 
-        // Extract only the "name" part (after username/)
-        const keys = list.keys.map(k => k.name.replace(prefix, ""));
-
         return json({
-            success: true,
-            keys
+          success: true,
+          keys: list.keys.map(k => k.name.replace(prefix, ""))
         });
-    }
+      }
 
-    return json({ error: "Unsupported method" }, 400);
-}
+      return json({ error: "Unsupported method" }, 400);
+    }
 
     // ---------------------------
     // SAVE FILE
@@ -212,143 +172,136 @@ if (path === "/api/pb-api") {
       }
 
       const { user, filename, content } = body;
-      if (!user || !filename) return json({ error: "Missing params" }, 400);
+
+      if (!user || !filename)
+        return json({ error: "Missing params" }, 400);
 
       await env.FILES.put(`${user}/${filename}`, content ?? "");
+      return json({ success: true });
+    }
+
+    // ---------------------------
+    // LOGIN
+    // ---------------------------
+    if (path === "/api/pass") {
+      const username = url.searchParams.get("username");
+      const pass = url.searchParams.get("pass");
+
+      if (!username || !pass)
+        return json({ success: false, error: "Missing username or password" }, 400);
+
+      const storedPass = await env.Pass.get(username, { type: "text" });
+
+      if (!storedPass)
+        return json({ success: false, error: "Username not found" }, 404);
+
+      if (storedPass !== pass)
+        return json({ success: false, error: "Incorrect username or password" }, 403);
 
       return json({ success: true });
     }
-// ---------------------------
-// LOGIN
-// ---------------------------
-if (path === "/api/pass") {
-  const username = url.searchParams.get("username");
-  const pass = url.searchParams.get("pass");
 
-  if (!username || !pass)
-    return json({ success: false, error: "Missing username or password" }, 400);
-
-  // Get stored pass
-  const storedPass = await env.Pass.get(username, "text");
-
-  if (!storedPass)
-    return json({ success: false, error: "Username not found" }, 404);
-
-  // Check password
-  if (storedPass !== pass)
-    return json({ success: false, error: "Incorrect username or password" }, 403);
-
-  return json({ success: true });
-}
     // ---------------------------
-// SIGNUP
-// ---------------------------
-if (path === "/api/pass-deploy") {
-  const username = url.searchParams.get("username");
-  const pass = url.searchParams.get("pass");
+    // SIGNUP
+    // ---------------------------
+    if (path === "/api/pass-deploy") {
+      const username = url.searchParams.get("username");
+      const pass = url.searchParams.get("pass");
 
-  if (!username || !pass)
-    return json({ success: false, error: "Missing username or password" }, 400);
+      if (!username || !pass)
+        return json({ success: false, error: "Missing username or password" }, 400);
 
-  // Check if already exists
-  const existing = await env.Pass.get(username, "text");
+      const existing = await env.Pass.get(username, { type: "text" });
 
-  if (existing)
-    return json({ success: false, error: "Username already exists" }, 409);
+      if (existing)
+        return json({ success: false, error: "Username already exists" }, 409);
 
-  // Save to KV
-  await env.Pass.put(username, pass);
+      await env.Pass.put(username, pass);
+      return json({ success: true });
+    }
 
-  return json({ success: true });
-}
     // ---------------------------------------------------
-    // DEPLOY (UPLOAD ONLY TO: Code-Mon-space)
+    // /api/deploy — Sync KV -> GitHub
     // ---------------------------------------------------
     if (path === "/api/deploy") {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Invalid JSON body" }, 400);
-  }
-
-  const { user, filename } = body;
-  if (!user || !filename) return json({ error: "Missing params" }, 400);
-
-  // Load file from KV
-  const stored = await env.FILES.get(`${user}/${filename}`, "text");
-  if (!stored) return json({ error: "File not found" }, 404);
-
-  // Save a public copy inside KV
-  await env.FILES.put(`public/${user}/${filename}`, stored);
-
-  // Load GitHub token
-  const githubToken = await env.FILES.get("GITHUB_TOKEN", "text");
-  if (!githubToken)
-    return json({ error: "GitHub token missing in KV" }, 500);
-
-  const githubApiUrl =
-    `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
-
-  // -------------------------------
-  // Check if file exists to get SHA
-  // -------------------------------
-  let fileSha = null;
-  try {
-    const checkRes = await fetch(githubApiUrl, {
-      headers: {
-        "Authorization": `Bearer ${githubToken}`,
-        "User-Agent": "CodeMon-Deployer"
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "Invalid JSON body" }, 400);
       }
-    });
 
-    if (checkRes.ok) {
-      const fileInfo = await checkRes.json();
-      fileSha = fileInfo.sha;
+      const { user, filename } = body;
+      if (!user || !filename)
+        return json({ error: "Missing params" }, 400);
+
+      const stored = await env.FILES.get(`${user}/${filename}`, { type: "text" });
+
+      if (!stored)
+        return json({ error: "File not found" }, 404);
+
+      await env.FILES.put(`public/${user}/${filename}`, stored);
+
+      const githubToken = await env.FILES.get("GITHUB_TOKEN", { type: "text" });
+
+      if (!githubToken)
+        return json({ error: "GitHub token missing in KV" }, 500);
+
+      const githubApiUrl = `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
+
+      // Check if exists
+      let fileSha = null;
+      try {
+        const checkRes = await fetch(githubApiUrl, {
+          headers: {
+            "Authorization": `Bearer ${githubToken}`,
+            "User-Agent": "CodeMon-Deployer"
+          }
+        });
+
+        if (checkRes.ok) {
+          const fileInfo = await checkRes.json();
+          fileSha = fileInfo.sha;
+        }
+      } catch {}
+
+      const uploadBody = {
+        message: `Deploy ${user}/${filename}`,
+        content: btoa(unescape(encodeURIComponent(stored))), // UTF-8 safe
+        branch: "main",
+        ...(fileSha ? { sha: fileSha } : {})
+      };
+
+      const ghRes = await fetch(githubApiUrl, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${githubToken}`,
+          "Content-Type": "application/json",
+          "User-Agent": "CodeMon-Deployer"
+        },
+        body: JSON.stringify(uploadBody)
+      });
+
+      const raw = await ghRes.text();
+      let ghJson = null;
+
+      try {
+        ghJson = JSON.parse(raw);
+      } catch {
+        return json({ error: "GitHub invalid JSON", raw }, 500);
+      }
+
+      if (!ghRes.ok) {
+        return json({ error: "GitHub error", details: ghJson }, 500);
+      }
+
+      return json({
+        success: true,
+        url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`,
+        github: ghJson.content?.html_url ?? null
+      });
     }
-  } catch (err) {
-    // ignore errors; assume file doesn't exist
-  }
 
-  // -------------------------------
-  // Upload to GitHub
-  // -------------------------------
-  const uploadBody = {
-    message: `Deploy ${user}/${filename}`,
-    content: btoa(stored),
-    branch: "main",
-    ...(fileSha ? { sha: fileSha } : {}) // include SHA if updating
-  };
-
-  const ghRes = await fetch(githubApiUrl, {
-    method: "PUT",
-    headers: {
-      "Authorization": `Bearer ${githubToken}`,
-      "Content-Type": "application/json",
-      "User-Agent": "CodeMon-Deployer"
-    },
-    body: JSON.stringify(uploadBody)
-  });
-
-  const raw = await ghRes.text();
-  let ghJson;
-  try {
-    ghJson = JSON.parse(raw);
-  } catch {
-    return json({ error: "GitHub invalid JSON", raw }, 500);
-  }
-
-  if (!ghRes.ok) {
-    return json({ error: "GitHub error", details: ghJson }, 500);
-  }
-
-  // SUCCESS
-  return json({
-    success: true,
-    url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`,
-    github: ghJson.content?.html_url ?? null
-  });
-    }
     // ---------------------------
     // DEFAULT
     // ---------------------------
