@@ -133,58 +133,73 @@ if (path === "/api/pb-api-pro") {
     });
 }
     // -------------------------------------------
-// /api/pb-api  (simple KV read/write)
+// /api/pb-api  (simple KV read/write/list)
 // -------------------------------------------
 if (path === "/api/pb-api") {
 
     const username = url.searchParams.get("username");
     const method = url.searchParams.get("method");
-    const name = url.searchParams.get("name");
-    const value = url.searchParams.get("value"); // POST only
+    const name = url.searchParams.get("name");   // GET/POST only
+    const key = url.searchParams.get("key");     // LIST only (optional)
+    const value = url.searchParams.get("value");
 
-    if (!username || !method || !name) {
+    if (!username || !method) {
         return json({ error: "Missing parameters" }, 400);
     }
-
-    // Final KV key → username/name
-    const storageKey = `${username}/${name}`;
 
     // --------------------------
     // POST → Save value
     // --------------------------
     if (method.toUpperCase() === "POST") {
 
-        if (!value) {
-            return json({ error: "Missing value for POST" }, 400);
-        }
+        if (!name || !value)
+            return json({ error: "Missing name or value" }, 400);
+
+        const storageKey = `${username}/${name}`;
 
         await env.FILES.put(storageKey, value);
+
         return json({ success: true });
     }
 
     // --------------------------
-    // GET → Read value
+    // GET → Read a value
     // --------------------------
     if (method.toUpperCase() === "GET") {
 
+        if (!name)
+            return json({ error: "Missing name for GET" }, 400);
+
+        const storageKey = `${username}/${name}`;
         const stored = await env.FILES.get(storageKey);
 
-        if (stored === null) {
-            return json({
-                success: false,
-                value: null,
-                message: "Not found"
-            });
-        }
-
-        return json({ success: true, value: stored });
+        return json({
+            success: stored !== null,
+            value: stored
+        });
     }
 
-    // -------------------------
-    // Invalid method
-    // -------------------------
+    // --------------------------
+    // LIST → Return all keys of user
+    // --------------------------
+    if (method.toUpperCase() === "LIST") {
+
+        const prefix = `${username}/`;
+
+        const list = await env.FILES.list({ prefix });
+
+        // Extract only the "name" part (after username/)
+        const keys = list.keys.map(k => k.name.replace(prefix, ""));
+
+        return json({
+            success: true,
+            keys
+        });
+    }
+
     return json({ error: "Unsupported method" }, 400);
 }
+
     // ---------------------------
     // SAVE FILE
     // ---------------------------
