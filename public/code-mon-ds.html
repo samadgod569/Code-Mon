@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Code Mon DS</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        padding: 20px;
+    }
+    .box {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    button {
+        padding: 10px 20px;
+        margin-top: 10px;
+        border: none;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    pre {
+        background: #222;
+        color: #0f0;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+    }
+</style>
+</head>
+<body>
+
+<h2>Code Mon DS</h2>
+<p>Select your Data Storage type:</p>
+
+<button onclick="openSimple()">Simple DS</button>
+<button onclick="openProtected()">Protected DS</button>
+
+<div id="output"></div>
+
+<script>
+const API = "https://code-mon.codemon.workers.dev";
+const username = localStorage.getItem("code-mon-username");
+const password = localStorage.getItem("code-mon-pass");
+
+if (!username || !password) {
+    document.body.innerHTML = "<h2>Please login first.</h2>";
+}
+
+// ---------------------------------------------------------
+// SIMPLE DS
+// ---------------------------------------------------------
+function openSimple() {
+    const key = `DSK-${Math.random().toString(36).slice(2, 10)}`;
+
+    document.getElementById("output").innerHTML = `
+        <div class="box">
+            <h3>Simple DS Space</h3>
+            <p><b>Your Username:</b> ${username}</p>
+            <p><b>Your DS Key:</b> ${key}</p>
+
+            <h4>API Base:</h4>
+            <pre>${API}/api/pb-api</pre>
+
+            <h4>Example: Save Data (POST)</h4>
+            <pre>
+fetch("${API}/api/pb-api?username=${username}&method=POST&key=${key}&name=mydata&value=HelloWorld")
+   .then(r => r.json()).then(console.log);
+            </pre>
+
+            <h4>Example: Read Data (GET)</h4>
+            <pre>
+fetch("${API}/api/pb-api?username=${username}&method=GET&key=${key}&name=mydata")
+   .then(r => r.json()).then(console.log);
+            </pre>
+
+            <button onclick="loadSimpleKeys('${key}')">Load Stored Keys</button>
+            <div id="keyList"></div>
+        </div>
+    `;
+}
+
+// Load simple DS keys
+async function loadSimpleKeys(key) {
+    const res = await fetch(`${API}/api/pb-api?username=${username}&method=LIST&key=${key}`);
+    const data = await res.json();
+
+    document.getElementById("keyList").innerHTML = `
+        <h4>Stored Keys:</h4>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+    `;
+}
+
+
+
+// ---------------------------------------------------------
+// PROTECTED DS
+// ---------------------------------------------------------
+function openProtected() {
+    const key = `PDS-${Math.random().toString(36).slice(2, 10)}`;
+
+    document.getElementById("output").innerHTML = `
+        <div class="box">
+            <h3>Protected DS Space</h3>
+
+            <p><b>Your Username:</b> ${username}</p>
+            <p><b>Your Password:</b> ${password}</p>
+            <p><b>Your Protected DS Key:</b> ${key}</p>
+
+            <h4>API Base:</h4>
+            <pre>${API}/api/pb-api-pro</pre>
+
+            <h4>Example: Save Password (POST)</h4>
+            <pre>
+fetch("${API}/api/pb-api-pro?username=${username}&pass=${password}&text=mysecret&value=SuperPassword123")
+   .then(r => r.json()).then(console.log);
+            </pre>
+
+            <h4>Example: Read Protected Value</h4>
+            <pre>
+fetch("${API}/api/pb-api-pro?username=${username}&pass=${password}&text=mysecret")
+   .then(r => r.json()).then(console.log);
+            </pre>
+
+            <button onclick="loadProtectedKeys()">Load Protected Keys</button>
+            <div id="protectedList"></div>
+        </div>
+    `;
+}
+
+// Load protected DS keys
+async function loadProtectedKeys() {
+    const res = await fetch(`${API}/api/pro-api?username=${username}&pass=${password}`);
+    const data = await res.json();
+
+    document.getElementById("protectedList").innerHTML = `
+        <h4>Protected Stored Keys:</h4>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+    `;
+}
+</script>
+
+</body>
+</html>
