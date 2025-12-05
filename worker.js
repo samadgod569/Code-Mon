@@ -62,7 +62,129 @@ if (path === "/api/load") {
     }
   });
                       }
+// ---------------------------------------------------------
+// /api/pro-api
+// Verify if stored API key value matches supplied value
+// ---------------------------------------------------------
+if (pathname === "/api/pro-api") {
 
+    const username = url.searchParams.get("username");
+    const key = url.searchParams.get("key");
+    const value = url.searchParams.get("value");
+
+    if (!username || !key || !value) {
+        return json({ success: false, error: "Missing username, key or value" }, 400);
+    }
+
+    // Key where the secret/value is stored
+    const storageKey = `${username}/${key}`;
+
+    // Load stored value
+    const storedValue = await env.API.get(storageKey, "text");
+
+    if (!storedValue) {
+        return json({ success: false, error: "Key not found" }, 404);
+    }
+
+    // Compare values
+    if (storedValue === value) {
+        return json({ success: true });
+    }
+
+    return json({ success: false });
+}
+    // -------------------------------------------
+// /api/pb-api-pro
+// -------------------------------------------
+if (path === "/api/pb-api-pro") {
+
+    const username = url.searchParams.get("username");
+    const pass = url.searchParams.get("pass");
+    const textKey = url.searchParams.get("text");
+
+    if (!username || !pass || !textKey) {
+        return json({ success: false, error: "Missing parameters" }, 400);
+    }
+
+    // 1️⃣ Check password (reuse your login logic)
+    const storedPass = await env.Pass.get(username, "text");
+
+    if (!storedPass) {
+        return json({ success: false, error: "Username not found" }, 404);
+    }
+
+    if (storedPass !== pass) {
+        return json({ success: false, error: "Incorrect username or password" }, 403);
+    }
+
+    // 2️⃣ Fetch stored value under "username/text"
+    const storageKey = `${username}/${textKey}`;
+    const storedValue = await env.FILES.get(storageKey, "text");
+
+    if (!storedValue) {
+        return json({ success: false, value: null, message: "Key not found" }, 404);
+    }
+
+    // 3️⃣ Success → return value
+    return json({
+        success: true,
+        key: textKey,
+        value: storedValue
+    });
+}
+    // -------------------------------------------
+// /api/pb-api  (simple KV read/write)
+// -------------------------------------------
+if (path === "/api/pb-api") {
+
+    const username = url.searchParams.get("username");
+    const method = url.searchParams.get("method");
+    const name = url.searchParams.get("name");
+    const value = url.searchParams.get("value"); // POST only
+
+    if (!username || !method || !name) {
+        return json({ error: "Missing parameters" }, 400);
+    }
+
+    // Final KV key → username/name
+    const storageKey = `${username}/${name}`;
+
+    // --------------------------
+    // POST → Save value
+    // --------------------------
+    if (method.toUpperCase() === "POST") {
+
+        if (!value) {
+            return json({ error: "Missing value for POST" }, 400);
+        }
+
+        await env.FILES.put(storageKey, value);
+        return json({ success: true });
+    }
+
+    // --------------------------
+    // GET → Read value
+    // --------------------------
+    if (method.toUpperCase() === "GET") {
+
+        const stored = await env.FILES.get(storageKey);
+
+        if (stored === null) {
+            return json({
+                success: false,
+                value: null,
+                message: "Not found"
+            });
+        }
+
+        return json({ success: true, value: stored });
+    }
+
+    // -------------------------
+    // Invalid method
+    // -------------------------
+    return json({ error: "Unsupported method" }, 400);
+}
     // ---------------------------
     // SAVE FILE
     // ---------------------------
