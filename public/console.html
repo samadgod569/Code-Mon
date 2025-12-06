@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CM Dev Console Advanced</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Roboto',sans-serif;
+  background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
+  color:#fff;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+header{
+  text-align:center;
+  padding:20px;
+  font-family:'Orbitron',sans-serif;
+  font-size:2rem;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  color:#22d3ee;
+  text-shadow:0 0 15px #22d3ee;
+}
+#consoleArea{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding:15px;
+}
+#output{
+  flex:1;
+  overflow-y:auto;
+  padding:15px;
+  background: rgba(255,255,255,0.05);
+  border:1px solid rgba(34,211,238,0.5);
+  border-radius:12px;
+  margin-bottom:10px;
+  font-family: monospace;
+}
+#inputArea{
+  display:flex;
+}
+#cmdInput{
+  flex:1;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  outline:none;
+  font-family: monospace;
+  font-size:14px;
+  margin-right:10px;
+}
+#cmdInput::placeholder{ color:#aaa; }
+#runBtn{
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  background:#22d3ee;
+  color:#0f0c29;
+  cursor:pointer;
+  font-weight:bold;
+}
+#runBtn:hover{ background:#0bdfff; }
+/* Scrollbar */
+#output::-webkit-scrollbar{
+  width:10px;
+}
+#output::-webkit-scrollbar-thumb{
+  background: rgba(34,211,238,0.5);
+  border-radius:10px;
+}
+#output::-webkit-scrollbar-thumb:hover{
+  background:#22d3ee;
+}
+/* DOM tree display */
+.tree-node{
+  margin-left:20px;
+  cursor:pointer;
+  user-select:none;
+}
+.tree-node:hover{color:#22d3ee;}
+.tree-node.selected{background:rgba(34,211,238,0.2);border-radius:4px;}
+</style>
+</head>
+<body>
+<header>CM Dev Console Advanced</header>
+<div id="consoleArea">
+  <div id="output"></div>
+  <div id="inputArea">
+    <input type="text" id="cmdInput" placeholder="Type commands here e.g. cm fetch https://example.com">
+    <button id="runBtn">Run</button>
+  </div>
+</div>
+
+<script>
+const output = document.getElementById('output');
+const input = document.getElementById('cmdInput');
+const runBtn = document.getElementById('runBtn');
+let history = [];
+let selectedElement = null;
+
+// Logging function
+function log(msg, color='#22d3ee', html=false){
+  const div = document.createElement('div');
+  if(html) div.innerHTML = msg;
+  else div.innerHTML = `<span style="color:${color}">${msg}</span>`;
+  output.appendChild(div);
+  output.scrollTop = output.scrollHeight;
+}
+
+// Fetch helper
+async function cmFetch(url, method='GET', body=null){
+  try{
+    const res = await fetch(url, body ? {method, body:JSON.stringify(body), headers:{'Content-Type':'application/json'}}:{method});
+    const text = await res.text();
+    log(`Fetch response: ${text}`);
+    return text;
+  }catch(e){log(`Fetch error: ${e}`,'red');}
+}
+
+// DOM Tree Renderer
+function renderDOMTree(root=document.body, parentDiv=null){
+  if(!parentDiv) parentDiv = document.createElement('div');
+  const nodeDiv = document.createElement('div');
+  nodeDiv.className = 'tree-node';
+  nodeDiv.innerText = `<${root.tagName.toLowerCase()}>`;
+  nodeDiv.onclick = e=>{
+    e.stopPropagation();
+    if(selectedElement) selectedElement.classList.remove('selected');
+    nodeDiv.classList.add('selected');
+    selectedElement = nodeDiv;
+    log(`Selected element: ${root.tagName}`, '#0f0');
+  };
+  parentDiv.appendChild(nodeDiv);
+  Array.from(root.children).forEach(child=>{
+    renderDOMTree(child, nodeDiv);
+  });
+  return parentDiv;
+}
+
+// Event listener logger
+function logEventListener(type){
+  document.addEventListener(type, e=>{
+    log(`Event ${type} on ${e.target.tagName}`,'#ff0');
+  }, true);
+}
+
+// Core command processor
+async function runCommand(cmd){
+  if(!cmd.startsWith('cm ')) return log('Commands must start with cm', 'orange');
+  const args = cmd.slice(3).trim().split(' ');
+  const action = args[0];
+
+  switch(action){
+    case 'clear': output.innerHTML=''; break;
+    case 'history': log(history.join('<br>'), '#0ff', true); break;
+    case 'localStorage.setItem': try{ localStorage.setItem(args[1], args.slice(2).join(' ')); log(`Set localStorage[${args[1]}]`);}catch(e){log(e,'red');} break;
+    case 'localStorage.getItem': try{ log(localStorage.getItem(args[1])); }catch(e){log(e,'red');} break;
+    case 'sessionStorage.setItem': try{ sessionStorage.setItem(args[1], args.slice(2).join(' ')); log(`Set sessionStorage[${args[1]}]`);}catch(e){log(e,'red');} break;
+    case 'sessionStorage.getItem': try{ log(sessionStorage.getItem(args[1])); }catch(e){log(e,'red');} break;
+    case 'fetch': await cmFetch(args[1]); break;
+    case 'fetch.post': const body = JSON.parse(args.slice(2).join(' ')); await cmFetch(args[1],'POST',body); break;
+    case 'eval': try{ log(eval(args.slice(1).join(' '))); }catch(e){log(e,'red');} break;
+    case 'see': try{ const res = await fetch(args[1]); const text = await res.text(); log(`<pre>${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`, '#0f0', true);}catch(e){log(e,'red');} break;
+    case 'inspect': try{ const el = document.querySelector(args[1]); log(el ? el.outerHTML : 'Element not found', '#ffcc00', true);}catch(e){log(e,'red');} break;
+    case 'query': try{ const el = document.querySelector(args[1]); log(el ? el.innerText : 'Element not found', '#ffcc00');}catch(e){log(e,'red');} break;
+    case 'style': try{ const el = document.querySelector(args[1]); if(!el) return log('Element not found','orange'); const cs = window.getComputedStyle(el); let styles=''; for(const s of cs) styles+=`${s}: ${cs.getPropertyValue(s)};\n`; log(`<pre>${styles}</pre>`,'#0ff',true);}catch(e){log(e,'red');} break;
+    case 'alert': alert(args.slice(1).join(' ')); break;
+    case 'prompt': const p = prompt(args.slice(1).join(' ')); log(`Prompt returned: ${p}`); break;
+    case 'confirm': const c = confirm(args.slice(1).join(' ')); log(`Confirm returned: ${c}`); break;
+    case 'create': try{ const tag=args[1]; const txt=args.slice(2).join(' '); const el=document.createElement(tag); el.innerText=txt; document.body.appendChild(el); log(`Created <${tag}>`,'#0f0');}catch(e){log(e,'red');} break;
+    case 'remove': try{ const el=document.querySelector(args[1]); if(el){el.remove(); log(`Removed element ${args[1]}`,'#f00');}else log('Element not found','orange');}catch(e){log(e,'red');} break;
+    case 'dom.tree': const tree=renderDOMTree(); log('<b>DOM Tree Rendered in Console</b>','#0f0',true); output.appendChild(tree); break;
+    case 'event.log': logEventListener(args[1]||'click'); log(`Logging all ${args[1]||'click'} events`,'#0f0'); break;
+    case 'network.log': 
+      const originalFetch = window.fetch;
+      window.fetch = async (...fargs)=>{
+        log(`Fetch called: ${fargs[0]}`,'#ff0'); 
+        return originalFetch(...fargs);
+      }; 
+      log('Network requests are now logged','#0f0'); break;
+    case 'location': log(location.href); break;
+    case 'navigator': log(JSON.stringify(navigator,null,2),'#0ff',true); break;
+    case 'screen': log(`Width: ${screen.width}, Height: ${screen.height}`); break;
+    default: log('Unknown command', 'orange'); break;
+  }
+}
+
+// Event listeners
+runBtn.onclick = ()=>{ const val=input.value.trim(); if(val){history.push(val); runCommand(val); input.value='';} };
+input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ runBtn.click(); } });
+
+// Initial log
+log('CM Advanced Console Ready! Type cm help for commands','#0f0');
+</script>
+</body>
+</html>
