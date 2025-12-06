@@ -71,7 +71,7 @@ export default {
         return json({ success: false, error: "Missing username, key or value" }, 400);
 
       const storageKey = `${username}/${key}`;
-      const storedValue = await env.API.get(storageKey, { type: "text" });
+      const storedValue = await env.PRO.get(storageKey, { type: "text" });
 
       if (!storedValue)
         return json({ success: false, error: "Key not found" }, 404);
@@ -79,38 +79,45 @@ export default {
       return json({ success: storedValue === value });
     }
 
-    // ---------------------------------------------------------
-    // /api/pb-api-pro  (Login + read text)
-    // ---------------------------------------------------------
-    if (path === "/api/pb-api-pro") {
-      const username = url.searchParams.get("username");
-      const pass = url.searchParams.get("pass");
-      const textKey = url.searchParams.get("text");
+// --------------------------------------------------------
+// /api/pb-api-pro  → Return ALL protected keys + values
+// --------------------------------------------------------
+if (path === "/api/pb-api-pro") {
+    const username = url.searchParams.get("username");
+    const pass = url.searchParams.get("pass");
 
-      if (!username || !pass || !textKey) {
-        return json({ success: false, error: "Missing parameters" }, 400);
-      }
+    if (!username || !pass) {
+        return json({ success: false, error: "Missing username or pass" }, 400);
+    }
 
-      const storedPass = await env.Pass.get(username, { type: "text" });
+    // Validate password
+    const storedPass = await env.Pass.get(username, { type: "text" });
 
-      if (!storedPass)
+    if (!storedPass)
         return json({ success: false, error: "Username not found" }, 404);
 
-      if (storedPass !== pass)
+    if (storedPass !== pass)
         return json({ success: false, error: "Incorrect username or password" }, 403);
 
-      const storageKey = `${username}/${textKey}`;
-      const storedValue = await env.FILES.get(storageKey, { type: "text" });
+    // List all keys for this user
+    const prefix = `${username}/`;
+    const list = await env.PRO.list({ prefix });
 
-      if (!storedValue)
-        return json({ success: false, value: null, message: "Key not found" }, 404);
+    const result = {};
 
-      return json({
-        success: true,
-        key: textKey,
-        value: storedValue
-      });
+    // Fetch values for each key
+    for (const item of list.keys) {
+        const name = item.name.replace(prefix, "");
+        const value = await env.PRO.get(item.name, { type: "text" });
+        result[name] = value || null;
     }
+
+    return json({
+        success: true,
+        count: Object.keys(result).length,
+        data: result
+    });
+  }
 
     // ---------------------------------------------------------
     // /api/pb-api (simple KV read/write/list)
@@ -129,7 +136,7 @@ export default {
         if (!name || !value)
           return json({ error: "Missing name or value" }, 400);
 
-        await env.FILES.put(`${username}/${name}`, value);
+        await env.API.put(`${username}/${name}`, value);
         return json({ success: true });
       }
 
@@ -138,7 +145,7 @@ export default {
         if (!name)
           return json({ error: "Missing name for GET" }, 400);
 
-        const stored = await env.FILES.get(`${username}/${name}`, { type: "text" });
+        const stored = await env.API.get(`${username}/${name}`, { type: "text" });
 
         return json({
           success: stored !== null,
@@ -147,19 +154,46 @@ export default {
       }
 
       // LIST
-      if (method.toUpperCase() === "LIST") {
-        const prefix = `${username}/`;
-        const list = await env.FILES.list({ prefix });
+      // LIST → Return all keys + values for this user
+if (method.toUpperCase() === "LIST") {
+    const prefix = `${username}/`;
+    const list = await env.API.list({ prefix });
 
-        return json({
-          success: true,
-          keys: list.keys.map(k => k.name.replace(prefix, ""))
-        });
-      }
+    const items = await Promise.all(
+        list.keys.map(async k => {
+            const keyName = k.name.replace(prefix, "");
+            const value = await env.API.get(k.name);
+            return { name: keyName, value: value };
+        })
+    );
+
+    return json({
+        success: true,
+        items
+    });
+}
 
       return json({ error: "Unsupported method" }, 400);
     }
+// ---------------------------------------------------------
+// /api/pro-api-deploy  (simple key deploy)
+// ---------------------------------------------------------
+if (path === "/api/pro-api-deploy") {
 
+    const username = url.searchParams.get("username");
+    const text = url.searchParams.get("text");
+    const value = url.searchParams.get("value");
+
+    if (!username || !text || !value) {
+        return json({ success: false, error: "Missing username, text, or value" }, 400);
+    }
+
+    const storageKey = `${username}/${text}`;
+
+    await env.PRO.put(storageKey, value);
+
+    return json({ success: true, key: storageKey });
+}
     // ---------------------------
     // SAVE FILE
     // ---------------------------
