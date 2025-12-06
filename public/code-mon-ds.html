@@ -3,35 +3,136 @@
 <head>
 <meta charset="UTF-8">
 <title>Code Mon DS</title>
+
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f5f5f5;
-        padding: 20px;
-    }
-    .box {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-    button {
-        padding: 10px 20px;
-        margin-top: 10px;
-        border: none;
-        background: #007bff;
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    pre {
-        background: #222;
-        color: #0f0;
-        padding: 10px;
-        border-radius: 5px;
-        overflow-x: auto;
-    }
+    /* GLOBAL */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Roboto', sans-serif;
+    background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
+    color: #fff;
+    padding: 30px;
+    min-height: 100vh;
+}
+
+/* TITLE */
+h2 {
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.2rem;
+    color: #22d3ee;
+    text-shadow: 0 0 18px #22d3ee;
+    margin-bottom: 20px;
+    animation: glitch 2s infinite;
+}
+
+/* PARAGRAPH */
+p {
+    text-align: center;
+    font-size: 18px;
+    color: #c8faff;
+}
+
+/* DS SELECTION BUTTONS */
+button {
+    padding: 14px 22px;
+    border-radius: 40px;
+    border: 2px solid #22d3ee;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(8px);
+    font-family: 'Orbitron', sans-serif;
+    color: #22d3ee;
+    cursor: pointer;
+    transition: 0.25s;
+    margin: 10px;
+}
+button:hover {
+    background: #22d3ee;
+    color: #0f0c29;
+    box-shadow: 0 0 25px #22d3ee;
+    transform: scale(1.05);
+}
+
+/* MAIN BOX */
+.box {
+    margin-top: 25px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(34,211,238,0.5);
+    padding: 25px;
+    border-radius: 14px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 20px rgba(34,211,238,0.25);
+}
+
+/* Inputs */
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #22d3ee;
+    border-radius: 8px;
+    color: #22d3ee;
+    font-size: 16px;
+    outline: none;
+    transition: 0.25s;
+}
+input:focus {
+    box-shadow: 0 0 15px #22d3ee;
+}
+
+/* CODE BOX */
+pre {
+    background: rgba(255,255,255,0.08);
+    color: #22d3ee;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(34,211,238,0.4);
+    font-size: 14px;
+    overflow-x: auto;
+    text-shadow: 0 0 8px #22d3ee;
+}
+
+/* DATA LIST ITEMS */
+.data-item {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(34,211,238,0.4);
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    color: #aef9ff;
+    text-shadow: 0 0 6px rgba(34,211,238,0.4);
+    transition: 0.3s;
+}
+.data-item:hover {
+    background: rgba(34,211,238,0.2);
+    transform: translateX(5px);
+    font-weight: bold;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(34,211,238,0.5);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #22d3ee;
+}
+
+/* Glitch animation */
+@keyframes glitch {
+    0% { text-shadow: 0 0 8px #22d3ee; }
+    20% { text-shadow: 3px 2px 6px #22d3ee; }
+    40% { text-shadow: -3px -2px 6px #22d3ee; }
+    60% { text-shadow: 2px -3px 6px #22d3ee; }
+    80% { text-shadow: -2px 3px 6px #22d3ee; }
+    100% { text-shadow: 0 0 10px #22d3ee; }
+}
 </style>
 </head>
 <body>
@@ -53,34 +154,41 @@ if (!username || !password) {
     document.body.innerHTML = "<h2>Please login first.</h2>";
 }
 
-// =================================================================
+// ==========================================================
 // SIMPLE DS
-// =================================================================
+// ==========================================================
 
 function openSimple() {
-    const key = `DSK-${Math.random().toString(36).slice(2, 10)}`;
-
     document.getElementById("output").innerHTML = `
         <div class="box">
             <h3>Simple DS Space</h3>
 
             <p><b>Your Username:</b> ${username}</p>
-            <p><b>Your DS Key:</b> ${key}</p>
+
+            <h4>Create Key</h4>
+            <input id="simpleKey" placeholder="Key name">
+            <input id="simpleValue" placeholder="Value">
+            <button onclick="createSimpleKey()">Create</button>
 
             <h4>API Base:</h4>
             <pre>${API}/api/pb-api</pre>
 
-            <button onclick="loadSimpleKeys('${key}')">Load Stored Keys</button>
+            <button onclick="loadSimpleKeys()">Load Stored Keys</button>
             <div id="keyList"></div>
         </div>
     `;
 }
 
-// ------------------------
-// Load Simple DS Keys
-// ------------------------
-async function loadSimpleKeys(key) {
-    const res = await fetch(`${API}/api/pb-api?username=${username}&method=LIST&key=${key}`);
+async function createSimpleKey() {
+    const keyName = document.getElementById("simpleKey").value;
+    const value = document.getElementById("simpleValue").value;
+
+    await fetch(`${API}/api/pb-api?username=${username}&method=POST&name=${keyName}&value=${value}`);
+    alert("Created!");
+}
+
+async function loadSimpleKeys() {
+    const res = await fetch(`${API}/api/pb-api?username=${username}&method=LIST`);
     const data = await res.json();
 
     if (!data.success || !data.items) {
@@ -92,22 +200,9 @@ async function loadSimpleKeys(key) {
 
     data.items.forEach(item => {
         html += `
-            <div style="
-                width:100%;
-                height:30px;
-                border:1px solid #ccc;
-                margin-bottom:8px;
-                padding:5px;
-                border-radius:6px;
-                display:flex;
-                justify-content:space-between;
-            ">
+            <div class="data-item">
                 <span><b>${item.name}</b></span>
-                <span style="
-                    max-width:60%;
-                    overflow-x:auto;
-                    white-space:nowrap;
-                ">${item.value}</span>
+                <span>${item.value}</span>
             </div>
         `;
     });
@@ -117,9 +212,9 @@ async function loadSimpleKeys(key) {
 
 
 
-// =================================================================
+// ==========================================================
 // PROTECTED DS
-// =================================================================
+// ==========================================================
 
 function openProtected() {
 
@@ -129,6 +224,11 @@ function openProtected() {
 
             <p><b>Your Username:</b> ${username}</p>
             <p><b>Your Password:</b> ${password}</p>
+
+            <h4>Create Protected Key</h4>
+            <input id="proKey" placeholder="Key name">
+            <input id="proValue" placeholder="Value">
+            <button onclick="createProtectedKey()">Create</button>
 
             <h4>Save Data API:</h4>
             <pre>${API}/api/pro-api-deploy?username=${username}&text=website&value=HelloWorld</pre>
@@ -142,10 +242,14 @@ function openProtected() {
     `;
 }
 
+async function createProtectedKey() {
+    const k = document.getElementById("proKey").value;
+    const v = document.getElementById("proValue").value;
 
-// --------------------------------------------------------
-// Load Protected DS Keys using pb-api-pro internally
-// --------------------------------------------------------
+    await fetch(`${API}/api/pro-api-deploy?username=${username}&text=${k}&value=${v}`);
+    alert("Created!");
+}
+
 async function loadProtectedKeys() {
     const res = await fetch(`${API}/api/pb-api-pro?username=${username}&pass=${password}`);
     const data = await res.json();
@@ -158,30 +262,16 @@ async function loadProtectedKeys() {
     let html = `<h4>Protected Stored Keys:</h4>`;
 
     Object.entries(data.data).forEach(([key, value]) => {
-
         html += `
-            <div style="
-                width:100%;
-                height:30px;
-                border:1px solid #ccc;
-                margin-bottom:8px;
-                padding:5px;
-                border-radius:6px;
-                display:flex;
-                justify-content:space-between;
-            ">
+            <div class="data-item">
                 <span><b>${key}</b></span>
-                <span style="
-                    max-width:60%;
-                    overflow-x:auto;
-                    white-space:nowrap;
-                ">${value}</span>
+                <span>${value}</span>
             </div>
         `;
     });
 
     document.getElementById("protectedList").innerHTML = html;
-        }
+}
 </script>
 
 </body>
