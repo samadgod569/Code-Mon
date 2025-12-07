@@ -186,7 +186,262 @@ async function runCommand(cmd){
       log(e, "red");
   }
   break;
-  
+
+// =======================================================
+// ULTRA PRO COMMANDS (SUPER PACK)
+// =======================================================
+
+// ==================== PORTAL LOAD ======================
+case "portal": {
+    const url = args.join(" ");
+    if (!url) return log("Usage: cm portal <url>", "err");
+
+    log(`[portal] Fetching: ${url}`, "info");
+
+    try {
+        const html = await (await fetch(url)).text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        PORTAL.workspace = {
+            url,
+            files: { "index.html": html },
+            snapshots: []
+        };
+
+        // auto-collect CSS + JS
+        const links = [...doc.querySelectorAll("link[rel='stylesheet']")];
+        const scripts = [...doc.querySelectorAll("script[src]")];
+
+        for (const l of links) {
+            try {
+                const href = new URL(l.href, url).href;
+                PORTAL.workspace.files[href.split("/").pop()] =
+                    await (await fetch(href)).text();
+            } catch {}
+        }
+        for (const s of scripts) {
+            try {
+                const src = new URL(s.src, url).href;
+                PORTAL.workspace.files[src.split("/").pop()] =
+                    await (await fetch(src)).text();
+            } catch {}
+        }
+
+        log(`[portal] Workspace created. ${Object.keys(PORTAL.workspace.files).length} files loaded.`, "ok");
+        log("Commands: portal.list, portal.edit, portal.find, portal.replace, portal.add-script, portal.preview, portal.export", "info");
+
+    } catch {
+        log(`[portal] Cannot load site.`, "err");
+    }
+    break;
+}
+
+// ==================== LIST FILES ======================
+case "portal.list": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+    Object.keys(PORTAL.workspace.files).forEach(f => log(" • " + f, "info"));
+    break;
+}
+
+// ==================== EDIT FILE =======================
+case "portal.edit": {
+    const file = args.join(" ");
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+    if (!PORTAL.workspace.files[file]) return log(`File not found: ${file}`, "err");
+    openEditor(file, PORTAL.workspace.files[file]);
+    break;
+}
+
+// ==================== SAVE FILE =======================
+case "portal.save": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+    const file = args.shift();
+    const content = args.join(" ");
+    PORTAL.workspace.files[file] = content;
+    log(`[portal] Saved ${file}`, "ok");
+    break;
+}
+
+// ==================== FIND ============================
+case "portal.find": {
+    const text = args.join(" ");
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+
+    let hits = 0;
+    for (const [name, data] of Object.entries(PORTAL.workspace.files)) {
+        if (data.includes(text)) {
+            log(`[portal.find] Found in: ${name}`, "ok");
+            hits++;
+        }
+    }
+
+    if (!hits) log("No matches found.", "err");
+    break;
+}
+
+// ==================== REPLACE =========================
+case "portal.replace": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+    const target = args.shift();
+    const replacement = args.join(" ");
+
+    let count = 0;
+    for (const file in PORTAL.workspace.files) {
+        const before = PORTAL.workspace.files[file];
+        const after = before.split(target).join(replacement);
+        if (before !== after) count++;
+        PORTAL.workspace.files[file] = after;
+    }
+
+    log(`[portal] Replaced in ${count} file(s).`, "ok");
+    break;
+}
+
+// ==================== ADD SCRIPT ======================
+case "portal.add-script": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+
+    const script = args.join(" ");
+    PORTAL.workspace.files["portal-injected.js"] = script;
+
+    log("[portal] Script added as portal-injected.js", "ok");
+    break;
+}
+
+// ==================== REMOVE FILE =====================
+case "portal.remove": {
+    const file = args.join(" ");
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+
+    delete PORTAL.workspace.files[file];
+    log(`[portal] Removed ${file}`, "ok");
+    break;
+}
+
+// ==================== PORTAL INFO =====================
+case "portal.info": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+
+    log("URL: " + PORTAL.workspace.url, "info");
+    log("Files: " + Object.keys(PORTAL.workspace.files).length, "info");
+    break;
+}
+
+// ==================== LIVE PREVIEW ====================
+case "portal.preview": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+
+    const html = PORTAL.workspace.files["index.html"];
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+
+    log(`[portal] Preview opened.`, "ok");
+    break;
+}
+
+// ==================== SNAPSHOT ========================
+case "portal.snapshot": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+    PORTAL.workspace.snapshots.push(JSON.stringify(PORTAL.workspace.files));
+    log(`[portal] Snapshot saved (#${PORTAL.workspace.snapshots.length})`, "ok");
+    break;
+}
+
+case "portal.restore": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+    const index = parseInt(args[0]) - 1;
+
+    if (!PORTAL.workspace.snapshots[index])
+        return log("No such snapshot.", "err");
+
+    PORTAL.workspace.files = JSON.parse(PORTAL.workspace.snapshots[index]);
+    log(`[portal] Restored snapshot #${index + 1}`, "ok");
+    break;
+}
+
+// ==================== EXPORT ZIP ======================
+case "portal.export": {
+    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+
+    const zip = new JSZip();
+    for (const [name, content] of Object.entries(PORTAL.workspace.files))
+        zip.file(name, content);
+
+    zip.generateAsync({ type: "blob" }).then(blob => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "portal-website.zip";
+        a.click();
+    });
+
+    log("[portal] Website exported!", "ok");
+    break;
+}
+
+// =======================================================
+// TIME TRAVEL SYSTEM (EXTENDED)
+// =======================================================
+
+case "timetravel": {
+    const target = args.join(" ");
+
+    if (!target) return log("Usage: cm timetravel <date or +1d>", "err");
+
+    let newDate;
+
+    if (target.startsWith("+") || target.startsWith("-")) {
+        const amount = parseInt(target);
+        const type = target.slice(-1);
+
+        newDate = new Date();
+
+        switch (type) {
+            case "d": newDate.setDate(newDate.getDate() + amount); break;
+            case "h": newDate.setHours(newDate.getHours() + amount); break;
+            case "m": newDate.setMinutes(newDate.getMinutes() + amount); break;
+            case "s": newDate.setSeconds(newDate.getSeconds() + amount); break;
+        }
+    }
+    else if (target === "now") {
+        newDate = new Date();
+    }
+    else newDate = new Date(target);
+
+    if (isNaN(newDate.getTime()))
+        return log("Invalid date.", "err");
+
+    TIME_MACHINE.current = newDate;
+
+    log(`[time] Now set to: ${newDate}`, "ok");
+    break;
+}
+
+case "time.now": {
+    log("[time] " + TIME_MACHINE.current.toString(), "info");
+    break;
+}
+
+case "time.freeze": {
+    TIME_MACHINE.freeze = true;
+    log("[time] Time is frozen.", "ok");
+    break;
+}
+
+case "time.unfreeze": {
+    TIME_MACHINE.freeze = false;
+    log("[time] Time resumed.", "ok");
+    break;
+}
+
+case "time.speed": {
+    TIME_MACHINE.speed = Number(args[0]) || 1;
+    log(`[time] Speed set to x${TIME_MACHINE.speed}`, "ok");
+    break;
+        }
+
+        
     case 'inspect': try{ const el = document.querySelector(args[1]); log(el ? el.outerHTML : 'Element not found', '#ffcc00', true);}catch(e){log(e,'red');} break;
     case 'query': try{ const el = document.querySelector(args[1]); log(el ? el.innerText : 'Element not found', '#ffcc00');}catch(e){log(e,'red');} break;
     case 'style': try{ const el = document.querySelector(args[1]); if(!el) return log('Element not found','orange'); const cs = window.getComputedStyle(el); let styles=''; for(const s of cs) styles+=`${s}: ${cs.getPropertyValue(s)};\n`; log(`<pre>${styles}</pre>`,'#0ff',true);}catch(e){log(e,'red');} break;
