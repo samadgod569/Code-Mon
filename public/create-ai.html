@@ -18,7 +18,6 @@ body {
     align-items: center;
     height: 100vh;
 
-    /* Animated tech grid */
     background-image:
         linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
@@ -31,20 +30,14 @@ body {
     100% { background-position: 400px 400px, 400px 400px; }
 }
 
-/* ============================
-      CENTER CONTAINER
-============================ */
 #panel {
     width: 450px;
     padding: 30px;
     border-radius: 15px;
-
     background: rgba(0, 20, 20, 0.35);
     backdrop-filter: blur(12px);
-
     border: 1px solid rgba(0,255,255,0.25);
     box-shadow: 0 0 25px rgba(0,255,255,0.2);
-
     animation: fadeUp 0.9s ease-out;
 }
 
@@ -61,23 +54,16 @@ h1 {
     text-shadow: 0 0 10px #00ffff;
 }
 
-/* ============================
-      INPUT + TEXTAREA STYLE
-============================ */
 input, textarea {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
     font-size: 16px;
-
     color: #0ff;
     background: rgba(0, 0, 0, 0.6);
-
     border: 1px solid rgba(0,255,255,0.35);
     border-radius: 8px;
-
     outline: none;
-
     transition: 0.2s;
 }
 
@@ -92,24 +78,18 @@ textarea {
     resize: none;
 }
 
-/* ============================
-      BUTTON (HyTech)
-============================ */
 button {
     width: 100%;
     padding: 12px;
     margin-top: 12px;
     font-size: 18px;
     cursor: pointer;
-
     background: linear-gradient(90deg, #003cff, #00f2ff);
     border: none;
     border-radius: 8px;
-
     color: white;
     font-weight: bold;
     letter-spacing: 1px;
-
     transition: 0.2s;
 }
 
@@ -123,9 +103,6 @@ button:active {
     box-shadow: 0 0 10px #00eaff;
 }
 
-/* ============================
-     OUTPUT BOX (console look)
-============================ */
 #output {
     color: #00ffc8;
     background: rgba(0, 10, 10, 0.7);
@@ -149,24 +126,41 @@ button:active {
 <input id="username" placeholder="Username">
 <input id="name" placeholder="AI Name">
 <input id="key" placeholder="Gemini API Key">
-
-<textarea id="training" placeholder="Training text"></textarea>
-
+<textarea id="training" placeholder="Training text">visit ai.google.dev for the API key</textarea>
 <button onclick="createAI()">Create AI</button>
-
 <pre id="output"></pre>
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Fetch username from localStorage if exists
+    const savedUsername = localStorage.getItem("code-mon-username");
+    if (savedUsername) {
+        username.value = savedUsername;
+    }
+});
+
 async function createAI() {
-  const u = username.value;
-  const n = name.value;
-  const k = key.value;
-  const t = training.value;
+    const u = username.value.trim();
+    const n = name.value.trim();
+    const k = key.value.trim();
+    const t = training.value.trim();
 
-  const res = await fetch(`/api/ai?username=${u}&name=${n}&key=${k}&trainingText=${encodeURIComponent(t)}`);
+    if (!u || !n || !k) {
+        output.textContent = "Username, AI Name, and API Key are required!";
+        return;
+    }
 
-  output.textContent = await res.text();
+    // Save username to localStorage
+    localStorage.setItem("username", u);
+
+    try {
+        const res = await fetch(`/api/ai?username=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}&key=${encodeURIComponent(k)}&trainingText=${encodeURIComponent(t)}`);
+        const text = await res.text();
+        output.textContent = text;
+    } catch (err) {
+        output.textContent = "Error creating AI: " + err.message;
+    }
 }
 </script>
 
