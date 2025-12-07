@@ -51,43 +51,83 @@ export default {
     // ---------------------------
     // Get AI response (Gemini)
     // ---------------------------
-    if (path === "/api/ai-get") {
-      const username = url.searchParams.get("username");
-      const name = url.searchParams.get("name");
-      const question = url.searchParams.get("question") || "";
-
-      if (!username || !name) return new Response("Missing username or name", { status: 400 });
-
-      const value = await env.AI.get(`ai/${username}/${name}`);
-      if (!value) return new Response("AI not found", { status: 404 });
-
-      const [key, trainingText] = value.split("[*]");
-
-      try {
-        // Make actual request to Gemini
-        const res = await fetch("https://api.gemini.ai/v1/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            prompt: `You are trained with: "${trainingText}". Answer this question: "${question}"`,
-            max_tokens: 20000
-          })
-        });
-
-        const data = await res.json();
-        const reply = data.choices?.[0]?.text || "No reply from Gemini";
-
-        return new Response(reply, { headers: { ...corsHeaders, "Content-Type": "text/plain" } });
-      } catch (err) {
-        return new Response("Error contacting Gemini API: " + err.message, { status: 500 });
-      }
-    }
+    
 
   
+if (path === "/api/ai-get") {
+  const username = url.searchParams.get("username");
+  const name = url.searchParams.get("name");
+  const question = url.searchParams.get("question") || "";
 
+  if (!username || !name) {
+    return new Response("Missing username or name", { status: 400 });
+  }
+
+  // Load stored:  key[*]trainingText
+  const stored = await env.AI.get(`ai/${username}/${name}`, { type: "text" });
+  if (!stored) {
+    return new Response("AI not found", { status: 404 });
+  }
+
+  const [apiKey, trainingText] = stored.split("[*]");
+
+  // Build Gemini request
+  const body = {
+    system_instruction: {
+      parts: [
+        { text: `You are a custom AI trained with the following data:\n${trainingText}` }
+      ]
+    },
+    contents: [
+      { parts: [{ text: question }] }
+    ],
+    generationConfig: {
+      maxOutputTokens: 4096,
+      temperature: 0.4
+    }
+  };
+
+  // Call Gemini 2.5 Flash
+  const geminiResp = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
+      },
+      body: JSON.stringify(body)
+    }
+  );
+
+  // Handle errors safely
+  if (!geminiResp.ok) {
+    let err;
+    try { err = await geminiResp.json(); }
+    catch { err = await geminiResp.text(); }
+
+    return new Response(JSON.stringify({
+      error: "Gemini API error",
+      status: geminiResp.status,
+      details: err
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const data = await geminiResp.json();
+  const answer =
+    data?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") ||
+    "No response from Gemini.";
+
+  return new Response(answer, {
+    headers: {
+      "Content-Type": "text/plain",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
+}
     
 
     
