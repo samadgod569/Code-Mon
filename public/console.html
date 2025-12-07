@@ -174,7 +174,8 @@ input.addEventListener("keydown", async (e) => {
         return;
     }
 // ================= LIVE WEBSITE SEE SYSTEM =================
-if (cmd === "see") {
+
+    if (cmd === "see") {
     const url = args[0];
     if (!url) return log("Usage: cm see <url>", "err");
 
@@ -184,21 +185,38 @@ if (cmd === "see") {
         const res = await fetch(url);
         const text = await res.text();
 
-        log("[see] Code fetched. Rendering preview below...", "ok");
+        log("[see] Code fetched. Rendering live preview...", "ok");
 
-        // Live iframe preview
-        const frame = document.createElement("iframe");
-        frame.style.width = "100%";
-        frame.style.height = "400px";
-        frame.style.border = "1px solid #0f0";
-        frame.style.marginTop = "10px";
-        document.body.appendChild(frame);
+        // Remove old preview if exists
+        let oldPreview = document.getElementById("livePreview");
+        if (oldPreview) oldPreview.remove();
 
-        frame.contentDocument.open();
-        frame.contentDocument.write(text);
-        frame.contentDocument.close();
+        // Create container for live preview
+        const preview = document.createElement("div");
+        preview.id = "livePreview";
+        preview.style.width = "100%";
+        preview.style.border = "1px solid #0f0";
+        preview.style.marginTop = "10px";
+        preview.style.padding = "10px";
+        preview.style.background = "#000";
+        document.body.appendChild(preview);
 
-        // Show raw code in editor
+        // Inject HTML + run scripts
+        preview.innerHTML = text;
+
+        // Execute inline scripts
+        const scripts = preview.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement("script");
+            if (oldScript.src) {
+                newScript.src = oldScript.src;
+            } else {
+                newScript.textContent = oldScript.textContent;
+            }
+            oldScript.replaceWith(newScript);
+        });
+
+        // Optionally show raw code in editor
         openEditor("live-view.html", text);
 
     } catch (err) {
