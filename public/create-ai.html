@@ -17,7 +17,6 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-
     background-image:
         linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
@@ -109,7 +108,7 @@ button:active {
     border: 1px solid rgba(0,255,255,0.25);
     padding: 10px;
     margin-top: 15px;
-    height: 120px;
+    height: 150px;
     overflow-y: auto;
     border-radius: 8px;
     font-size: 14px;
@@ -134,7 +133,7 @@ button:active {
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     // Fetch username from localStorage if exists
-    const savedUsername = localStorage.getItem("code-mon-username");
+    const savedUsername = localStorage.getItem("username");
     if (savedUsername) {
         username.value = savedUsername;
     }
@@ -155,9 +154,15 @@ async function createAI() {
     localStorage.setItem("username", u);
 
     try {
-        const res = await fetch(`/api/ai?username=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}&key=${encodeURIComponent(k)}&trainingText=${encodeURIComponent(t)}`);
+        const endpoint = "https://code-mon.codemon.workers.dev/api/ai";
+        const res = await fetch(`${endpoint}?username=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}&key=${encodeURIComponent(k)}&trainingText=${encodeURIComponent(t)}`);
+        
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+        
         const text = await res.text();
-        output.textContent = text;
+
+        // Show success message and the AI endpoint
+        output.textContent = `${text}\n\nYou can now use your AI by fetching:\nhttps://code-mon.codemon.workers.dev/api/ai-get?username=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}&question=YOUR_QUESTION`;
     } catch (err) {
         output.textContent = "Error creating AI: " + err.message;
     }
