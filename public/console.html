@@ -1,477 +1,380 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>CM Dev Console Advanced</title>
+<title>CM Ultra Console</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{
-  font-family:'Roboto',sans-serif;
-  background: radial-gradient(circle at top, #0f0c29, #302b63, #24243e);
-  color:#fff;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
+    
+    /* ==== HYTECH ULTRA FUTURISTIC CONSOLE THEME ==== */
+
+body {
+    margin: 0;
+    background: radial-gradient(circle at center, #020202, #000);
+    color: #00ffea;
+    font-family: Consolas, monospace;
+    overflow: hidden;
 }
-header{
-  text-align:center;
-  padding:20px;
-  font-family:'Orbitron',sans-serif;
-  font-size:2rem;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
-  border-bottom:1px solid rgba(255,255,255,0.1);
-  color:#22d3ee;
-  text-shadow:0 0 15px #22d3ee;
+
+/* Glow frame */
+#console {
+    width: 100%;
+    height: 90vh;
+    padding: 15px;
+    font-size: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00ffe1;
+    border-radius: 10px;
+
+    backdrop-filter: blur(6px);
+    box-shadow:
+        0 0 20px #00ffe1,
+        inset 0 0 15px #004d47,
+        0 0 60px #009688;
+
+    color: #00ffd9;
+    overflow-y: auto;
 }
-#consoleArea{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  padding:15px;
+
+/* Type area */
+#input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    background: rgba(0, 20, 20, 0.9);
+    border: 2px solid #00ffe1;
+    outline: none;
+    font-size: 16px;
+    color: #00ffe1;
+
+    box-shadow:
+        0 0 15px #00ffe1,
+        inset 0 0 10px #003f3b;
 }
-#output{
-  flex:1;
-  overflow-y:auto;
-  padding:15px;
-  background: rgba(255,255,255,0.05);
-  border:1px solid rgba(34,211,238,0.5);
-  border-radius:12px;
-  margin-bottom:10px;
-  font-family: monospace;
+
+#input::placeholder {
+    color: #00c7a1;
 }
-#inputArea{
-  display:flex;
+
+/* Console text colors */
+.log {
+    padding: 3px 0;
+    letter-spacing: 0.6px;
 }
-#cmdInput{
-  flex:1;
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  outline:none;
-  font-family: monospace;
-  font-size:14px;
-  margin-right:10px;
+
+.ok {
+    color: #00ff9d;
+    text-shadow: 0 0 5px #00ff9d;
 }
-#cmdInput::placeholder{ color:#aaa; }
-#runBtn{
-  padding:10px 20px;
-  border:none;
-  border-radius:8px;
-  background:#22d3ee;
-  color:#0f0c29;
-  cursor:pointer;
-  font-weight:bold;
+
+.err {
+    color: #ff4a4a;
+    text-shadow: 0 0 5px #ff3b3b;
 }
-#runBtn:hover{ background:#0bdfff; }
+
+.info {
+    color: #00fff6;
+    text-shadow: 0 0 5px #00fff6;
+}
+
 /* Scrollbar */
-#output::-webkit-scrollbar{
-  width:10px;
+#console::-webkit-scrollbar {
+    width: 8px;
 }
-#output::-webkit-scrollbar-thumb{
-  background: rgba(34,211,238,0.5);
-  border-radius:10px;
+
+#console::-webkit-scrollbar-thumb {
+    background: #00ffe1;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #00ffe1;
 }
-#output::-webkit-scrollbar-thumb:hover{
-  background:#22d3ee;
+
+#console::-webkit-scrollbar-track {
+    background: rgba(0, 30, 30, 0.5);
 }
-/* DOM tree display */
-.tree-node{
-  margin-left:20px;
-  cursor:pointer;
-  user-select:none;
-}
-.tree-node:hover{color:#22d3ee;}
-.tree-node.selected{background:rgba(34,211,238,0.2);border-radius:4px;}
 </style>
 </head>
 <body>
-<header>CM Dev Console Advanced</header>
-<div id="consoleArea">
-  <div id="output"></div>
-  <div id="inputArea">
-    <input type="text" id="cmdInput" placeholder="Type commands here e.g. cm fetch https://example.com">
-    <button id="runBtn">Run</button>
-  </div>
-</div>
+
+<div id="console"></div>
+<input id="input" placeholder="Type: cm help" autofocus/>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 
 <script>
-const output = document.getElementById('output');
-const input = document.getElementById('cmdInput');
-const runBtn = document.getElementById('runBtn');
-let history = [];
-let selectedElement = null;
+const consoleBox = document.getElementById("console");
+const input = document.getElementById("input");
 
-// Logging function
-function log(msg, color='#22d3ee', html=false){
-  const div = document.createElement('div');
-  if(html) div.innerHTML = msg;
-  else div.innerHTML = `<span style="color:${color}">${msg}</span>`;
-  output.appendChild(div);
-  output.scrollTop = output.scrollHeight;
+const PORTAL = { workspace: null };
+const TIME_MACHINE = { current: new Date() };
+
+function log(msg, type="log") {
+    const div = document.createElement("div");
+    div.className = "log " + type;
+    div.innerText = msg;
+    consoleBox.appendChild(div);
+    consoleBox.scrollTop = consoleBox.scrollHeight;
 }
 
-// Fetch helper
-async function cmFetch(url, method='GET', body=null){
-  try{
-    const res = await fetch(url, body ? {method, body:JSON.stringify(body), headers:{'Content-Type':'application/json'}}:{method});
-    const text = await res.text();
-    log(`Fetch response: ${text}`);
-    return text;
-  }catch(e){log(`Fetch error: ${e}`,'red');}
+function openEditor(filename, content) {
+    const w = window.open("", "_blank");
+    w.document.write(`
+        <textarea id='edit' style='width:100%;height:90vh;'>${content.replace(/</g, "&lt;")}</textarea>
+        <button onclick="save()">Save</button>
+        <script>
+        function save() {
+            const data = document.getElementById('edit').value;
+            window.opener.postMessage({ file: "${filename}", content: data }, "*");
+        }
+        <` + `/script>
+    `);
 }
 
-// DOM Tree Renderer
-function renderDOMTree(root=document.body, parentDiv=null){
-  if(!parentDiv) parentDiv = document.createElement('div');
-  const nodeDiv = document.createElement('div');
-  nodeDiv.className = 'tree-node';
-  nodeDiv.innerText = `<${root.tagName.toLowerCase()}>`;
-  nodeDiv.onclick = e=>{
-    e.stopPropagation();
-    if(selectedElement) selectedElement.classList.remove('selected');
-    nodeDiv.classList.add('selected');
-    selectedElement = nodeDiv;
-    log(`Selected element: ${root.tagName}`, '#0f0');
-  };
-  parentDiv.appendChild(nodeDiv);
-  Array.from(root.children).forEach(child=>{
-    renderDOMTree(child, nodeDiv);
-  });
-  return parentDiv;
-}
+window.addEventListener("message", e => {
+    if (PORTAL.workspace && PORTAL.workspace.files[e.data.file]) {
+        PORTAL.workspace.files[e.data.file] = e.data.content;
+        log("[portal] Saved " + e.data.file, "ok");
+    }
+});
 
-// Event listener logger
-function logEventListener(type){
-  document.addEventListener(type, e=>{
-    log(`Event ${type} on ${e.target.tagName}`,'#ff0');
-  }, true);
-}
+input.addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    const raw = input.value.trim();
+    input.value = "";
 
-// Core command processor
-async function runCommand(cmd){
-  if(!cmd.startsWith('cm ')) return log('Commands must start with cm', 'orange');
-  const args = cmd.slice(3).trim().split(' ');
-  const action = args[0];
+    if (!raw.startsWith("cm")) {
+        log("Commands must start with: cm", "err");
+        return;
+    }
 
-  switch(action){
-    case 'clear': output.innerHTML=''; break;
-    case 'history': log(history.join('<br>'), '#0ff', true); break;
-    case 'localStorage.setItem': try{ localStorage.setItem(args[1], args.slice(2).join(' ')); log(`Set localStorage[${args[1]}]`);}catch(e){log(e,'red');} break;
-    case 'localStorage.getItem': try{ log(localStorage.getItem(args[1])); }catch(e){log(e,'red');} break;
-    case 'sessionStorage.setItem': try{ sessionStorage.setItem(args[1], args.slice(2).join(' ')); log(`Set sessionStorage[${args[1]}]`);}catch(e){log(e,'red');} break;
-    case 'sessionStorage.getItem': try{ log(sessionStorage.getItem(args[1])); }catch(e){log(e,'red');} break;
-    case 'fetch': await cmFetch(args[1]); break;
-    case 'fetch.post': const body = JSON.parse(args.slice(2).join(' ')); await cmFetch(args[1],'POST',body); break;
-    case 'eval': try{ log(eval(args.slice(1).join(' '))); }catch(e){log(e,'red');} break;
-    case 'see':
-  try {
-      const url = args[1];
-      const res = await fetch(url);
-      let text = await res.text();
+    log("→ " + raw, "info");
 
-      // REMOVE <script>...</script>
-      text = text.replace(/<script[\s\S]*?<\/script>/gi, "");
+    const parts = raw.split(" ");
+    parts.shift();
+    const cmd = parts.shift();
+    const args = parts;
 
-      // REMOVE external JS files: <script src="xxx.js">
-      text = text.replace(/<script[^>]*src=["'][^"']*["'][^>]*><\/script>/gi, "");
+    // ================= HELP =================
+    if (cmd === "help") {
+        log("=== CM ULTRA CONSOLE COMMANDS ===");
+        log("storage.set <key> <value>");
+        log("storage.get <key>");
+        log("fetch <url>");
+        log("portal <url>");
+        log("portal.list");
+        log("portal.edit <file>");
+        log("portal.export");
+        log("portal.find <text>");
+        log("portal.replace <a> <b>");
+        log("timetravel <date | +1d | -1h>");
+        log("time.now");
+        log("dev.see <url>");
+        log("dev.links <url>");
+        log("sys.ram");
+        log("sys.cpu");
+        log("math <expression>");
+        log("sandbox <js>");
+        return;
+    }
 
-      // CLEAN OUTPUT SAFE
-      const clean = text
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+    // ================= STORAGE =================
+    if (cmd === "storage.set") {
+        const key = args[0];
+        const value = args.slice(1).join(" ");
+        localStorage.setItem(key, value);
+        log("Saved!", "ok");
+        return;
+    }
 
-      log(`<pre>${clean}</pre>`, "#0f0", true);
-  } catch (e) {
-      log(e, "red");
-  }
-  break;
+    if (cmd === "storage.get") {
+        const key = args[0];
+        log(localStorage.getItem(key), "info");
+        return;
+    }
 
-// =======================================================
-// ULTRA PRO COMMANDS (SUPER PACK)
-// =======================================================
+    // ================= FETCH =================
+    if (cmd === "fetch") {
+        try {
+            const url = args[0];
+            const res = await fetch(url);
+            const text = await res.text();
+            log(text, "info");
+        } catch {
+            log("Fetch failed.", "err");
+        }
+        return;
+    }
 
-// ==================== PORTAL LOAD ======================
-case "portal": {
-    const url = args.join(" ");
-    if (!url) return log("Usage: cm portal <url>", "err");
+    // ================= PORTAL SYSTEM =================
+    if (cmd === "portal") {
+        const url = args.join(" ");
+        log("[portal] Fetching " + url, "info");
 
-    log(`[portal] Fetching: ${url}`, "info");
+        try {
+            const html = await (await fetch(url)).text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
 
-    try {
+            PORTAL.workspace = {
+                url,
+                files: { "index.html": html }
+            };
+
+            for (const link of doc.querySelectorAll("link[rel='stylesheet']")) {
+                try {
+                    const href = new URL(link.href, url).href;
+                    PORTAL.workspace.files[href.split("/").pop()] =
+                        await (await fetch(href)).text();
+                } catch {}
+            }
+
+            for (const s of doc.querySelectorAll("script[src]")) {
+                try {
+                    const src = new URL(s.src, url).href;
+                    PORTAL.workspace.files[src.split("/").pop()] =
+                        await (await fetch(src)).text();
+                } catch {}
+            }
+
+            log(`[portal] Workspace created with ${Object.keys(PORTAL.workspace.files).length} files`, "ok");
+            log("Use: portal.list | portal.edit | portal.export", "info");
+
+        } catch {
+            log("[portal] Failed to load.", "err");
+        }
+        return;
+    }
+
+    if (cmd === "portal.list") {
+        if (!PORTAL.workspace) return log("No portal active.", "err");
+        Object.keys(PORTAL.workspace.files).forEach(f => log("• " + f, "info"));
+        return;
+    }
+
+    if (cmd === "portal.edit") {
+        if (!PORTAL.workspace) return log("No portal active.", "err");
+        const file = args.join(" ");
+        if (!PORTAL.workspace.files[file]) return log("File missing.", "err");
+        openEditor(file, PORTAL.workspace.files[file]);
+        return;
+    }
+
+    if (cmd === "portal.export") {
+        if (!PORTAL.workspace) return log("No portal active.", "err");
+
+        const zip = new JSZip();
+        for (const [name, content] of Object.entries(PORTAL.workspace.files))
+            zip.file(name, content);
+
+        zip.generateAsync({ type: "blob" }).then(blob => {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "portal-site.zip";
+            a.click();
+        });
+
+        log("[portal] Exported ZIP!", "ok");
+        return;
+    }
+
+    if (cmd === "portal.find") {
+        const text = args.join(" ");
+        if (!PORTAL.workspace) return log("No portal loaded.", "err");
+        const found = [];
+        for (const [file, content] of Object.entries(PORTAL.workspace.files)) {
+            if (content.includes(text)) found.push(file);
+        }
+        log(found.length ? "Found in:\n" + found.join("\n") : "Not found.", found.length ? "info" : "err");
+        return;
+    }
+
+    if (cmd === "portal.replace") {
+        if (!PORTAL.workspace) return log("No portal loaded.", "err");
+        const [a, b] = args;
+        for (const file in PORTAL.workspace.files)
+            PORTAL.workspace.files[file] = PORTAL.workspace.files[file].split(a).join(b);
+        log("Replaced globally.", "ok");
+        return;
+    }
+
+    // ================= TIME TRAVEL =================
+    if (cmd === "timetravel") {
+        const target = args.join(" ");
+        let d = new Date();
+
+        if (target.startsWith("+") || target.startsWith("-")) {
+            const n = parseInt(target);
+            const type = target.slice(-1);
+            switch (type) {
+                case "d": d.setDate(d.getDate() + n); break;
+                case "h": d.setHours(d.getHours() + n); break;
+                case "m": d.setMinutes(d.getMinutes() + n); break;
+                case "s": d.setSeconds(d.getSeconds() + n); break;
+            }
+        } else d = new Date(target);
+
+        if (isNaN(d.getTime())) return log("Invalid date.", "err");
+        TIME_MACHINE.current = d;
+        log("[time] Now: " + d.toString(), "ok");
+        return;
+    }
+
+    if (cmd === "time.now") {
+        log(TIME_MACHINE.current.toString(), "info");
+        return;
+    }
+
+    // ================= DEV TOOLS =================
+    if (cmd === "dev.see") {
+        const url = args[0];
         const html = await (await fetch(url)).text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-
-        PORTAL.workspace = {
-            url,
-            files: { "index.html": html },
-            snapshots: []
-        };
-
-        // auto-collect CSS + JS
-        const links = [...doc.querySelectorAll("link[rel='stylesheet']")];
-        const scripts = [...doc.querySelectorAll("script[src]")];
-
-        for (const l of links) {
-            try {
-                const href = new URL(l.href, url).href;
-                PORTAL.workspace.files[href.split("/").pop()] =
-                    await (await fetch(href)).text();
-            } catch {}
-        }
-        for (const s of scripts) {
-            try {
-                const src = new URL(s.src, url).href;
-                PORTAL.workspace.files[src.split("/").pop()] =
-                    await (await fetch(src)).text();
-            } catch {}
-        }
-
-        log(`[portal] Workspace created. ${Object.keys(PORTAL.workspace.files).length} files loaded.`, "ok");
-        log("Commands: portal.list, portal.edit, portal.find, portal.replace, portal.add-script, portal.preview, portal.export", "info");
-
-    } catch {
-        log(`[portal] Cannot load site.`, "err");
-    }
-    break;
-}
-
-// ==================== LIST FILES ======================
-case "portal.list": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-    Object.keys(PORTAL.workspace.files).forEach(f => log(" • " + f, "info"));
-    break;
-}
-
-// ==================== EDIT FILE =======================
-case "portal.edit": {
-    const file = args.join(" ");
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-    if (!PORTAL.workspace.files[file]) return log(`File not found: ${file}`, "err");
-    openEditor(file, PORTAL.workspace.files[file]);
-    break;
-}
-
-// ==================== SAVE FILE =======================
-case "portal.save": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-    const file = args.shift();
-    const content = args.join(" ");
-    PORTAL.workspace.files[file] = content;
-    log(`[portal] Saved ${file}`, "ok");
-    break;
-}
-
-// ==================== FIND ============================
-case "portal.find": {
-    const text = args.join(" ");
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-
-    let hits = 0;
-    for (const [name, data] of Object.entries(PORTAL.workspace.files)) {
-        if (data.includes(text)) {
-            log(`[portal.find] Found in: ${name}`, "ok");
-            hits++;
-        }
+        openEditor("view.html", html);
+        log("Source opened.", "ok");
+        return;
     }
 
-    if (!hits) log("No matches found.", "err");
-    break;
-}
-
-// ==================== REPLACE =========================
-case "portal.replace": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-    const target = args.shift();
-    const replacement = args.join(" ");
-
-    let count = 0;
-    for (const file in PORTAL.workspace.files) {
-        const before = PORTAL.workspace.files[file];
-        const after = before.split(target).join(replacement);
-        if (before !== after) count++;
-        PORTAL.workspace.files[file] = after;
+    if (cmd === "dev.links") {
+        const url = args[0];
+        const html = await (await fetch(url)).text();
+        const d = new DOMParser().parseFromString(html, "text/html");
+        [...d.querySelectorAll("a")].forEach(a => log(a.href, "info"));
+        return;
     }
 
-    log(`[portal] Replaced in ${count} file(s).`, "ok");
-    break;
-}
+    // ================= SYSTEM =================
+    if (cmd === "sys.ram") {
+        if (performance.memory)
+            log("RAM usage: " + Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB", "info");
+        else log("RAM info not supported.", "err");
+        return;
+    }
 
-// ==================== ADD SCRIPT ======================
-case "portal.add-script": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
+    if (cmd === "sys.cpu") {
+        log("CPU Load: " + (Math.random() * 100).toFixed(2) + "% (simulated)", "info");
+        return;
+    }
 
-    const script = args.join(" ");
-    PORTAL.workspace.files["portal-injected.js"] = script;
-
-    log("[portal] Script added as portal-injected.js", "ok");
-    break;
-}
-
-// ==================== REMOVE FILE =====================
-case "portal.remove": {
-    const file = args.join(" ");
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-
-    delete PORTAL.workspace.files[file];
-    log(`[portal] Removed ${file}`, "ok");
-    break;
-}
-
-// ==================== PORTAL INFO =====================
-case "portal.info": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-
-    log("URL: " + PORTAL.workspace.url, "info");
-    log("Files: " + Object.keys(PORTAL.workspace.files).length, "info");
-    break;
-}
-
-// ==================== LIVE PREVIEW ====================
-case "portal.preview": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-
-    const html = PORTAL.workspace.files["index.html"];
-    const win = window.open("", "_blank");
-    win.document.write(html);
-    win.document.close();
-
-    log(`[portal] Preview opened.`, "ok");
-    break;
-}
-
-// ==================== SNAPSHOT ========================
-case "portal.snapshot": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-    PORTAL.workspace.snapshots.push(JSON.stringify(PORTAL.workspace.files));
-    log(`[portal] Snapshot saved (#${PORTAL.workspace.snapshots.length})`, "ok");
-    break;
-}
-
-case "portal.restore": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-    const index = parseInt(args[0]) - 1;
-
-    if (!PORTAL.workspace.snapshots[index])
-        return log("No such snapshot.", "err");
-
-    PORTAL.workspace.files = JSON.parse(PORTAL.workspace.snapshots[index]);
-    log(`[portal] Restored snapshot #${index + 1}`, "ok");
-    break;
-}
-
-// ==================== EXPORT ZIP ======================
-case "portal.export": {
-    if (!PORTAL.workspace) return log("No portal loaded.", "err");
-
-    const zip = new JSZip();
-    for (const [name, content] of Object.entries(PORTAL.workspace.files))
-        zip.file(name, content);
-
-    zip.generateAsync({ type: "blob" }).then(blob => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "portal-website.zip";
-        a.click();
-    });
-
-    log("[portal] Website exported!", "ok");
-    break;
-}
-
-// =======================================================
-// TIME TRAVEL SYSTEM (EXTENDED)
-// =======================================================
-
-case "timetravel": {
-    const target = args.join(" ");
-
-    if (!target) return log("Usage: cm timetravel <date or +1d>", "err");
-
-    let newDate;
-
-    if (target.startsWith("+") || target.startsWith("-")) {
-        const amount = parseInt(target);
-        const type = target.slice(-1);
-
-        newDate = new Date();
-
-        switch (type) {
-            case "d": newDate.setDate(newDate.getDate() + amount); break;
-            case "h": newDate.setHours(newDate.getHours() + amount); break;
-            case "m": newDate.setMinutes(newDate.getMinutes() + amount); break;
-            case "s": newDate.setSeconds(newDate.getSeconds() + amount); break;
+    // ================= MATH =================
+    if (cmd === "math") {
+        try {
+            log(eval(args.join(" ")), "ok");
+        } catch {
+            log("Math error.", "err");
         }
+        return;
     }
-    else if (target === "now") {
-        newDate = new Date();
-    }
-    else newDate = new Date(target);
 
-    if (isNaN(newDate.getTime()))
-        return log("Invalid date.", "err");
-
-    TIME_MACHINE.current = newDate;
-
-    log(`[time] Now set to: ${newDate}`, "ok");
-    break;
-}
-
-case "time.now": {
-    log("[time] " + TIME_MACHINE.current.toString(), "info");
-    break;
-}
-
-case "time.freeze": {
-    TIME_MACHINE.freeze = true;
-    log("[time] Time is frozen.", "ok");
-    break;
-}
-
-case "time.unfreeze": {
-    TIME_MACHINE.freeze = false;
-    log("[time] Time resumed.", "ok");
-    break;
-}
-
-case "time.speed": {
-    TIME_MACHINE.speed = Number(args[0]) || 1;
-    log(`[time] Speed set to x${TIME_MACHINE.speed}`, "ok");
-    break;
+    // ================= SANDBOX =================
+    if (cmd === "sandbox") {
+        try {
+            const result = Function(args.join(" "))();
+            log(result, "ok");
+        } catch {
+            log("Sandbox error.", "err");
         }
+        return;
+    }
 
-        
-    case 'inspect': try{ const el = document.querySelector(args[1]); log(el ? el.outerHTML : 'Element not found', '#ffcc00', true);}catch(e){log(e,'red');} break;
-    case 'query': try{ const el = document.querySelector(args[1]); log(el ? el.innerText : 'Element not found', '#ffcc00');}catch(e){log(e,'red');} break;
-    case 'style': try{ const el = document.querySelector(args[1]); if(!el) return log('Element not found','orange'); const cs = window.getComputedStyle(el); let styles=''; for(const s of cs) styles+=`${s}: ${cs.getPropertyValue(s)};\n`; log(`<pre>${styles}</pre>`,'#0ff',true);}catch(e){log(e,'red');} break;
-    case 'alert': alert(args.slice(1).join(' ')); break;
-    case 'prompt': const p = prompt(args.slice(1).join(' ')); log(`Prompt returned: ${p}`); break;
-    case 'confirm': const c = confirm(args.slice(1).join(' ')); log(`Confirm returned: ${c}`); break;
-    case 'create': try{ const tag=args[1]; const txt=args.slice(2).join(' '); const el=document.createElement(tag); el.innerText=txt; document.body.appendChild(el); log(`Created <${tag}>`,'#0f0');}catch(e){log(e,'red');} break;
-    case 'remove': try{ const el=document.querySelector(args[1]); if(el){el.remove(); log(`Removed element ${args[1]}`,'#f00');}else log('Element not found','orange');}catch(e){log(e,'red');} break;
-    case 'dom.tree': const tree=renderDOMTree(); log('<b>DOM Tree Rendered in Console</b>','#0f0',true); output.appendChild(tree); break;
-    case 'event.log': logEventListener(args[1]||'click'); log(`Logging all ${args[1]||'click'} events`,'#0f0'); break;
-    case 'network.log': 
-      const originalFetch = window.fetch;
-      window.fetch = async (...fargs)=>{
-        log(`Fetch called: ${fargs[0]}`,'#ff0'); 
-        return originalFetch(...fargs);
-      }; 
-      log('Network requests are now logged','#0f0'); break;
-    case 'location': log(location.href); break;
-    case 'navigator': log(JSON.stringify(navigator,null,2),'#0ff',true); break;
-    case 'screen': log(`Width: ${screen.width}, Height: ${screen.height}`); break;
-    default: log('Unknown command', 'orange'); break;
-  }
-}
-
-// Event listeners
-runBtn.onclick = ()=>{ const val=input.value.trim(); if(val){history.push(val); runCommand(val); input.value='';} };
-input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ runBtn.click(); } });
-
-// Initial log
-log('CM Advanced Console Ready! Type cm help for commands','#0f0');
+    log("Unknown command.", "err");
+});
 </script>
+
 </body>
-</html>
+  </html>
