@@ -25,6 +25,75 @@ export default {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+
+    
+    if (path === "/api/ai") {
+      const username = url.searchParams.get("username");
+      const name = url.searchParams.get("name");
+      const key = url.searchParams.get("key");
+      const trainingText = url.searchParams.get("trainingText") || "";
+
+      if (!username || !name || !key)
+        return new Response("Missing fields", { status: 400 });
+
+      const storageKey = `ai/${username}/${name}`;
+      const value = `${key}[*]${trainingText}`;
+
+      await env.AI.put(storageKey, value);
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: "AI stored successfully",
+        endpoint: `/api/ai-get?username=${username}&name=${name}`
+      }), { headers: { "Content-Type": "application/json" }});
+    }
+
+    // ---------- API: GET RESPONSE ----------
+    if (path === "/api/ai-get") {
+      const username = url.searchParams.get("username");
+      const name = url.searchParams.get("name");
+      const question = url.searchParams.get("question");
+
+      if (!username || !name || !question)
+        return new Response("Missing fields", { status: 400 });
+
+      const storageKey = `ai/${username}/${name}`;
+      const savedData = await env.AI.get(storageKey);
+
+      if (!savedData)
+        return new Response("AI not found", { status: 404 });
+
+      // Split key + training text
+      const [apiKey, trainingText] = savedData.split("[*]");
+
+      // ----- Gemini API FETCH -----
+      const body = {
+        contents: [{
+          parts: [
+            { text: "You are a custom AI. Here is your training:" },
+            { text: trainingText || "No training text." },
+            { text: "User asks: " + question }
+          ]
+        }]
+      };
+
+      const geminiResponse = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        }
+      );
+
+      const result = await geminiResponse.json();
+
+      return new Response(JSON.stringify(result), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    
     // ---------------------------
     // LIST FILES
     // ---------------------------
