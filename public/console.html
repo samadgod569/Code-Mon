@@ -164,7 +164,29 @@ async function runCommand(cmd){
     case 'fetch': await cmFetch(args[1]); break;
     case 'fetch.post': const body = JSON.parse(args.slice(2).join(' ')); await cmFetch(args[1],'POST',body); break;
     case 'eval': try{ log(eval(args.slice(1).join(' '))); }catch(e){log(e,'red');} break;
-    case 'see': try{ const res = await fetch(args[1]); const text = await res.text(); log(`<pre>${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`, '#0f0', true);}catch(e){log(e,'red');} break;
+    case 'see':
+  try {
+      const url = args[1];
+      const res = await fetch(url);
+      let text = await res.text();
+
+      // REMOVE <script>...</script>
+      text = text.replace(/<script[\s\S]*?<\/script>/gi, "");
+
+      // REMOVE external JS files: <script src="xxx.js">
+      text = text.replace(/<script[^>]*src=["'][^"']*["'][^>]*><\/script>/gi, "");
+
+      // CLEAN OUTPUT SAFE
+      const clean = text
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      log(`<pre>${clean}</pre>`, "#0f0", true);
+  } catch (e) {
+      log(e, "red");
+  }
+  break;
+  
     case 'inspect': try{ const el = document.querySelector(args[1]); log(el ? el.outerHTML : 'Element not found', '#ffcc00', true);}catch(e){log(e,'red');} break;
     case 'query': try{ const el = document.querySelector(args[1]); log(el ? el.innerText : 'Element not found', '#ffcc00');}catch(e){log(e,'red');} break;
     case 'style': try{ const el = document.querySelector(args[1]); if(!el) return log('Element not found','orange'); const cs = window.getComputedStyle(el); let styles=''; for(const s of cs) styles+=`${s}: ${cs.getPropertyValue(s)};\n`; log(`<pre>${styles}</pre>`,'#0ff',true);}catch(e){log(e,'red');} break;
