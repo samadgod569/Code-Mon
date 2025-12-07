@@ -46,6 +46,11 @@ export default {
       return new Response(`AI ${name} created successfully!`);
     }
 
+    
+
+    // ---------------------------
+    // Get AI response (Gemini)
+    // ---------------------------
     if (path === "/api/ai-get") {
       const username = url.searchParams.get("username");
       const name = url.searchParams.get("name");
@@ -58,12 +63,30 @@ export default {
 
       const [key, trainingText] = value.split("[*]");
 
-      // Here you would call the AI API (Gemini) using fetch and key
-      // For example:
-      const aiResponse = `Simulated reply using training text: "${trainingText}" for question: "${question}"`;
+      try {
+        // Make actual request to Gemini
+        const res = await fetch("https://api.gemini.ai/v1/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            prompt: `You are trained with: "${trainingText}". Answer this question: "${question}"`,
+            max_tokens: 20000
+          })
+        });
 
-      return new Response(aiResponse);
+        const data = await res.json();
+        const reply = data.choices?.[0]?.text || "No reply from Gemini";
+
+        return new Response(reply, { headers: { ...corsHeaders, "Content-Type": "text/plain" } });
+      } catch (err) {
+        return new Response("Error contacting Gemini API: " + err.message, { status: 500 });
+      }
     }
+
+  
 
     
 
