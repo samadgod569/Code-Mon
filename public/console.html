@@ -173,7 +173,40 @@ input.addEventListener("keydown", async (e) => {
         log("sandbox <js>");
         return;
     }
+// ================= LIVE WEBSITE SEE SYSTEM =================
+if (cmd === "see") {
+    const url = args[0];
+    if (!url) return log("Usage: cm see <url>", "err");
 
+    log("[see] Fetching website...", "info");
+
+    try {
+        const res = await fetch(url);
+        const text = await res.text();
+
+        log("[see] Code fetched. Rendering preview below...", "ok");
+
+        // Live iframe preview
+        const frame = document.createElement("iframe");
+        frame.style.width = "100%";
+        frame.style.height = "400px";
+        frame.style.border = "1px solid #0f0";
+        frame.style.marginTop = "10px";
+        document.body.appendChild(frame);
+
+        frame.contentDocument.open();
+        frame.contentDocument.write(text);
+        frame.contentDocument.close();
+
+        // Show raw code in editor
+        openEditor("live-view.html", text);
+
+    } catch (err) {
+        log("SEE failed: " + err.message, "err");
+    }
+
+    return;
+    }
     // ================= STORAGE =================
     if (cmd === "storage.set") {
         const key = args[0];
