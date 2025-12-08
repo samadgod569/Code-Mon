@@ -129,7 +129,83 @@ if (path === "/api/ai-get") {
   });
 }
     
+// ---------------------------------------------------------
+// /api/api-get  → simple GET/POST key-value store
+// ---------------------------------------------------------
+if (path === "/api/api-get") {
+  const method = url.searchParams.get("method");
+  const key = url.searchParams.get("key");
+  const value = url.searchParams.get("value");
 
+  if (!method || !key) {
+    return new Response(JSON.stringify({
+      error: "Missing required parameters: method & key"
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // ------------------------------
+  // POST → store value
+  // ------------------------------
+  if (method.toUpperCase() === "POST") {
+    if (!value) {
+      return new Response(JSON.stringify({
+        error: "Missing value for POST method"
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    await env.GETAPI.put(key, value);
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: "Value stored successfully",
+      key,
+      value
+    }), {
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // ------------------------------
+  // GET → return stored value
+  // ------------------------------
+  if (method.toUpperCase() === "GET") {
+    const stored = await env.GETAPI.get(key, { type: "text" });
+
+    if (stored === null) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Key not found"
+      }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      key,
+      value: stored
+    }), {
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // ------------------------------
+  // Invalid method
+  // ------------------------------
+  return new Response(JSON.stringify({
+    error: "Invalid method. Use GET or POST."
+  }), {
+    status: 400,
+    headers: { "Content-Type": "application/json" }
+  });
+}
     
     // ---------------------------
     // LIST FILES
