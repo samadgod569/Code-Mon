@@ -129,83 +129,76 @@ if (path === "/api/ai-get") {
   });
 }
     
-// ---------------------------------------------------------
-// /api/api-get  → simple GET/POST key-value store
-// ---------------------------------------------------------
-if (path === "/api/api-get") {
-  const method = url.searchParams.get("method");
-  const key = url.searchParams.get("key");
-  const value = url.searchParams.get("value");
+// ---------------------------------------------------------  
+// /api/api-get  → simple GET/POST KV  
+// ---------------------------------------------------------  
+if (path === "/api/api-get") {  
+  const method = url.searchParams.get("method");  
+  const key = url.searchParams.get("key");  
+  const value = url.searchParams.get("value");  
 
-  if (!method || !key) {
+  if (!method || !key) {  
     return new Response(JSON.stringify({
       error: "Missing required parameters: method & key"
-    }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
+    }), {  
+      status: 400,  
+      headers: { "Content-Type": "application/json", ...corsHeaders }  
+    });  
+  }  
 
-  // ------------------------------
-  // POST → store value
-  // ------------------------------
-  if (method.toUpperCase() === "POST") {
-    if (!value) {
+  // POST → store value  
+  if (method.toUpperCase() === "POST") {  
+    if (!value) {  
       return new Response(JSON.stringify({
         error: "Missing value for POST method"
-      }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
+      }), {  
+        status: 400,  
+        headers: { "Content-Type": "application/json", ...corsHeaders }  
+      });  
+    }  
 
-    await env.AI.put(key, value);
+    await env.AI.put(key, value);  
 
     return new Response(JSON.stringify({
       success: true,
       message: "Value stored successfully",
       key,
       value
-    }), {
-      headers: { "Content-Type": "application/json" }
-    });
-  }
+    }), {  
+      headers: { "Content-Type": "application/json", ...corsHeaders }  
+    });  
+  }  
 
-  // ------------------------------
-  // GET → return stored value
-  // ------------------------------
-  if (method.toUpperCase() === "GET") {
-    const stored = await env.AI.get(key, { type: "text" });
+  // GET → read value  
+  if (method.toUpperCase() === "GET") {  
+    const stored = await env.AI.get(key, { type: "text" });  
 
-    if (stored === null) {
+    if (stored === null) {  
       return new Response(JSON.stringify({
         success: false,
         error: "Key not found"
-      }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
+      }), {  
+        status: 404,  
+        headers: { "Content-Type": "application/json", ...corsHeaders }  
+      });  
+    }  
 
     return new Response(JSON.stringify({
       success: true,
       key,
       value: stored
-    }), {
-      headers: { "Content-Type": "application/json" }
-    });
-  }
+    }), {  
+      headers: { "Content-Type": "application/json", ...corsHeaders }  
+    });  
+  }  
 
-  // ------------------------------
-  // Invalid method
-  // ------------------------------
   return new Response(JSON.stringify({
     error: "Invalid method. Use GET or POST."
-  }), {
-    status: 400,
-    headers: { "Content-Type": "application/json" }
-  });
-}
+  }), {  
+    status: 400,  
+    headers: { "Content-Type": "application/json", ...corsHeaders }  
+  });  
+    }
     
     // ---------------------------
     // LIST FILES
