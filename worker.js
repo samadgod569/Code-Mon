@@ -186,7 +186,7 @@ if (method.toUpperCase() === "LIST") {
     count: items.length,
     items
   }), {
-    headers: { "Content-Type": "application/json" }
+    headers: { "Content-Type": "application/json", ...corsHeaders }
   });
 }
   // GET → read value  
