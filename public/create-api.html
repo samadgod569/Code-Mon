@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
 <title>API Key Manager</title>
@@ -128,7 +128,7 @@ async function postValue() {
     try {
         const res = await fetch(url);
         const text = await res.text();
-        resultBox.textContent = 
+        resultBox.textContent =
             text +
             `\n\nTo GET this value:\n${API_BASE}?method=GET&key=${fullKey}`;
 
@@ -140,18 +140,19 @@ async function postValue() {
 
 // LOAD USER KEYS
 async function loadKeys() {
+    const listURL = `https://code-mon.codemon.workers.dev/api/list?user=${username}`;
+
     try {
-        const listURL = `https://code-mon.codemon.workers.dev/api/list?user=${username}`;
         const res = await fetch(listURL);
         const data = await res.json();
 
-        if (!data.files.length) {
+        if (!data.keys || data.keys.length === 0) {
             keysList.textContent = "(none yet)";
             return;
         }
 
-        keysList.innerHTML = data.files
-            .map(f => `<div> ${f}</div>`)
+        keysList.innerHTML = data.keys
+            .map(k => `<div>🔑 ${k}</div>`)
             .join("");
 
     } catch (err) {
