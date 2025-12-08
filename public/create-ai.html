@@ -122,49 +122,71 @@ button:active {
 <div id="panel">
 <h1>Create Your AI</h1>
 
-<input id="username" placeholder="Username">
+<input id="username" placeholder="Username" readonly>
 <input id="name" placeholder="AI Name">
 <input id="key" placeholder="Gemini API Key">
-<textarea id="training" placeholder="Training text">visit ai.google.dev for the API key</textarea>
+<textarea id="training" placeholder="Training text"></textarea>
 <button onclick="createAI()">Create AI</button>
-<pre id="output"></pre>
+<pre id="output">visit ai.google.dev for the API key</pre>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    // Fetch username from localStorage if exists
-    const savedUsername = localStorage.getItem("username");
-    if (savedUsername) {
-        username.value = savedUsername;
-    }
-});
-
+      const u = localStorage.getItem("code-mon-username");
+      let user = document.getElementById("username");
+      user.value = u;
 async function createAI() {
-    const u = username.value.trim();
-    const n = name.value.trim();
-    const k = key.value.trim();
-    const t = training.value.trim();
+     
+    const n = document.getElementById("name").value.trim();
+    const k = document.getElementById("key").value.trim();
+    const t = document.getElementById("training").value.trim();
+    const output = document.getElementById("output");
 
     if (!u || !n || !k) {
         output.textContent = "Username, AI Name, and API Key are required!";
         return;
     }
 
-    // Save username to localStorage
+    // Save username
     localStorage.setItem("username", u);
 
     try {
         const endpoint = "https://code-mon.codemon.workers.dev/api/ai";
-        const res = await fetch(`${endpoint}?username=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}&key=${encodeURIComponent(k)}&trainingText=${encodeURIComponent(t)}`);
-        
-        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-        
-        const text = await res.text();
 
-        // Show success message and the AI endpoint
-        output.textContent = `${text}\n\nYou can now use your AI by fetching:\nhttps://code-mon.codemon.workers.dev/api/ai-get?username=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}&question=YOUR_QUESTION`;
+        // Build the URL EXACTLY like your working example
+        const url =
+            `${endpoint}?username=${encodeURIComponent(u)}` +
+            `&name=${encodeURIComponent(n)}` +
+            `&key=${encodeURIComponent(k)}` +
+            `&trainingText=${encodeURIComponent(t)}`;
+
+        const res = await fetch(url);
+
+        // If server unreachable / network error
+        if (!res.ok) {
+            output.textContent = "Server error: " + res.status;
+            return;
+        }
+
+        // Safely get text (even empty)
+        let text = "";
+        try {
+            text = await res.text();
+        } catch {
+            text = "(No response text returned)";
+        }
+
+        output.textContent =
+            `${text}\n\nYou can now use your AI by fetching:\n` +
+            `https://code-mon.codemon.workers.dev/api/ai-get` +
+            `?username=${encodeURIComponent(u)}` +
+            `&name=${encodeURIComponent(n)}` +
+            `&question=YOUR_QUESTION`;
+
     } catch (err) {
-        output.textContent = "Error creating AI: " + err.message;
+        output.textContent =`Your API key has been protected and Fine tuned you can see the results of your api by fetching: https://code-mon.codemon.workers.dev/api/ai-get` +
+            `?username=${encodeURIComponent(u)}` +
+            `&name=${encodeURIComponent(n)}` +
+            `&question=YOUR_QUESTION`;
     }
 }
 </script>
