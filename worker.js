@@ -168,7 +168,27 @@ if (path === "/api/api-get") {
       headers: { "Content-Type": "application/json", ...corsHeaders }  
     });  
   }  
+// ------------------------------
+// LIST → return all keys stored in env.AI
+// ------------------------------
+if (method.toUpperCase() === "LIST") {
+  const list = await env.AI.list();
 
+  const items = await Promise.all(
+    list.keys.map(async k => {
+      const value = await env.AI.get(k.name, { type: "text" });
+      return { key: k.name, value };
+    })
+  );
+
+  return new Response(JSON.stringify({
+    success: true,
+    count: items.length,
+    items
+  }), {
+    headers: { "Content-Type": "application/json" }
+  });
+}
   // GET → read value  
   if (method.toUpperCase() === "GET") {  
     const stored = await env.AI.get(key, { type: "text" });  
