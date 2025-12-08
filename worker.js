@@ -159,7 +159,7 @@ if (path === "/api/api-get") {
       });
     }
 
-    await env.GETAPI.put(key, value);
+    await env.AI.put(key, value);
 
     return new Response(JSON.stringify({
       success: true,
@@ -175,7 +175,7 @@ if (path === "/api/api-get") {
   // GET → return stored value
   // ------------------------------
   if (method.toUpperCase() === "GET") {
-    const stored = await env.GETAPI.get(key, { type: "text" });
+    const stored = await env.AI.get(key, { type: "text" });
 
     if (stored === null) {
       return new Response(JSON.stringify({
