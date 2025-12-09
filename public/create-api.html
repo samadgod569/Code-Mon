@@ -176,7 +176,7 @@ async function postValue() {
 
 // LOAD USER KEYS
 async function loadKeys() {
-    const listURL = `https://code-mon.codemon.workers.dev/api/list?user=${username}`;
+    const listURL = `https://code-mon.codemon.workers.dev/api-get/?method=LIST&username=${username}`;
 
     try {
         const res = await fetch(listURL);
