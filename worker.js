@@ -418,22 +418,37 @@ if (path === "/api/pro-api-deploy") {
     // ---------------------------
     // SAVE FILE
     // ---------------------------
-    if (path === "/api/save") {
-      let body;
-      try {
-        body = await request.json();
-      } catch {
-        return json({ error: "Invalid JSON" }, 400);
-      }
+    // ---------------------------
+// SAVE FILE (with password check)
+// ---------------------------
+if (path === "/api/save") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
 
-      const { user, filename, content } = body;
+  const { user, pass, filename, content } = body;
 
-      if (!user || !filename)
-        return json({ error: "Missing params" }, 400);
+  if (!user || !pass || !filename) {
+    return json({ error: "Missing user, pass or filename" }, 400);
+  }
 
-      await env.FILES.put(`${user}/${filename}`, content ?? "");
-      return json({ success: true });
-    }
+  // Validate password
+  const storedPass = await env.Pass.get(user, { type: "text" });
+
+  if (!storedPass)
+    return json({ success: false, error: "Username not found" }, 404);
+
+  if (storedPass !== pass)
+    return json({ success: false, error: "Incorrect password" }, 403);
+
+  // Save file AFTER password is verified
+  await env.FILES.put(`${user}/${filename}`, content ?? "");
+
+  return json({ success: true, message: "File saved successfully" });
+}
 
     // ---------------------------
     // LOGIN
