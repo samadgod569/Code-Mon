@@ -354,19 +354,26 @@ async function confirmCreate() {
 async function saveFile() {
     if (!currentFile) return showError("Select a file first");
 
+    const pass = localStorage.getItem("code-mon-password"); // or however you store the password
+
+    if (!pass) return showError("Missing password — please login again");
+
     try {
         const res = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 user,
+                pass,            // 🔥 NEW: send password
                 filename: currentFile,
                 content: document.getElementById("editor").value
             })
         });
 
         const data = await res.json();
-        if (data.error) return showError("Failed to save file: " + data.error);
+
+        if (!data.success)
+            return showError("Failed to save file: " + (data.error || "Unknown error"));
 
         showSuccess("File saved!");
         loadFiles(currentFile);
@@ -374,7 +381,7 @@ async function saveFile() {
     } catch (err) {
         showError("Failed to save file: " + err.message);
     }
-}
+    }
 
     /* OPEN IMAGE UPLOAD BOX */
 
