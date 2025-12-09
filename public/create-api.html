@@ -171,29 +171,7 @@ async function postValue() {
     }
 }
 
-// LOAD USER KEYS
-async function loadKeys() {
-    const listURL = `https://code-mon.codemon.workers.dev/api-get/?method=LIST&username=${username}`;
 
-    try {
-        const res = await fetch(listURL);
-        const data = await res.json();
-
-        if (!data.keys || data.keys.length === 0) {
-            keysList.textContent = "(none yet)";
-            return;
-        }
-
-        keysList.innerHTML = data.keys
-            .map(k => `<div>🔑 ${k}</div>`)
-            .join("");
-
-    } catch (err) {
-        keysList.textContent = "Error loading keys";
-    }
-}
-
-loadKeys();
 </script>
 
 </body>
