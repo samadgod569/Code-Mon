@@ -354,7 +354,7 @@ async function confirmCreate() {
 async function saveFile() {
     if (!currentFile) return showError("Select a file first");
 
-    const pass = localStorage.getItem("code-mon-password"); // or however you store the password
+    const pass = localStorage.getItem("code-mon-pass"); // or however you store the password
 
     if (!pass) return showError("Missing password — please login again");
 
