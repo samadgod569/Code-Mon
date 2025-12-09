@@ -171,24 +171,50 @@ if (path === "/api/api-get") {
 // ------------------------------
 // LIST → return all keys stored in env.AI
 // ------------------------------
+// ------------------------------
+// LIST → return all keys for a specific username
+// ------------------------------
 if (method.toUpperCase() === "LIST") {
+  const username = url.searchParams.get("username");
+
+  if (!username) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: "Missing username for LIST method"
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", ...corsHeaders }
+    });
+  }
+
+  // Fetch ALL keys from KV
   const list = await env.AI.list();
 
+  // Filter keys by prefix: username/
+  const filtered = list.keys.filter(k => k.name.startsWith(username + "/"));
+
+  // Load values for each key
   const items = await Promise.all(
-    list.keys.map(async k => {
+    filtered.map(async k => {
       const value = await env.AI.get(k.name, { type: "text" });
-      return { key: k.name, value };
+      return { 
+        key: k.name.replace(username + "/", ""), // return only the key name
+        fullKey: k.name,
+        value 
+      };
     })
   );
 
   return new Response(JSON.stringify({
     success: true,
+    username,
     count: items.length,
     items
   }), {
     headers: { "Content-Type": "application/json", ...corsHeaders }
   });
 }
+
   // GET → read value  
   if (method.toUpperCase() === "GET") {  
     const stored = await env.AI.get(key, { type: "text" });  
