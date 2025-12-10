@@ -258,7 +258,7 @@ header {
 
     
 const API = "https://code-mon.codemon.workers.dev";
-const user = localStorage.getItem("user");
+const user = localStorage.getItem("code-mon-username");
 if (!user) location.href = "login.html";
 
 let currentFile = null;
