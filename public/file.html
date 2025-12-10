@@ -249,7 +249,7 @@ header {
 <div id="wrap">
   <div id="files">
     <button onclick="createFile()">+ Create</button>
-<button onclick="openUploadBox()">Upload Image</button>
+<button onclick="openUpload()">Upload Image</button>
 <button onclick="saveFile()">SAVE FILE</button>
 <button onclick="deploy()">DEPLOY</button>
       
@@ -301,10 +301,33 @@ header {
     }
 })();
 
-  function openUploadBox() {
+  let uploadFileData = null;
+
+function openUpload() {
     document.getElementById("uploadBox").style.display = "block";
-    document.getElementById("uploadBox").style.top = "0px";
-  }  
+}
+
+// Clicking the box opens file picker
+document.getElementById("uploadDrop").onclick = () => {
+    document.getElementById("uploadInput").click();
+};
+
+// When file is selected
+document.getElementById("uploadInput").onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        uploadFileData = ev.target.result;
+
+        const preview = document.getElementById("uploadPreview");
+        preview.src = uploadFileData;
+        preview.style.display = "block";
+    };
+
+    reader.readAsDataURL(file);
+};
 const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("code-mon-username");
     const pass = localStorage.getItem("code-mon-pass");
