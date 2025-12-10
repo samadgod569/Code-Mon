@@ -250,7 +250,7 @@ header {
 <div id="wrap">
   <div id="files">
     <button onclick="createFile()">+ Create</button>
-<button onclick="openUpload()">↑ Upload</button>
+<button onclick="uploadAndDeployImage()">Push Image</button>
 <button onclick="saveFile()">SAVE FILE</button>
 <button onclick="deploy()">DEPLOY</button>
       
@@ -431,88 +431,50 @@ async function saveFile() {
     }
 
     /* OPEN IMAGE UPLOAD BOX */
-
-/* OPEN UPLOAD BOX */
-function openUpload() {
-    document.getElementById("uploadBox").style.display = "block";
-}
-
-/* Elements */
-const uploadDrop = document.getElementById("uploadDrop");
-const uploadInput = document.getElementById("uploadInput");
-const uploadPreview = document.getElementById("uploadPreview");
-
-let uploadFileData = null;
-
-/* Click to select file */
-uploadDrop.addEventListener("click", () => uploadInput.click());
-
-/* Drag over */
-uploadDrop.addEventListener("dragover", e => {
-    e.preventDefault();
-    uploadDrop.style.background = "rgba(0,255,130,0.2)";
-});
-
-/* Drag leave */
-uploadDrop.addEventListener("dragleave", () => {
-    uploadDrop.style.background = "transparent";
-});
-
-/* Drop file */
-uploadDrop.addEventListener("drop", e => {
-    e.preventDefault();
-    uploadDrop.style.background = "transparent";
-    
-    const file = e.dataTransfer.files[0];
-    if (file) previewUploadFile(file);
-});
-
-/* When file selected */
-uploadInput.addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (file) previewUploadFile(file);
-});
-
-/* Preview & convert */
-function previewUploadFile(file) {
-    if (!file.type.startsWith("image/"))
-        return showError("Please select an image file!");
-
-    const reader = new FileReader();
-    reader.onload = e => {
-        uploadPreview.src = e.target.result;
-        uploadPreview.style.display = "block";
-        uploadFileData = e.target.result; // Base64 string
-    };
-    reader.readAsDataURL(file);
-}
-
-/* CONFIRM UPLOAD */
-async function confirmUpload() {
+async function uploadAndDeployImage() {
     const filename = document.getElementById("uploadFilename").value.trim();
     const pass = localStorage.getItem("code-mon-pass");
 
-    if (!filename) return showError("Filename required!");
-    if (!uploadFileData) return showError("Select an image first!");
+    if (!filename)
+        return showError("Filename required!");
+
+    if (!uploadFileData)
+        return showError("Select an image first!");
 
     try {
-        const res = await fetch(`${API}/api/save`, {
+        // STEP 1 — Save Base64 to KV
+        const saveRes = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 user,
                 pass,
                 filename,
-                content: uploadFileData  // base64 image
+                content: uploadFileData // Base64 stored in KV
             })
         });
 
-        const data = await res.json();
+        const saveJson = await saveRes.json();
 
-        if (!data.success)
-            return showError("Upload failed: " + data.error);
+        if (!saveJson.success)
+            return showError("KV Save Failed: " + (saveJson.error || "Unknown"));
 
-        showSuccess("Image uploaded!");
+        // STEP 2 — Push image to GitHub as binary
+        const deployRes = await fetch(`${API}/api/deploy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user,
+                filename
+            })
+        });
+
+        const deployJson = await deployRes.json();
+
+        if (deployJson.error)
+            return showError("GitHub Upload Failed: " + deployJson.error);
+
+        showSuccess("Image uploaded and deployed!");
         document.getElementById("uploadBox").style.display = "none";
 
         loadFiles(filename);
@@ -521,6 +483,7 @@ async function confirmUpload() {
         showError("Upload failed: " + err.message);
     }
     }
+
 /* DEPLOY */
 async function deploy() {
     if (!currentFile) return showError("Select a file first");
