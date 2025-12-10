@@ -229,7 +229,6 @@ header {
     <input id="createFilename" placeholder="example: index.html">
     <button onclick="confirmCreate()">Create</button>
 </div>
-<!-- UPLOAD IMAGE BOX -->
 <!-- UPLOAD FILE BOX -->
 <div id="uploadBox">
     <h3 style="color:#00ff9d;">Upload Image</h3>
@@ -244,13 +243,13 @@ header {
     
     <img id="uploadPreview" style="max-width:100%;margin-top:10px;display:none;border-radius:8px;">
 
-    <button onclick="confirmUpload()">Upload</button>
+    <!-- ONLY THIS LINE CHANGES -->
+    <button onclick="uploadAndDeployImage()">Upload</button>
 </div>
-    
 <div id="wrap">
   <div id="files">
     <button onclick="createFile()">+ Create</button>
-<button onclick="uploadAndDeployImage()">Push Image</button>
+<button onclick="openUploadBox()">Upload Image</button>
 <button onclick="saveFile()">SAVE FILE</button>
 <button onclick="deploy()">DEPLOY</button>
       
@@ -302,7 +301,10 @@ header {
     }
 })();
 
-    
+  function openUploadBox() {
+    document.getElementById("uploadBox").style.display = "block";
+    document.getElementById("uploadBox").style.top = "0px";
+  }  
 const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("code-mon-username");
     const pass = localStorage.getItem("code-mon-pass");
@@ -433,7 +435,7 @@ async function saveFile() {
     /* OPEN IMAGE UPLOAD BOX */
 async function uploadAndDeployImage() {
     const filename = document.getElementById("uploadFilename").value.trim();
-    const pass = localStorage.getItem("code-mon-pass");
+    
 
     if (!filename)
         return showError("Filename required!");
@@ -450,16 +452,15 @@ async function uploadAndDeployImage() {
                 user,
                 pass,
                 filename,
-                content: uploadFileData // Base64 stored in KV
+                content: uploadFileData // Base64 saved to KV
             })
         });
 
         const saveJson = await saveRes.json();
-
         if (!saveJson.success)
             return showError("KV Save Failed: " + (saveJson.error || "Unknown"));
 
-        // STEP 2 — Push image to GitHub as binary
+        // STEP 2 — Deploy to GitHub (convert Base64 → binary)
         const deployRes = await fetch(`${API}/api/deploy`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
