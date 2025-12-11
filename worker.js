@@ -167,6 +167,7 @@ if (path === "/api/img-save") {
 // ---------------------------------------------------------
 // /api/img-deploy  (deploy binary from KV → GitHub)
 // ---------------------------------------------------------
+
 if (path === "/api/img-deploy") {
   let body;
   try {
@@ -179,19 +180,19 @@ if (path === "/api/img-deploy") {
   if (!user || !filename)
     return json({ error: "Missing user or filename" }, 400);
 
+  // Get binary from KV
   const stored = await env.FILES.get(`${user}/${filename}`, { type: "arrayBuffer" });
   if (!stored)
     return json({ error: "Image not found in KV" }, 404);
 
   const githubToken = await env.FILES.get("GITHUB_TOKEN", { type: "text" });
-
   if (!githubToken)
     return json({ error: "GitHub token missing in KV" }, 500);
 
   const githubApiUrl =
     `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
 
-  // Check existing file for SHA
+  // Check existing file SHA (for updating)
   let fileSha = null;
   try {
     const checkRes = await fetch(githubApiUrl, {
@@ -206,10 +207,19 @@ if (path === "/api/img-deploy") {
     }
   } catch {}
 
-  // Convert binary → Base64
-  const base64 = btoa(
-    String.fromCharCode(...new Uint8Array(stored))
-  );
+  // Convert ArrayBuffer → Base64 safely
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000; // prevent "call stack exceeded"
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, chunk);
+    }
+    return btoa(binary);
+  }
+
+  const base64 = arrayBufferToBase64(stored);
 
   const uploadBody = {
     message: `Deploy image ${user}/${filename}`,
