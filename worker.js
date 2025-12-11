@@ -135,17 +135,17 @@ if (path === "/api/ai-get") {
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Invalid JSON" }, 400);
-  }
 
-  const { user, pass, filename, content } = body;
+  // Read raw binary
+  const binary = new Uint8Array(await request.arrayBuffer());
 
-  if (!user || !pass || !filename || !content)
-    return json({ error: "Missing user, pass, filename, or content" }, 400);
+  // Extract metadata from headers
+  const user = request.headers.get("x-user");
+  const pass = request.headers.get("x-pass");
+  const filename = request.headers.get("x-filename");
+
+  if (!user || !pass || !filename)
+    return json({ error: "Missing user, pass, or filename header" }, 400);
 
   // Validate password
   const storedPass = await env.Pass.get(user, { type: "text" });
@@ -155,16 +155,12 @@ if (path === "/api/img-save") {
   if (storedPass !== pass)
     return json({ error: "Incorrect password" }, 403);
 
-  // Convert Base64 → binary
-  const binary = Uint8Array.from(
-    atob(content),
-    c => c.charCodeAt(0)
-  );
-
+  // Store binary directly into KV
   await env.FILES.put(`${user}/${filename}`, binary);
 
-  return json({ success: true, message: "Image stored (binary)" });
+  return json({ success: true });
 }
+
 
 
 
