@@ -6,11 +6,13 @@ export default {
     // ---------------------------
     // CORS
     // ---------------------------
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    };
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, x-user, x-pass, x-filename"
+};
 
     if (request.method === "OPTIONS") {
       return new Response("", {
