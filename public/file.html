@@ -468,7 +468,7 @@ async function uploadAndDeployImageBinary() {
 
     try {
         // STEP 1 — Upload binary to KV
-        const saveRes = await fetch(`${API}/api/save-img`, {
+        const saveRes = await fetch(`${API}/api/img-save`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/octet-stream",
@@ -484,7 +484,7 @@ async function uploadAndDeployImageBinary() {
             return showError("KV Binary Save Failed: " + (saveJson.error || "Unknown"));
 
         // STEP 2 — Deploy to GitHub
-        const deployRes = await fetch(`${API}/api/deploy-img`, {
+        const deployRes = await fetch(`${API}/api/img-deploy`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user, filename })
