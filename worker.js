@@ -128,7 +128,126 @@ if (path === "/api/ai-get") {
     }
   });
 }
-    
+
+    // ---------------------------------------------------------
+// /api/img-save  (store binary image into KV)
+// ---------------------------------------------------------
+if (path === "/api/img-save") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { user, pass, filename, content } = body;
+
+  if (!user || !pass || !filename || !content)
+    return json({ error: "Missing user, pass, filename, or content" }, 400);
+
+  // Validate password
+  const storedPass = await env.Pass.get(user, { type: "text" });
+  if (!storedPass)
+    return json({ error: "User not found" }, 404);
+
+  if (storedPass !== pass)
+    return json({ error: "Incorrect password" }, 403);
+
+  // Convert Base64 → binary
+  const binary = Uint8Array.from(
+    atob(content),
+    c => c.charCodeAt(0)
+  );
+
+  await env.FILES.put(`${user}/${filename}`, binary);
+
+  return json({ success: true, message: "Image stored (binary)" });
+}
+
+
+
+// ---------------------------------------------------------
+// /api/img-deploy  (deploy binary from KV → GitHub)
+// ---------------------------------------------------------
+if (path === "/api/img-deploy") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const { user, filename } = body;
+  if (!user || !filename)
+    return json({ error: "Missing user or filename" }, 400);
+
+  const stored = await env.FILES.get(`${user}/${filename}`, { type: "arrayBuffer" });
+  if (!stored)
+    return json({ error: "Image not found in KV" }, 404);
+
+  const githubToken = await env.FILES.get("GITHUB_TOKEN", { type: "text" });
+
+  if (!githubToken)
+    return json({ error: "GitHub token missing in KV" }, 500);
+
+  const githubApiUrl =
+    `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
+
+  // Check existing file for SHA
+  let fileSha = null;
+  try {
+    const checkRes = await fetch(githubApiUrl, {
+      headers: {
+        "Authorization": `Bearer ${githubToken}`,
+        "User-Agent": "CodeMon-Image-Deployer"
+      }
+    });
+    if (checkRes.ok) {
+      const info = await checkRes.json();
+      fileSha = info.sha;
+    }
+  } catch {}
+
+  // Convert binary → Base64
+  const base64 = btoa(
+    String.fromCharCode(...new Uint8Array(stored))
+  );
+
+  const uploadBody = {
+    message: `Deploy image ${user}/${filename}`,
+    content: base64,
+    branch: "main",
+    ...(fileSha ? { sha: fileSha } : {})
+  };
+
+  const ghRes = await fetch(githubApiUrl, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${githubToken}`,
+      "Content-Type": "application/json",
+      "User-Agent": "CodeMon-Image-Deployer"
+    },
+    body: JSON.stringify(uploadBody)
+  });
+
+  const text = await ghRes.text();
+  let jsonResp;
+
+  try {
+    jsonResp = JSON.parse(text);
+  } catch {
+    return json({ error: "Invalid GitHub JSON", raw: text }, 500);
+  }
+
+  if (!ghRes.ok)
+    return json({ error: "GitHub error", details: jsonResp }, 500);
+
+  return json({
+    success: true,
+    url: `https://raw.githubusercontent.com/samadgod569/Code-Mon-space/main/public/${user}/${filename}`,
+    github: jsonResp.content?.html_url || null
+  });
+}
 // ---------------------------------------------------------  
 // /api/api-get  → simple GET/POST KV  
 // ---------------------------------------------------------  
