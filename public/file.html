@@ -493,7 +493,7 @@ async function uploadAndDeployImageBinary() {
         const deployJson = await deployRes.json();
 
         if (!deployJson.success)
-            return showError("GitHub Upload Failed: " + deployJson.error);
+    return showError("GitHub Upload Failed: " + JSON.stringify(deployJson));
 
         showSuccess("Image uploaded and deployed!");
         document.getElementById("uploadBox").style.display = "none";
