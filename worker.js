@@ -131,6 +131,235 @@ if (path === "/api/ai-get") {
   });
 }
 
+    if (path === "/api/worker-vm") {
+
+  // Require API key
+  const suppliedKey = request.headers.get("x-api-key");
+  const storedKey = await env.FILES.get("MASTER_KEY", { type: "text" });
+
+  if (!storedKey) {
+    return json({
+      error: "VM API key not configured in KV"
+    }, 500);
+  }
+
+  if (suppliedKey !== storedKey) {
+    return json({
+      error: "Invalid or missing API key"
+    }, 403);
+  }
+
+  // -------- VM LEVEL 2 (DROP-IN READY) ----------
+
+    if (request.method !== "POST") {
+      return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 });
+    }
+
+    const { scripts = [], input = null } = body;
+    if (!Array.isArray(scripts) || scripts.length === 0) {
+      return new Response(JSON.stringify({ error: "scripts[] required" }), { status: 400 });
+    }
+
+    // ------------------------------------------------
+    // LEVEL 2 — ADVANCED VM ENVIRONMENT
+    // ------------------------------------------------
+
+    // Virtual filesystem
+    const FS = {
+      _files: {},
+      write(path, content) {
+        const now = Date.now();
+        this._files[path] = { content, updated: now };
+      },
+      read(path) {
+        return this._files[path]?.content ?? null;
+      },
+      list() {
+        return Object.keys(this._files);
+      },
+      meta(path) {
+        return this._files[path] || null;
+      }
+    };
+
+    // Key-value STORE
+    const STORE = {
+      _db: {},
+      set(ns, key, val) {
+        if (!this._db[ns]) this._db[ns] = {};
+        this._db[ns][key] = val;
+      },
+      get(ns, key) {
+        return this._db[ns]?.[key] ?? null;
+      },
+      ns(ns) {
+        return this._db[ns] || {};
+      }
+    };
+
+    // Logs
+    const logs = [];
+    const consoleProxy = {
+      log: (...a) => logs.push(a.join(" ")),
+      error: (...a) => logs.push("ERROR: " + a.join(" ")),
+      warn: (...a) => logs.push("WARN: " + a.join(" "))
+    };
+
+    // delay()
+    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+    // fakeFetch()
+    const fakeFetch = async (url, opts = {}) => {
+      await delay(60);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ url, opts, message: "Fake fetch success" }),
+        text: async () => "Fake fetch text"
+      };
+    };
+
+    // Events
+    const EVENT_BUS = {};
+    const emit = (name, data) => {
+      if (EVENT_BUS[name]) EVENT_BUS[name].forEach(cb => cb(data));
+    };
+    const on = (name, handler) => {
+      if (!EVENT_BUS[name]) EVENT_BUS[name] = [];
+      EVENT_BUS[name].push(handler);
+    };
+
+    // ------------------------------------------------
+    // LEVEL 2 ADDITIONS
+    // ------------------------------------------------
+
+    // 1) Timers
+    const timers = new Set();
+    const vmSetTimeout = (fn, ms) => {
+      const id = setTimeout(() => {
+        timers.delete(id);
+        fn();
+      }, ms);
+      timers.add(id);
+      return id;
+    };
+    const vmSetInterval = (fn, ms) => {
+      const id = setInterval(fn, ms);
+      timers.add(id);
+      return id;
+    };
+    const clearAllTimers = () => {
+      for (const id of timers) clearInterval(id);
+    };
+
+    // 2) Crypto Tools
+    const cryptoTools = {
+      uuid() {
+        return crypto.randomUUID();
+      },
+      rand(size = 16) {
+        const arr = new Uint8Array(size);
+        crypto.getRandomValues(arr);
+        return [...arr];
+      },
+      async hash(str) {
+        const enc = new TextEncoder().encode(str);
+        const digest = await crypto.subtle.digest("SHA-256", enc);
+        return [...new Uint8Array(digest)]
+          .map(b => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+    };
+
+    // 3) Modules
+    const MODULES = {};
+    const defineModule = (name, exports) => {
+      MODULES[name] = exports;
+    };
+    const requireModule = (name) => {
+      if (!MODULES[name]) throw new Error(`Module '${name}' not found`);
+      return MODULES[name];
+    };
+
+    // 4) Snapshot / Rollback
+    const snapshot = () =>
+      JSON.stringify({ FS: FS._files, STORE: STORE._db });
+
+    const rollback = (snap) => {
+      const data = JSON.parse(snap);
+      FS._files = data.FS;
+      STORE._db = data.STORE;
+    };
+
+    // 5) Timeout protection
+    const MAX_EXEC_TIME = 1500;
+    const startTime = Date.now();
+    const checkTimeout = () => {
+      if (Date.now() - startTime > MAX_EXEC_TIME) {
+        throw new Error("VM Timeout: script exceeded execution limit");
+      }
+    };
+
+    // ------------------------------------------------
+    // EXECUTOR
+    // ------------------------------------------------
+
+    const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+    let state = input;
+
+    try {
+      for (let i = 0; i < scripts.length; i++) {
+        checkTimeout();
+
+        const code = scripts[i];
+
+        const func = new AsyncFunction(
+          "state", "FS", "STORE", "fetch", "console", "delay",
+          "emit", "on", "setTimeout", "setInterval",
+          "crypto", "require", "module", "snapshot", "rollback",
+          code
+        );
+
+        state = await func(
+          state, FS, STORE, fakeFetch, consoleProxy, delay,
+          emit, on, vmSetTimeout, vmSetInterval,
+          cryptoTools, requireModule, defineModule, snapshot, rollback
+        );
+      }
+
+      clearAllTimers();
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          result: state,
+          logs,
+          fs: FS._files,
+          store: STORE._db
+        }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+    } catch (err) {
+      clearAllTimers();
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: String(err),
+          logs
+        }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+      }
     // ---------------------------------------------------------
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
