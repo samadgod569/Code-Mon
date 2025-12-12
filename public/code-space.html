@@ -175,7 +175,36 @@ header {
     cursor: pointer;
     font-weight: bold;
 }
+#uploadBox {
+    display: none;
+    position: absolute;
+    top: -150px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,255,130,0.15);
+    border: 2px solid #00ff9d;
+    padding: 20px;
+    border-radius: 12px;
+    width: 300px;
+    backdrop-filter: blur(12px);
+    animation: slideDown 0.4s forwards;
+    z-index: 11;
+    text-align: center;
+}
 
+/* Upload drop zone */
+#uploadDrop {
+    margin-top: 12px;
+    padding: 20px;
+    border: 2px dashed #00ff9d;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #00ff9d;
+    transition: 0.25s;
+}
+#uploadDrop:hover {
+    background: rgba(0,255,130,0.15);
+}
 /* Animation */
 @keyframes slideDown {
     from { top: -80px; opacity: 0; }
@@ -199,11 +228,26 @@ header {
     <button onclick="confirmCreate()">Create</button>
 </div>
 <!-- UPLOAD IMAGE BOX -->
+<div id="uploadBox">
+    <h3 style="color:#00ff9d;">Upload Image</h3>
 
+    <input id="uploadFilename" placeholder="example: photo.png">
+
+    <div id="uploadDrop">
+        Click or Drop Image Here
+    </div>
+
+    <input type="file" id="uploadInput" accept="image/*" style="display:none;">
+    
+    <img id="uploadPreview" style="max-width:100%;margin-top:10px;display:none;border-radius:8px;">
+
+    <!-- ONLY THIS LINE CHANGES -->
+    <button onclick="uploadAndDeployImageBinary()">Upload</button>
+</div>
 <div id="wrap">
   <div id="files">
     <button onclick="createFile()">+ Create</button>
-      
+    <button onclick="openUpload()">Upload Image</button>  
     <button onclick="saveFile()">SAVE FILE</button>
     <button onclick="deploy()">PREVIEW</button>
     <div id="fileList"></div>
@@ -254,7 +298,34 @@ header {
     }
 })();
 
-    
+ let uploadFileData = null;
+
+function openUpload() {
+    document.getElementById("uploadBox").style.display = "block";
+}
+
+// Clicking the box opens file picker
+document.getElementById("uploadDrop").onclick = () => {
+    document.getElementById("uploadInput").click();
+};
+
+// When file is selected
+
+
+document.getElementById("uploadInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    uploadFileData = await file.arrayBuffer(); // binary stored
+
+    // Preview image
+    const reader = new FileReader();
+    reader.onload = () => {
+        document.getElementById("uploadPreview").src = reader.result;
+        document.getElementById("uploadPreview").style.display = "block";
+    };
+    reader.readAsDataURL(file);
+});   
 const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("code-mon-username");
 if (!user) location.href = "login.html";
@@ -381,7 +452,53 @@ async function saveFile() {
     }
 }
 /* OPEN IMAGE UPLOAD BOX */
+async function uploadAndDeployImageBinary() {
+    const filename = document.getElementById("uploadFilename").value.trim();
+    
+    if (!filename)
+        return showError("Filename required!");
 
+    if (!uploadFileData)
+        return showError("Select an image first!");
+
+    try {
+        // STEP 1 — Upload binary to KV
+        const saveRes = await fetch(`${API}/api/img-save`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/octet-stream",
+                "x-user": user,
+                "x-pass": pass,
+                "x-filename": filename
+            },
+            body: uploadFileData      // <-- RAW BINARY ARRAYBUFFER
+        });
+
+        const saveJson = await saveRes.json();
+        if (!saveJson.success)
+            return showError("KV Binary Save Failed: " + (saveJson.error || "Unknown"));
+
+        // STEP 2 — Deploy to GitHub
+        const deployRes = await fetch(`${API}/api/img-deploy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, filename })
+        });
+
+        const deployJson = await deployRes.json();
+
+        if (!deployJson.success)
+    return showError("GitHub Upload Failed: " + JSON.stringify(deployJson));
+
+        showSuccess("Image uploaded and deployed!");
+        document.getElementById("uploadBox").style.display = "none";
+
+        loadFiles(filename);
+
+    } catch (err) {
+        showError("Upload failed: " + err.message);
+    }
+            }
 /* DEPLOY */
 async function deploy() {
         const content = document.getElementById("editor").value;
