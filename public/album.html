@@ -2,93 +2,93 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Code-Mon Hytech Album</title>
+<title>Code-Mon Album</title>
 <style>
-  body {
-    margin: 0;
-    padding: 20px;
-    font-family: "Orbitron", sans-serif;
-    background: linear-gradient(135deg, #0a0a13, #1f1f2e);
-    color: #0ff;
-    overflow-x: hidden;
-  }
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: "Orbitron", sans-serif;
+  background: linear-gradient(135deg, #0a0a13, #1f1f2e);
+  color: #0ff;
+  overflow-x: hidden;
+}
 
-  h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-weight: 700;
-    font-size: 2.5rem;
-    text-shadow: 0 0 8px #0ff, 0 0 15px #0ff33;
-  }
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-weight: 700;
+  font-size: 2.5rem;
+  text-shadow: 0 0 8px #0ff, 0 0 15px #0ff33;
+}
 
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 25px;
-    padding: 0 20px;
-  }
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 25px;
+  padding: 0 20px;
+}
 
-  .image-card {
-    background: rgba(15, 15, 30, 0.6);
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 0 15px rgba(0,255,255,0.3),
-                0 10px 30px rgba(0,255,255,0.1);
-    backdrop-filter: blur(6px);
-    transition: transform 0.3s, box-shadow 0.3s;
-    border: 1px solid rgba(0,255,255,0.2);
-  }
+.image-card {
+  background: rgba(15, 15, 30, 0.6);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0,255,255,0.3),
+              0 10px 30px rgba(0,255,255,0.1);
+  backdrop-filter: blur(6px);
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 1px solid rgba(0,255,255,0.2);
+}
 
-  .image-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 0 25px rgba(0,255,255,0.7),
-                0 15px 35px rgba(0,255,255,0.3);
-  }
+.image-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 0 25px rgba(0,255,255,0.7),
+              0 15px 35px rgba(0,255,255,0.3);
+}
 
-  .image-card img {
-    width: 100%;
-    height: 160px;
-    object-fit: cover;
-    display: block;
-    border-bottom: 1px solid rgba(0,255,255,0.2);
-    transition: transform 0.3s;
-  }
+.image-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid rgba(0,255,255,0.2);
+  transition: transform 0.3s;
+}
 
-  .image-card img:hover {
-    transform: scale(1.05);
-  }
+.image-card img:hover {
+  transform: scale(1.05);
+}
 
-  .image-info {
-    padding: 12px;
-    text-align: center;
-    font-size: 14px;
-    color: #0ff;
-  }
+.image-info {
+  padding: 12px;
+  text-align: center;
+  font-size: 14px;
+  color: #0ff;
+}
 
-  .image-info code {
-    display: block;
-    background: rgba(0,0,0,0.3);
-    padding: 4px 6px;
-    margin-top: 6px;
-    border-radius: 5px;
-    font-size: 12px;
-    color: #0ff;
-    word-break: break-all;
-    text-shadow: 0 0 5px #0ff;
-  }
+.image-info code {
+  display: block;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 6px;
+  margin-top: 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: #0ff;
+  word-break: break-all;
+  text-shadow: 0 0 5px #0ff;
+}
 
-  .loading {
-    text-align: center;
-    font-size: 18px;
-    margin-top: 50px;
-    color: #0ff;
-    text-shadow: 0 0 6px #0ff33;
-  }
+.loading {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 50px;
+  color: #0ff;
+  text-shadow: 0 0 6px #0ff33;
+}
 </style>
 </head>
 <body>
 
-<h1>Code-Mon Hytech Album</h1>
+<h1>Code-Mon Album</h1>
 <div id="gallery" class="gallery"></div>
 <div id="loading" class="loading">Loading images...</div>
 
@@ -100,38 +100,28 @@ if (!user) {
   alert("No username found in localStorage (code-mon-username)");
 }
 
-/* Fetch image files from API */
+/* Fetch list of image files */
 async function fetchImageFiles() {
   const res = await fetch(`${API}/api/list?user=${user}`);
   const data = await res.json();
   if (!data.files) return [];
   return data.files.filter(f =>
-    f.endsWith(".png") || f.endsWith(".jpg") || f.endsWith(".jpeg") || f.endsWith(".webp") || f.endsWith(".gif")
+    f.endsWith(".png") ||
+    f.endsWith(".jpg") ||
+    f.endsWith(".jpeg") ||
+    f.endsWith(".webp") ||
+    f.endsWith(".gif")
   );
 }
 
-/* Convert KV binary to base64 for <img src> */
-async function loadImageBase64(filename) {
+/* Load image as object URL (works in <img src>) */
+async function loadImageURL(filename) {
   const res = await fetch(`${API}/api/load?user=${user}&filename=${filename}`);
-  const buffer = await res.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const chunk = 8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  const b64 = btoa(binary);
-
-  const ext = filename.split(".").pop().toLowerCase();
-  const mime = ext === "png" ? "image/png"
-            : ext === "webp" ? "image/webp"
-            : ext === "gif" ? "image/gif"
-            : "image/jpeg";
-
-  return `data:${mime};base64,${b64}`;
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
 
-/* Render the gallery */
+/* Render gallery */
 async function renderGallery() {
   const gallery = document.getElementById("gallery");
   const loading = document.getElementById("loading");
@@ -143,14 +133,12 @@ async function renderGallery() {
     const card = document.createElement("div");
     card.className = "image-card";
 
-    // Display image using base64
     const img = document.createElement("img");
-    img.src = await loadImageBase64(file);
+    img.src = await loadImageURL(file); // show the image
 
-    // Show file name for implementing in HTML (file only, not base64)
     const info = document.createElement("div");
     info.className = "image-info";
-    info.innerHTML = `${file}<br><code>&lt;img src="${file}" /&gt;</code>`;
+    info.innerHTML = `${file}<br><code>&lt;img src="${file}" /&gt;</code>`; // for implementation snippet
 
     card.appendChild(img);
     card.appendChild(info);
