@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Code-Mon Album</title>
+<title>Code-Mon Hytech Album</title>
 <style>
   body {
     margin: 0;
@@ -88,7 +88,7 @@
 </head>
 <body>
 
-<h1>Code-Mon Album</h1>
+<h1>Code-Mon Hytech Album</h1>
 <div id="gallery" class="gallery"></div>
 <div id="loading" class="loading">Loading images...</div>
 
@@ -100,21 +100,38 @@ if (!user) {
   alert("No username found in localStorage (code-mon-username)");
 }
 
-/* Fetch list of image files */
+/* Fetch image files from API */
 async function fetchImageFiles() {
   const res = await fetch(`${API}/api/list?user=${user}`);
   const data = await res.json();
   if (!data.files) return [];
   return data.files.filter(f =>
-    f.endsWith(".png") ||
-    f.endsWith(".jpg") ||
-    f.endsWith(".jpeg") ||
-    f.endsWith(".webp") ||
-    f.endsWith(".gif")
+    f.endsWith(".png") || f.endsWith(".jpg") || f.endsWith(".jpeg") || f.endsWith(".webp") || f.endsWith(".gif")
   );
 }
 
-/* Render gallery */
+/* Convert KV binary to base64 for <img src> */
+async function loadImageBase64(filename) {
+  const res = await fetch(`${API}/api/load?user=${user}&filename=${filename}`);
+  const buffer = await res.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunk = 8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  const b64 = btoa(binary);
+
+  const ext = filename.split(".").pop().toLowerCase();
+  const mime = ext === "png" ? "image/png"
+            : ext === "webp" ? "image/webp"
+            : ext === "gif" ? "image/gif"
+            : "image/jpeg";
+
+  return `data:${mime};base64,${b64}`;
+}
+
+/* Render the gallery */
 async function renderGallery() {
   const gallery = document.getElementById("gallery");
   const loading = document.getElementById("loading");
@@ -126,11 +143,11 @@ async function renderGallery() {
     const card = document.createElement("div");
     card.className = "image-card";
 
-    // Use API endpoint for img src
+    // Display image using base64
     const img = document.createElement("img");
-    img.src = `${API}/api/load?user=${user}&filename=${file}`;
+    img.src = await loadImageBase64(file);
 
-    // Show the file name in code snippet
+    // Show file name for implementing in HTML (file only, not base64)
     const info = document.createElement("div");
     info.className = "image-info";
     info.innerHTML = `${file}<br><code>&lt;img src="${file}" /&gt;</code>`;
