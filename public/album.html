@@ -2,11 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Code-Mon Hytech Album</title>
+<title>Code-Mon Album</title>
 <style>
-  /* -----------------------------------------
-      GLOBAL + BACKGROUND
-  ----------------------------------------- */
   body {
     margin: 0;
     padding: 20px;
@@ -24,9 +21,6 @@
     text-shadow: 0 0 8px #0ff, 0 0 15px #0ff33;
   }
 
-  /* -----------------------------------------
-      GALLERY GRID
-  ----------------------------------------- */
   .gallery {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -120,25 +114,6 @@ async function fetchImageFiles() {
   );
 }
 
-/* Fetch image as base64 from KV */
-async function loadImageBase64(filename) {
-  const res = await fetch(`${API}/api/load?user=${user}&filename=${filename}`);
-  const buffer = await res.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const chunk = 8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  const b64 = btoa(binary);
-  const ext = filename.split(".").pop().toLowerCase();
-  const mime = ext === "png" ? "image/png"
-            : ext === "webp" ? "image/webp"
-            : ext === "gif" ? "image/gif"
-            : "image/jpeg";
-  return `data:${mime};base64,${b64}`;
-}
-
 /* Render gallery */
 async function renderGallery() {
   const gallery = document.getElementById("gallery");
@@ -148,17 +123,17 @@ async function renderGallery() {
   const files = await fetchImageFiles();
 
   for (const file of files) {
-    const imgSrc = await loadImageBase64(file);
-
     const card = document.createElement("div");
     card.className = "image-card";
 
+    // Use API endpoint for img src
     const img = document.createElement("img");
-    img.src = imgSrc;
+    img.src = `${API}/api/load?user=${user}&filename=${file}`;
 
+    // Show the file name in code snippet
     const info = document.createElement("div");
     info.className = "image-info";
-    info.innerHTML = `${file}<br><code>&lt;img src="${imgSrc}" /&gt;</code>`;
+    info.innerHTML = `${file}<br><code>&lt;img src="${file}" /&gt;</code>`;
 
     card.appendChild(img);
     card.appendChild(info);
