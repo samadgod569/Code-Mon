@@ -409,7 +409,7 @@ async function confirmCreate() {
         const res = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user, filename: name, content: "" })
+            body: JSON.stringify({ user, pass, filename: name, content: "" })
         });
 
         const data = await res.json();
