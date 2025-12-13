@@ -366,13 +366,18 @@ async function loadFiles(selectedFile = null) {
         const list = document.getElementById("fileList");
         list.innerHTML = "";
 
-        data.files.forEach(f => {
-            const div = document.createElement("div");
-            div.className = "fileItem";
-            div.innerText = f;
-            div.onclick = () => loadFile(f);
-            list.appendChild(div);
-        });
+      data.files.forEach(f => {
+
+    
+    if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f)) return;
+
+    const div = document.createElement("div");
+    div.className = "fileItem";
+    div.innerText = f;
+    div.onclick = () => loadFile(f);
+    list.appendChild(div);
+});
+
 
         if (selectedFile && data.files.includes(selectedFile)) loadFile(selectedFile);
 
