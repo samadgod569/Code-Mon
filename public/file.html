@@ -521,7 +521,7 @@ async function deploy() {
         if (data.error)
             return showError("Deploy failed: " + JSON.stringify(data));
 
-        showSuccess("Deployed Successfully!");
+        showSuccess(`Deployed Successfully! Check out the website at https://code-mon-space.pages.dev/${user}/${currentFile}`);
 
     } catch (err) {
         /* SPECIAL MESSAGE FOR FAILED-TO-FETCH */
