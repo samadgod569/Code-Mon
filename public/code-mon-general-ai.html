@@ -159,11 +159,14 @@ async function send() {
     try {
         const q = encodeURIComponent(text + "/database:" + database);
         const url = `https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=Code-Mon-General&question=${q}`;
+const res = await fetch(url);
+const data = await res.text();
 
-        const res = await fetch(url);
-        const data = await res.text();
+console.log("Status:", res.status);
+console.log("Body length:", data.length);
 
-        add(data || "No response", "ai");
+add(data || "No response", "ai");
+
     } catch {
         add("Error getting response.", "ai");
     }
