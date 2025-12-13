@@ -328,6 +328,7 @@ document.getElementById("uploadInput").addEventListener("change", async (e) => {
 });   
 const API = "https://code-mon.codemon.workers.dev";
 const user = localStorage.getItem("code-mon-username");
+    const pass = localStorage.getItem("code-mon-pass");
 if (!user) location.href = "login.html";
 
 let currentFile = null;
@@ -405,7 +406,7 @@ async function confirmCreate() {
         const res = await fetch(`${API}/api/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user, filename: name, content: "" })
+            body: JSON.stringify({ user,pass, filename: name, content: "" })
         });
 
         const data = await res.json();
