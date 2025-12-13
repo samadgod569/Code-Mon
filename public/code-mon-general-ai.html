@@ -163,7 +163,7 @@ async function send() {
         const res = await fetch(url);
         const data = await res.text();
 
-        add(data.answer || "No response", "ai");
+        add(data || "No response", "ai");
     } catch {
         add("Error getting response.", "ai");
     }
