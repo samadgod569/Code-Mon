@@ -53,3 +53,45 @@ The Mail page enables users to receive notifications such as team invitations an
 The Server page allows users to create persistent servers that continue running even when the user is offline. These servers support Node.js, enabling advanced backend functionality. This feature is experimental and coming soon.
 
 18. If you find any bugs problem or confusion in something or have some suggestions then just visit our discord we will assist you properly.
+
+19. Important Code Mon Pages & Links  
+Below are the official pages of Code Mon that help users navigate and use the platform efficiently:
+
+1) Home Page  
+https://code-mon.pages.dev/
+
+2) Generate Page (AI Website Generator)  
+https://code-mon.pages.dev/generate?text=
+
+3) Login Page  
+https://code-mon.pages.dev/login
+
+4) File Manager  
+https://code-mon.pages.dev/file
+
+5) Code Space  
+https://code-mon.pages.dev/code-space
+
+6) Preview Page  
+https://code-mon.pages.dev/preview
+
+7) Code Mon Data Storage (Code Mon DS)  
+https://code-mon.pages.dev/code-mon-ds
+
+8) Console Page  
+https://code-mon.pages.dev/console
+
+9) Create AI Page  
+https://code-mon.pages.dev/create-ai
+
+10) Create API Page  
+https://code-mon.pages.dev/create-api
+
+11) About Us Page  
+https://code-mon.pages.dev/aboutus
+
+12) Terms & Conditions Page  
+https://code-mon.pages.dev/terms&conditions
+
+20. Terms & Conditions Notice  
+Before beginning your journey with Code Mon, it is mandatory to carefully read and understand all Terms & Conditions. This ensures that you use the platform responsibly and helps maintain a secure, fair, and protected environment for all users. By continuing to use Code Mon, you agree to comply with these terms.
