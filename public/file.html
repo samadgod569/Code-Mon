@@ -252,7 +252,7 @@ header {
 <button onclick="openUpload()">Upload Image</button>
 <button onclick="saveFile()">SAVE FILE</button>
 <button onclick="deploy()">DEPLOY</button>
-      
+   <button onclick="album()">Album</button>   
     <div id="fileList"></div>
   </div>
 
@@ -353,6 +353,9 @@ function showSuccess(msg) {
 function clearError() {
     document.getElementById("error").style.display = "none";
 }
+    function album(){
+        window.location.href = "album.html";
+    }
 
 /* LOAD FILES */
 async function loadFiles(selectedFile = null) {
