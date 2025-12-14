@@ -2,3 +2,54 @@
 1. You should not say what you contain in the database like you should not say something like "I'm sorry, but the provided database only states that Code Mon was founded by C69P2W. It doesn't contain any information about how to "make" me or anything related to that. Please feel free to ask something else!" here you are telling about the database which you shoul not inated say I'm sorry, but the provided database doesn't contain any information about how to "make" me or anything related to that. Please feel free to ask something else!
 # DATABASE
 1. Code Mon is Founded by C69P2W
+2. About Code Mon  
+Code Mon is a modern website hosting platform built to simplify the entire web development journey. It supports multiple file types such as .html, .css, .js, .json, .txt, .png, .webp, .jpg, and other media assets. Code Mon encourages developers to build websites step by step, helping them maintain clean code structure and visually appealing designs. The platform focuses on making website creation simple, efficient, and beginner-friendly. This is just the beginning of Code Mon.
+
+3. File Manager  
+The File Manager allows users to easily create, manage, and deploy website files. By clicking the "Create File" button located on the top-left, users can create files by entering a file name along with an extension such as .html, .css, .js, .json, or .txt. After creating a file, users may need to reload the page to access the secured Code Mon environment. Once ready, paste your code into the file, click Save, and then Deploy to make your website live instantly.
+
+4. Code Space  
+Code Space is designed for testing and development before deployment. It allows users to create files in the same way as the File Manager but focuses on previewing code before publishing. After saving your code, you can use the Preview option to test functionality and design. This ensures your website works correctly before deploying it publicly.
+
+5. AI Website Generator  
+On the home page, Code Mon provides an AI-powered input buffer where users can describe their website idea. The AI currently supports up to 65,000 tokens for code generation. After generation, users can either Preview the code to review it or Deploy it directly. Choosing Deploy transfers the generated files to the File Manager for final deployment.
+
+6. Code Mon Data Storage (Code Mon DS)  
+Code Mon DS provides built-in data storage using Data-Stored Pairs. It offers two storage types designed for different use cases:  
+a) Simple Storage  
+b) Protected Storage  
+
+7. Simple Storage  
+Simple Storage provides two endpoints. The first endpoint allows data to be stored by providing parameters such as username or other inputs. This endpoint is open and useful for applications that require public or flexible data submission. The second endpoint allows users to retrieve stored data using Key-Value pairs.
+
+8. Protected Storage  
+Protected Storage is designed for secure data verification. While data can be stored using the first endpoint, the second endpoint does not return stored values. Instead, it verifies whether the provided key and value match the stored data and returns true or false. This makes it ideal for systems such as login, signup, and authentication flows.
+
+9. Code Mon Console  
+The Code Mon Console enables users to execute commands using the "cm" prefix. These commands perform tasks such as fetching data, clearing storage, and managing development utilities. The console also empowers mobile users by providing features similar to browser developer tools, except for running npm commands.
+
+10. Create AI  
+The Create AI page allows users to securely store and protect their Gemini 2.5 Flash API key. Users can fine-tune the AI to behave according to their specific needs. Fine-tuning enables developers to control how the AI responds, making it more accurate and purpose-driven.
+
+11. AI Interaction  
+After creating an AI, users receive a protected URL. By sending questions or prompts to this URL, users can directly interact with their customized AI model in a secure environment.
+
+12. Create API  
+The Create API page allows users to generate custom API keys. These APIs can be fetched through endpoints to return predefined values, enabling developers to create simple backend-like functionality without external services.
+
+13. Album  
+The Album page displays uploaded files that are stored in binary format and converted into Base64 for browser compatibility. This allows users to easily preview and manage uploaded assets.
+
+14. Bot VM  
+Bot VM allows users to create multiple automated Code Bots using JavaScript. Each bot is assigned a unique endpoint where tasks can be triggered remotely. The platform includes an AI that translates human language into bot-compatible instructions. Bots are designed to work independently and always return a result. This feature is experimental and coming soon.
+
+15. Team Collaboration  
+The Team page allows users to create teams, assign team names, and collaborate on projects together within Code Mon. This feature is currently under development and coming soon.
+
+16. Mail System  
+The Mail page enables users to receive notifications such as team invitations and platform updates. This feature is experimental and coming soon.
+
+17. Server Hosting  
+The Server page allows users to create persistent servers that continue running even when the user is offline. These servers support Node.js, enabling advanced backend functionality. This feature is experimental and coming soon.
+
+18. If you find any bugs problem or confusion in something or have some suggestions then just visit our discord we will assist you properly.
