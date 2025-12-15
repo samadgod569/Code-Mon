@@ -141,13 +141,12 @@ h1 {
 </div>
 
 <script>
-         (async function() {
+(async function() {
     const API = "https://code-mon.codemon.workers.dev";
 
     const username = localStorage.getItem("code-mon-username");
     const password = localStorage.getItem("code-mon-pass");
 
-    //  No credentials → go to login
     if (!username || !password) {
         localStorage.clear();
         location.href = "login.html";
@@ -158,25 +157,19 @@ h1 {
         const res = await fetch(`${API}/api/pass?username=${username}&pass=${password}`);
         const data = await res.json();
 
-        //  Wrong password / user not found
         if (!data.success) {
-            localStorage.removeItem("code-mon-username");
-            localStorage.removeItem("code-mon-pass");
-            localStorage.removeItem("user");
-
+            localStorage.clear();
             location.href = "login.html";
             return;
         }
 
-        //  Auth success → continue loading file.html normally
         console.log("User authenticated:", username);
 
-    } catch (err) {
-        // Network failure = prevent access
+    } catch {
         localStorage.clear();
         location.href = "login.html";
     }
-})(); 
+})();
 
 let database = "";
 
@@ -186,6 +179,24 @@ fetch("database.txt")
     .then(t => database = t)
     .catch(() => database = "");
 
+/* ================================
+   AI FALLBACK ENDPOINTS (9)
+================================ */
+const AI_ENDPOINTS = [
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-2",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-3",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-4",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-5",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-6",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-7",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-8",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-9",
+    "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-10"
+];
+
+/* ================================
+   SEND FUNCTION WITH FALLBACK
+================================ */
 async function send() {
     const input = document.getElementById("input");
     const text = input.value.trim();
@@ -194,22 +205,41 @@ async function send() {
     add(text, "user");
     input.value = "";
 
-    try {
-        const q = encodeURIComponent(text + "/database:" + database);
-        const url = `https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=Code-Mon-General&question=${q}`;
-const res = await fetch(url);
-const data = await res.text();
+    const q = encodeURIComponent(text + "/database:" + database);
 
-console.log("Status:", res.status);
-console.log("Body length:", data.length);
+    for (let i = 0; i < AI_ENDPOINTS.length; i++) {
+        const url = `${AI_ENDPOINTS[i]}&question=${q}`;
 
-add(data || "No response", "ai");
+        try {
+            const res = await fetch(url);
 
-    } catch {
-        add("Error getting response.", "ai");
+            if (!res.ok) {
+                throw new Error("HTTP " + res.status);
+            }
+
+            const data = await res.text();
+
+            if (!data || !data.trim()) {
+                throw new Error("Empty response");
+            }
+
+            console.log(`✅ AI success from endpoint ${i + 2}`);
+            add(data, "ai");
+            return;
+
+        } catch (err) {
+            console.warn(`❌ Endpoint ${i + 2} failed`, err);
+            // Try next endpoint
+        }
     }
+
+    // If all endpoints fail
+    add("All AI servers are currently busy or exhausted. Please try again later.", "ai");
 }
 
+/* ================================
+   UI HELPERS
+================================ */
 function add(text, type) {
     const div = document.createElement("div");
     div.className = "msg " + type;
@@ -224,6 +254,5 @@ document.getElementById("input").addEventListener("keydown", e => {
     if (e.key === "Enter") send();
 });
 </script>
-
 </body>
 </html>
