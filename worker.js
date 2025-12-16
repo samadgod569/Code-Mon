@@ -361,15 +361,18 @@ if (path === "/api/ai-get") {
     }
       }
     
-  if (path === "/api/code-mon-ai") {
+// ---------------------------------------------------------
+// /api/code-mon-ai  → OpenRouter single response
+// ---------------------------------------------------------
+if (path === "/api/code-mon-ai") {
 
+  // Accept GET or POST
   let question = "";
 
   if (request.method === "GET") {
     question = url.searchParams.get("question") || "";
-  }
-
-  if (request.method === "POST") {
+  } 
+  else if (request.method === "POST") {
     try {
       const body = await request.json();
       question = body.question || "";
@@ -382,57 +385,53 @@ if (path === "/api/ai-get") {
     return json({ error: "Missing question" }, 400);
   }
 
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer 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`,
-      "HTTP-Referer": "https://code-mon.pages.dev",
-      "X-Title": "Code-Mon AI",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "openai/gpt-4o",
-      max_tokens: 1500,
-      messages: [
-        { role: "user", content: question }
-      ]
-    })
-  });
+  // Call OpenRouter
+  const res = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer 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",
+        "HTTP-Referer": "https://code-mon.pages.dev",
+        "X-Title": "Code-Mon AI",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "amazon/nova-2-lite-v1:free", // 🔁 replace model if needed
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: question
+          }
+        ]
+      })
+    }
+  );
 
-  const rawText = await res.text();
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); }
+    catch { err = await res.text(); }
 
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch {
-    return json({
-      error: "Invalid JSON from OpenRouter",
-      raw: rawText
-    }, 500);
-  }
-
-  // 🔥 HANDLE OPENROUTER ERRORS PROPERLY
-  if (!res.ok || data.error) {
     return json({
       error: "OpenRouter error",
-      details: data.error || data
-    }, 500);
+      details: err
+    }, res.status);
   }
 
-  const answer = data.choices?.[0]?.message?.content;
+  const data = await res.json();
 
-  if (!answer) {
-    return json({
-      error: "AI returned no text",
-      raw: data
-    }, 500);
-  }
+  // Extract TEXT (not JSON from AI)
+  const answer =
+    data?.choices?.[0]?.message?.content ||
+    "No response from AI";
 
+  // Return clean JSON
   return json({
-    success: true,
     answer
   });
-  }
+}
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
