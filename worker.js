@@ -360,9 +360,23 @@ if (path === "/api/ai-get") {
       );
     }
       }
-    if (path === "/api/code-mon-ai") {
+    
+  if (path === "/api/code-mon-ai") {
 
-  const question = url.searchParams.get("question") || "";
+  let question = "";
+
+  if (request.method === "GET") {
+    question = url.searchParams.get("question") || "";
+  }
+
+  if (request.method === "POST") {
+    try {
+      const body = await request.json();
+      question = body.question || "";
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
+    }
+  }
 
   if (!question) {
     return json({ error: "Missing question" }, 400);
@@ -371,7 +385,7 @@ if (path === "/api/ai-get") {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": "Bearer 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",
+      "Authorization": `Bearer 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`,
       "HTTP-Referer": "https://code-mon.pages.dev",
       "X-Title": "Code-Mon AI",
       "Content-Type": "application/json"
@@ -380,28 +394,45 @@ if (path === "/api/ai-get") {
       model: "openai/gpt-4o",
       max_tokens: 1500,
       messages: [
-        {
-          role: "user",
-          content: question
-        }
+        { role: "user", content: question }
       ]
     })
   });
 
-  const data = await res.json();
+  const rawText = await res.text();
 
-  const answer =
-    data?.choices?.[0]?.message?.content ||
-    "No response from AI";
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    return json({
+      error: "Invalid JSON from OpenRouter",
+      raw: rawText
+    }, 500);
+  }
 
-  return new Response(JSON.stringify({ answer }), {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
-    }
+  // 🔥 HANDLE OPENROUTER ERRORS PROPERLY
+  if (!res.ok || data.error) {
+    return json({
+      error: "OpenRouter error",
+      details: data.error || data
+    }, 500);
+  }
+
+  const answer = data.choices?.[0]?.message?.content;
+
+  if (!answer) {
+    return json({
+      error: "AI returned no text",
+      raw: data
+    }, 500);
+  }
+
+  return json({
+    success: true,
+    answer
   });
-    }
-    // ---------------------------------------------------------
+  }
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
