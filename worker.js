@@ -361,77 +361,7 @@ if (path === "/api/ai-get") {
     }
       }
     
-// ---------------------------------------------------------
-// /api/code-mon-ai  → OpenRouter single response
-// ---------------------------------------------------------
-if (path === "/api/code-mon-ai") {
 
-  // Accept GET or POST
-  let question = "";
-
-  if (request.method === "GET") {
-    question = url.searchParams.get("question") || "";
-  } 
-  else if (request.method === "POST") {
-    try {
-      const body = await request.json();
-      question = body.question || "";
-    } catch {
-      return json({ error: "Invalid JSON body" }, 400);
-    }
-  }
-
-  if (!question) {
-    return json({ error: "Missing question" }, 400);
-  }
-
-  // Call OpenRouter
-  const res = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer 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",
-        "HTTP-Referer": "https://code-mon.pages.dev",
-        "X-Title": "Code-Mon AI",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "amazon/nova-2-lite-v1:free", // 🔁 replace model if needed
-        max_tokens: 4096,
-        messages: [
-          {
-            role: "user",
-            content: question
-          }
-        ]
-      })
-    }
-  );
-
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); }
-    catch { err = await res.text(); }
-
-    return json({
-      error: "OpenRouter error",
-      details: err
-    }, res.status);
-  }
-
-  const data = await res.json();
-
-  // Extract TEXT (not JSON from AI)
-  const answer =
-    data?.choices?.[0]?.message?.content ||
-    "No response from AI";
-
-  // Return clean JSON
-  return json({
-    answer
-  });
-}
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
@@ -463,7 +393,75 @@ if (path === "/api/img-save") {
 
 
 
+// ---------------------------------------------------------
+// /api/code-mon-ai  → OpenRouter single response (KV KEY)
+// ---------------------------------------------------------
+if (path === "/api/code-mon-ai") {
 
+  let question = "";
+
+  // Accept GET or POST
+  if (request.method === "GET") {
+    question = url.searchParams.get("question") || "";
+  } 
+  else if (request.method === "POST") {
+    try {
+      const body = await request.json();
+      question = body.question || "";
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
+    }
+  }
+
+  if (!question) {
+    return json({ error: "Missing question" }, 400);
+  }
+
+  // 🔐 Load OpenRouter API key from KV
+  const apiKey = await env.FILES.get("OPENROUTER_KEY", { type: "text" });
+
+  if (!apiKey) {
+    return json({ error: "OpenRouter API key not configured" }, 500);
+  }
+
+  // 🔒 Call OpenRouter (server-side)
+  const res = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "amazon/nova-2-lite-v1:free",
+        max_tokens: 4096,
+        messages: [
+          { role: "user", content: question }
+        ]
+      })
+    }
+  );
+
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); }
+    catch { err = await res.text(); }
+
+    return json({
+      error: "OpenRouter error",
+      details: err
+    }, res.status);
+  }
+
+  const data = await res.json();
+
+  const answer =
+    data?.choices?.[0]?.message?.content?.trim() ||
+    "No response from AI";
+
+  return json({ answer });
+                }
 // ---------------------------------------------------------
 // /api/img-deploy  (deploy binary from KV → GitHub)
 // ---------------------------------------------------------
