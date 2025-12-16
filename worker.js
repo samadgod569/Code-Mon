@@ -388,7 +388,7 @@ if (path === "/api/ai-get") {
     })
   });
 
-  const data = await res.text();
+  const data = await res.json();
 
   const answer =
     data?.choices?.[0]?.message?.content ||
