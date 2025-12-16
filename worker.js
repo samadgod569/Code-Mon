@@ -391,7 +391,7 @@ if (path === "/api/code-mon-ai") {
     {
       method: "POST",
       headers: {
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer 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",
         "HTTP-Referer": "https://code-mon.pages.dev",
         "X-Title": "Code-Mon AI",
         "Content-Type": "application/json"
