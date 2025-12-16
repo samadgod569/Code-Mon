@@ -360,6 +360,47 @@ if (path === "/api/ai-get") {
       );
     }
       }
+    if (path === "/api/code-mon-ai") {
+
+  const question = url.searchParams.get("question") || "";
+
+  if (!question) {
+    return json({ error: "Missing question" }, 400);
+  }
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer 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",
+      "HTTP-Referer": "https://code-mon.pages.dev",
+      "X-Title": "Code-Mon AI",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-4o",
+      max_tokens: 1500,
+      messages: [
+        {
+          role: "user",
+          content: question
+        }
+      ]
+    })
+  });
+
+  const data = await res.text();
+
+  const answer =
+    data?.choices?.[0]?.message?.content ||
+    "No response from AI";
+
+  return new Response(JSON.stringify({ answer }), {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
+    }
     // ---------------------------------------------------------
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
