@@ -248,7 +248,7 @@ Output only the plain text.
 ${q}
 `;
 
-    let res = await fetch(`https://ai.craftersmc-navigators.xyz/query?q=${encodeURIComponent(prompt)}`);
+    const res = await fetch(`https://code-mon.codemon.workers.dev/api/code-mon-ai?question= ${encodeURIComponent(prompt)}`);
     let data = await res.json();
 
     let output = data.answer || "";
