@@ -360,7 +360,33 @@ if (path === "/api/ai-get") {
       );
     }
       }
-    
+   // ---------------------------------------------------------
+// /api/saveDeploy
+// ---------------------------------------------------------
+if (path === "/api/saveDeploy") {
+  const user = url.searchParams.get("user");
+  const filename = url.searchParams.get("filename");
+
+  if (!user || !filename) {
+    return new Response("Missing user or filename", { status: 400 });
+  }
+
+  // JUST CALL /api/load
+  const res = await fetch(
+    `https://code-mon.codemon.workers.dev/api/load?user=${user}&filename=${filename}`
+  );
+
+  // RETURN EXACTLY WHAT /api/load RETURNS
+  const text = await res.text();
+
+  return new Response(text, {
+    status: res.status,
+    headers: {
+      "Content-Type": "text/plain",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
+} 
 
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
