@@ -517,27 +517,10 @@ async function uploadAndDeployImageBinary() {
 async function deploy() {
     if (!currentFile) return showError("Select a file first");
 
-    try {
-        const res = await fetch(`${API}/api/deploy`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user, filename: currentFile })
-        });
+    
+        showSuccess(`Deployed Successfully! Check out the website at https://code-mon-space.pages.dev/@me/user=${user}&filename=${currentFile}`);
 
-        const data = await res.json();
 
-        if (data.error)
-            return showError("Deploy failed: " + JSON.stringify(data));
-
-        showSuccess(`Deployed Successfully! Check out the website at https://code-mon-space.pages.dev/${user}/${currentFile}`);
-
-    } catch (err) {
-        /* SPECIAL MESSAGE FOR FAILED-TO-FETCH */
-        showError(
-            "Ooops! Seems like you have reached your file CPU limit (Beta).\n" +
-            "You can convert the file or visit our Discord to deploy large files."
-        );
-    }
 }
 
 /* LOAD ON START */
