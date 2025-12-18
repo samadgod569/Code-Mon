@@ -450,7 +450,7 @@ if (path === "/api/code-mon-ai") {
     return json({ error: "OpenRouter API key not configured" }, 500);
   }
 
-  // 🔒 Call OpenRouter (server-side)
+  // 🔒 Single OpenRouter call with reasoning enabled
   const res = await fetch(
     "https://openrouter.ai/api/v1/chat/completions",
     {
@@ -460,11 +460,14 @@ if (path === "/api/code-mon-ai") {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "amazon/nova-2-lite-v1:free",
-        max_tokens: 4096,
+        model: "openai/gpt-oss-20b:free",
         messages: [
-          { role: "user", content: question }
-        ]
+          {
+            role: "user",
+            content: question
+          }
+        ],
+        reasoning: { enabled: true }
       })
     }
   );
@@ -482,12 +485,14 @@ if (path === "/api/code-mon-ai") {
 
   const data = await res.json();
 
-  const answer =
-    data?.choices?.[0]?.message?.content?.trim() ||
-    "No response from AI";
+  const message = data?.choices?.[0]?.message;
 
-  return json({ answer });
-                }
+  return json({
+    answer: message?.content?.trim() || "No response from AI",
+    // Optional: include reasoning details if you want them
+    reasoning_details: message?.reasoning_details ?? null
+  });
+}
 // ---------------------------------------------------------
 // /api/img-deploy  (deploy binary from KV → GitHub)
 // ---------------------------------------------------------
