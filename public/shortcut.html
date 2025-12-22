@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CodeMon Generator</title>
+
+<style>
+/* =====================================================
+   DESIGN SYSTEM (UNCHANGED)
+===================================================== */
+:root{
+  --bg-main:#f4f4f6;
+  --bg-card:#ffffff;
+  --ink:#0f1222;
+  --ink-soft:#5b5f7a;
+  --accent:#5b6cff;
+  --accent-soft:#e6e9ff;
+  --line:#e3e5ee;
+  --radius-xl:32px;
+  --radius-lg:22px;
+  --radius-md:14px;
+  --shadow-soft:0 20px 60px rgba(20,20,60,.12);
+  --shadow-hover:0 30px 80px rgba(20,20,60,.18);
+}
+
+/* RESET */
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  height:100%;
+  font-family:ui-sans-serif,system-ui;
+  background:linear-gradient(180deg,#f7f7fa,#efeff5);
+  color:var(--ink);
+  overflow:hidden;
+}
+
+/* BACKGROUND */
+.bg-blob{
+  position:fixed;
+  width:520px;
+  height:520px;
+  border-radius:50%;
+  background:radial-gradient(circle,var(--accent-soft),transparent 60%);
+  filter:blur(120px);
+  opacity:.8;
+  animation:blobMove 22s ease-in-out infinite alternate;
+}
+.bg-blob.one{top:-200px;left:-200px;}
+.bg-blob.two{bottom:-200px;right:-200px;animation-duration:28s;}
+@keyframes blobMove{from{transform:translate(0,0);}to{transform:translate(120px,80px);}}
+
+/* APP */
+.app{
+  position:relative;
+  z-index:1;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px;
+}
+
+.card{
+  width:100%;
+  max-width:760px;
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-soft);
+  padding:44px;
+  display:flex;
+  flex-direction:column;
+  gap:36px;
+  animation:cardDrop .9s cubic-bezier(.2,1,.3,1);
+}
+@keyframes cardDrop{from{opacity:0;transform:translateY(60px);}to{opacity:1;transform:translateY(0);}}
+
+/* HEADER */
+.brand{font-size:13px;letter-spacing:1.8px;text-transform:uppercase;color:var(--accent);}
+.title{font-size:clamp(30px,4vw,42px);font-weight:900;}
+.subtitle{max-width:520px;color:var(--ink-soft);}
+
+/* PROGRESS */
+.progress{height:2px;background:var(--line);}
+.progress-bar{height:100%;width:0%;background:var(--accent);transition:.6s;}
+
+/* STEPS */
+.steps{position:relative;min-height:260px;overflow:hidden;}
+.step{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(40px);
+  transition:.6s cubic-bezier(.3,1,.3,1);
+}
+.step.active{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.question{font-size:24px;font-weight:800;margin-bottom:18px;}
+
+input,select,textarea{
+  width:100%;
+  padding:18px 20px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--line);
+  background:#fafafe;
+  font-size:16px;
+}
+textarea{min-height:140px;resize:vertical;}
+
+/* BUTTONS */
+.actions{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+}
+button{
+  padding:16px 34px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+}
+.back{background:transparent;color:var(--ink-soft);}
+.next{background:var(--accent);color:white;box-shadow:0 10px 30px rgba(91,108,255,.35);}
+.next:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover);}
+
+/* SUMMARY */
+.summary{
+  padding:22px;
+  background:#fafafe;
+  border-radius:var(--radius-md);
+  border:1px solid var(--line);
+  color:var(--ink-soft);
+  white-space:pre-wrap;
+}
+
+/* GENERATION */
+.gen-wrapper{width:100%;display:flex;flex-direction:column;gap:16px;}
+.code-loader{
+  width:100%;
+  height:200px;
+  background:#0f1222;
+  color:#5bffb1;
+  font-family:monospace;
+  font-size:13px;
+  padding:16px;
+  border-radius:12px;
+  overflow:auto;
+  white-space:pre-wrap;
+}
+.gen-text{
+  font-weight:700;
+  color:var(--ink-soft);
+  animation:pulseText 1.6s infinite;
+}
+@keyframes pulseText{0%,100%{opacity:.4;}50%{opacity:1;}}
+
+@media(max-width:600px){
+  .card{padding:26px;}
+  .actions{flex-direction:column;}
+  button{width:100%;}
+}
+</style>
+</head>
+
+<body>
+<div class="bg-blob one"></div>
+<div class="bg-blob two"></div>
+
+<div class="app">
+<div class="card">
+
+<div class="brand">CodeMon Generator</div>
+<div class="title">Create your file</div>
+<div class="subtitle">Minimal questions. Maximum clarity.</div>
+
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+
+<div class="steps">
+  <div class="step active">
+    <div class="question">What’s the file name?</div>
+    <input id="name" placeholder="index">
+  </div>
+
+  <div class="step">
+    <div class="question">Choose file type</div>
+    <select id="type">
+      <option>html</option>
+      <option>css</option>
+      <option>js</option>
+      <option>json</option>
+      <option>txt</option>
+    </select>
+  </div>
+
+  <div class="step">
+    <div class="question">Describe the website</div>
+    <textarea id="prompt"></textarea>
+  </div>
+
+  <div class="step">
+    <div class="question">Summary</div>
+    <div class="summary" id="summary"></div>
+  </div>
+
+  <div class="step">
+    <div class="question">Generating</div>
+    <div class="gen-wrapper">
+      <div id="codeLoader" class="code-loader"></div>
+      <div class="gen-text">Generating code while fetching from Code Mon AI…</div>
+    </div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="back" id="back">Back</button>
+  <button class="next" id="next">Next</button>
+</div>
+
+</div>
+</div>
+
+<script>
+  const name = document.getElementById("name");
+const type = document.getElementById("type");
+const prompt = document.getElementById("prompt");
+const summary = document.getElementById("summary");
+let i = 0;
+let currentFileName = "";
+let currentFileType = "";
+
+const steps = document.querySelectorAll(".step");
+const bar = document.getElementById("bar");
+const loaderBox = document.getElementById("codeLoader");
+
+function update(){
+  steps.forEach((s,x)=>s.classList.toggle("active",x===i));
+  bar.style.width=(i/4)*100+"%";
+
+  if(i===3){
+    summary.textContent =
+`Name: ${currentFileName}
+Type: ${currentFileType}
+
+Prompt:
+${prompt.value}`;
+  }
+
+  if(i===4) startGeneration();
+}
+
+next.onclick = () => {
+  if(i===0) currentFileName = name.value.trim();
+  if(i===1) currentFileType = type.value;
+  if(i<4){ i++; update(); }
+};
+
+back.onclick = () => {
+  if(i>0){ i--; update(); }
+};
+
+function typeLoader(){
+  loaderBox.textContent="";
+  const chars="{}[]<>/=abcdefghijklmnopqrstuvwxyz".split("");
+  return setInterval(()=>{
+    loaderBox.textContent+=chars[Math.floor(Math.random()*chars.length)];
+    loaderBox.scrollTop=loaderBox.scrollHeight;
+  },30);
+}
+
+async function startGeneration(){
+  const user = localStorage.getItem("code-mon-username");
+  const pass = localStorage.getItem("code-mon-pass");
+
+  if(!currentFileName || !currentFileType){
+    loaderBox.textContent="Error: Missing filename or type.";
+    return;
+  }
+
+  const interval = typeLoader();
+
+  const aiPrompt = `Return ONLY raw HTML code.
+Do NOT include \`\`\`, html\`\`\`, js\`\`\`, css\`\`\`, or any wrappers.
+ONLY return the pure file content:
+also if you are asked to give java script or css or json code or text file then only give.
+
+For HTML requests:
+You are Code Mon.
+Output only raw HTML code.
+The HTML must include inline CSS and inline JavaScript in the same file.
+Do not place CSS or JavaScript in external files.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the full HTML file exactly as it should appear.
+
+For JS requests:
+You are Code Mon.
+Output only raw JavaScript code.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the code.
+
+For CSS requests:
+You are Code Mon.
+Output only raw CSS code.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the code.
+
+For JSON requests:
+You are Code Mon.
+Output only raw JSON.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only valid JSON.
+
+For TXT requests:
+You are Code Mon.
+Output only raw text.
+Do not use code blocks.
+Do not include backticks.
+Do not include comments.
+Do not include explanations.
+Do not escape newlines.
+Output only the plain text.
+ 
+ must use Code Mon Data Storage (DS) for any persistence: first decide whether the data is public/non-sensitive (use Code Mon SIMPLE DS) or secure/authentication/validation-related (use Code Mon PROTECTED DS), then persist and retrieve data only via Code Mon DS HTTP JSON APIs (never local variables or files); SIMPLE DS uses POST https://code-mon.codemon.workers.dev/api/pb-api?method=POST&username=${user}&name=KEY&value=VALUE to store and GET https://code-mon.codemon.workers.dev/api/pb-api?method=GET&username=${user}&name=KEY to fetch, while PROTECTED DS uses https://code-mon.codemon.workers.dev/api/pro-api-deploy?username=${user}&text=KEY&value=VALUE to store secrets and https://code-mon.codemon.workers.dev/api/pro-api?username=${user}&key=KEY&value=VALUE to validate, with all responses handled as JSON and success/failure explicitly managed.
+ the file type is ${currentFileType} and the question is: ${prompt.value} `;
+
+  const res = await fetch(
+    `https://code-mon.codemon.workers.dev/api/code-mon-ai?question=${encodeURIComponent(aiPrompt)}`
+  );
+  let data = await res.json();
+  const code = data.answer;
+
+  clearInterval(interval);
+  loaderBox.textContent = code;
+
+  const saveName = `${currentFileName}.${currentFileName}`;
+
+  await fetch(`https://code-mon.codemon.workers.dev/api/save`,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      user,
+      pass,
+      filename: saveName,
+      content: code
+    })
+  });
+
+  loaderBox.textContent += `
+
+✔ Saved successfully
+✔ Live at:
+https://code-mon-space.pages.dev/@me?user=${user}&filename=${currentFileName}.${currentFileType}`;
+}
+
+update();
+</script>
+</body>
+  </html>
