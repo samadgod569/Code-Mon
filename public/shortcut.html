@@ -391,7 +391,7 @@ Output only the plain text.
   clearInterval(interval);
   loaderBox.textContent = code;
 
-  const saveName = `${currentFileName}.${currentFileName}`;
+  const saveName = `${currentFileName}.${currentFileType}`;
 
   await fetch(`https://code-mon.codemon.workers.dev/api/save`,{
     method:"POST",
