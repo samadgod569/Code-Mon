@@ -131,12 +131,12 @@ if (path === "/api/ai-get") {
   });
 }
 
- if (path === "/api/engine") {
+ 
+if (path === "/api/engine") {
 
   /* ---------------- CORS ---------------- */
   
 
-  // Handle OPTIONS preflight
   if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -199,14 +199,6 @@ if (path === "/api/ai-get") {
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-  const safeExpr = (expr, ctx) => {
-    // extremely limited expression support
-    return Function(
-      ...Object.keys(ctx),
-      `"use strict"; return (${expr})`
-    )(...Object.values(ctx));
-  };
-
   /* ---------------- OPERATIONS ---------------- */
   const OPS = {
     set({ path, value }) { set(state, path, value); },
@@ -217,14 +209,16 @@ if (path === "/api/ai-get") {
     fs_read({ path, into }) { set(state, into, FS[path]?.value ?? null); },
     store_set({ ns, key, value }) { STORE[ns] ??= {}; STORE[ns][key] = value; },
     store_get({ ns, key, into }) { set(state, into, STORE[ns]?.[key] ?? null); },
-    calc({ expr, into }) { set(state, into, safeExpr(expr, state)); },
-    if: async ({ cond, then = [], else: other = [] }) => {
-      const res = safeExpr(cond, state);
-      await run(res ? then : other);
+
+    // SAFE conditional check
+    if_name_exists: async ({ then = [], else: other = [] }) => {
+      await run(state.name && state.name.trim() !== '' ? then : other);
     },
+
     repeat: async ({ times, do: body }) => {
       for (let i = 0; i < times; i++) await run(body);
     },
+
     fetch: async ({ url, into }) => {
       const res = await fetch(url);
       set(state, into, await res.text());
@@ -257,8 +251,7 @@ if (path === "/api/ai-get") {
       logs
     }), { status: 500, headers: corsHeaders });
   }
-    }
-
+  }
 
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
