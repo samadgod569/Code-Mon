@@ -133,38 +133,56 @@ if (path === "/api/ai-get") {
 
  if (path === "/api/engine") {
 
-  /* ---------------- SECURITY ---------------- */
+  /* ---------------- CORS ---------------- */
+  
 
+  // Handle OPTIONS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  /* ---------------- SECURITY ---------------- */
   const key = request.headers.get("x-api-key");
   const master = await env.FILES.get("MASTER_KEY", { type: "text" });
 
   if (!master || key !== master) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 403,
+      headers: corsHeaders
+    });
   }
 
   if (request.method !== "POST") {
-    return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
+    return new Response(JSON.stringify({ error: "POST only" }), {
+      status: 405,
+      headers: corsHeaders
+    });
   }
 
   let body;
   try { body = await request.json(); }
-  catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
+  catch { 
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
 
   const steps = body.steps;
   if (!Array.isArray(steps)) {
-    return new Response(JSON.stringify({ error: "steps[] required" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "steps[] required" }), {
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   /* ---------------- CORE STATE ---------------- */
-
   const state = structuredClone(body.input ?? {});
   const logs = [];
-
   const FS = {};
   const STORE = {};
 
   /* ---------------- HELPERS ---------------- */
-
   const get = (obj, path) =>
     path.split(".").reduce((o, k) => o?.[k], obj);
 
@@ -190,57 +208,23 @@ if (path === "/api/ai-get") {
   };
 
   /* ---------------- OPERATIONS ---------------- */
-
   const OPS = {
-
-    set({ path, value }) {
-      set(state, path, value);
-    },
-
-    add({ path, value }) {
-      set(state, path, (get(state, path) ?? 0) + value);
-    },
-
-    log({ msg }) {
-      logs.push(String(msg));
-    },
-
-    sleep: async ({ ms }) => {
-      await sleep(ms);
-    },
-
-    fs_write({ path, value }) {
-      FS[path] = { value, at: Date.now() };
-    },
-
-    fs_read({ path, into }) {
-      set(state, into, FS[path]?.value ?? null);
-    },
-
-    store_set({ ns, key, value }) {
-      STORE[ns] ??= {};
-      STORE[ns][key] = value;
-    },
-
-    store_get({ ns, key, into }) {
-      set(state, into, STORE[ns]?.[key] ?? null);
-    },
-
-    calc({ expr, into }) {
-      set(state, into, safeExpr(expr, state));
-    },
-
+    set({ path, value }) { set(state, path, value); },
+    add({ path, value }) { set(state, path, (get(state, path) ?? 0) + value); },
+    log({ msg }) { logs.push(String(msg)); },
+    sleep: async ({ ms }) => { await sleep(ms); },
+    fs_write({ path, value }) { FS[path] = { value, at: Date.now() }; },
+    fs_read({ path, into }) { set(state, into, FS[path]?.value ?? null); },
+    store_set({ ns, key, value }) { STORE[ns] ??= {}; STORE[ns][key] = value; },
+    store_get({ ns, key, into }) { set(state, into, STORE[ns]?.[key] ?? null); },
+    calc({ expr, into }) { set(state, into, safeExpr(expr, state)); },
     if: async ({ cond, then = [], else: other = [] }) => {
       const res = safeExpr(cond, state);
       await run(res ? then : other);
     },
-
     repeat: async ({ times, do: body }) => {
-      for (let i = 0; i < times; i++) {
-        await run(body);
-      }
+      for (let i = 0; i < times; i++) await run(body);
     },
-
     fetch: async ({ url, into }) => {
       const res = await fetch(url);
       set(state, into, await res.text());
@@ -248,7 +232,6 @@ if (path === "/api/ai-get") {
   };
 
   /* ---------------- EXECUTOR ---------------- */
-
   const run = async steps => {
     for (const step of steps) {
       const fn = OPS[step.op];
@@ -258,24 +241,25 @@ if (path === "/api/ai-get") {
   };
 
   /* ---------------- RUN ---------------- */
-
   try {
     await run(steps);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       state,
       logs,
       fs: FS,
       store: STORE
-    });
+    }), { headers: corsHeaders });
   } catch (e) {
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: String(e),
       logs
-    }, { status: 500 });
+    }), { status: 500, headers: corsHeaders });
   }
-  }   
+    }
+
+
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
