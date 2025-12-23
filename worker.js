@@ -356,7 +356,7 @@ if (path === "/api/ai-get") {
           error: String(err),
           logs
         }),
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json",  ...corsHeaders } }
       );
     }
       }
