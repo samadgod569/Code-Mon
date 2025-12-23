@@ -131,263 +131,151 @@ if (path === "/api/ai-get") {
   });
 }
 
-    if (path === "/api/worker-vm") {
+ if (path === "/api/engine") {
 
-  // Require API key
-  const suppliedKey = request.headers.get("x-api-key");
-  const storedKey = await env.FILES.get("MASTER_KEY", { type: "text" });
+  /* ---------------- SECURITY ---------------- */
 
-  if (!storedKey) {
-    return json({
-      error: "VM API key not configured in KV"
-    }, 500);
+  const key = request.headers.get("x-api-key");
+  const master = await env.FILES.get("MASTER_KEY", { type: "text" });
+
+  if (!master || key !== master) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
   }
 
-  if (suppliedKey !== storedKey) {
-    return json({
-      error: "Invalid or missing API key"
-    }, 403);
+  if (request.method !== "POST") {
+    return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
   }
 
-  // -------- VM LEVEL 2 (DROP-IN READY) ----------
+  let body;
+  try { body = await request.json(); }
+  catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
 
-    if (request.method !== "POST") {
-      return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
-    }
-
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 });
-    }
-
-    const { scripts = [], input = null } = body;
-    if (!Array.isArray(scripts) || scripts.length === 0) {
-      return new Response(JSON.stringify({ error: "scripts[] required" }), { status: 400 });
-    }
-
-    // ------------------------------------------------
-    // LEVEL 2 — ADVANCED VM ENVIRONMENT
-    // ------------------------------------------------
-
-    // Virtual filesystem
-    const FS = {
-      _files: {},
-      write(path, content) {
-        const now = Date.now();
-        this._files[path] = { content, updated: now };
-      },
-      read(path) {
-        return this._files[path]?.content ?? null;
-      },
-      list() {
-        return Object.keys(this._files);
-      },
-      meta(path) {
-        return this._files[path] || null;
-      }
-    };
-
-    // Key-value STORE
-    const STORE = {
-      _db: {},
-      set(ns, key, val) {
-        if (!this._db[ns]) this._db[ns] = {};
-        this._db[ns][key] = val;
-      },
-      get(ns, key) {
-        return this._db[ns]?.[key] ?? null;
-      },
-      ns(ns) {
-        return this._db[ns] || {};
-      }
-    };
-
-    // Logs
-    const logs = [];
-    const consoleProxy = {
-      log: (...a) => logs.push(a.join(" ")),
-      error: (...a) => logs.push("ERROR: " + a.join(" ")),
-      warn: (...a) => logs.push("WARN: " + a.join(" "))
-    };
-
-    // delay()
-    const delay = (ms) => new Promise(r => setTimeout(r, ms));
-
-    // fakeFetch()
-    const fakeFetch = async (url, opts = {}) => {
-      await delay(60);
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({ url, opts, message: "Fake fetch success" }),
-        text: async () => "Fake fetch text"
-      };
-    };
-
-    // Events
-    const EVENT_BUS = {};
-    const emit = (name, data) => {
-      if (EVENT_BUS[name]) EVENT_BUS[name].forEach(cb => cb(data));
-    };
-    const on = (name, handler) => {
-      if (!EVENT_BUS[name]) EVENT_BUS[name] = [];
-      EVENT_BUS[name].push(handler);
-    };
-
-    // ------------------------------------------------
-    // LEVEL 2 ADDITIONS
-    // ------------------------------------------------
-
-    // 1) Timers
-    const timers = new Set();
-    const vmSetTimeout = (fn, ms) => {
-      const id = setTimeout(() => {
-        timers.delete(id);
-        fn();
-      }, ms);
-      timers.add(id);
-      return id;
-    };
-    const vmSetInterval = (fn, ms) => {
-      const id = setInterval(fn, ms);
-      timers.add(id);
-      return id;
-    };
-    const clearAllTimers = () => {
-      for (const id of timers) clearInterval(id);
-    };
-
-    // 2) Crypto Tools
-    const cryptoTools = {
-      uuid() {
-        return crypto.randomUUID();
-      },
-      rand(size = 16) {
-        const arr = new Uint8Array(size);
-        crypto.getRandomValues(arr);
-        return [...arr];
-      },
-      async hash(str) {
-        const enc = new TextEncoder().encode(str);
-        const digest = await crypto.subtle.digest("SHA-256", enc);
-        return [...new Uint8Array(digest)]
-          .map(b => b.toString(16).padStart(2, "0"))
-          .join("");
-      }
-    };
-
-    // 3) Modules
-    const MODULES = {};
-    const defineModule = (name, exports) => {
-      MODULES[name] = exports;
-    };
-    const requireModule = (name) => {
-      if (!MODULES[name]) throw new Error(`Module '${name}' not found`);
-      return MODULES[name];
-    };
-
-    // 4) Snapshot / Rollback
-    const snapshot = () =>
-      JSON.stringify({ FS: FS._files, STORE: STORE._db });
-
-    const rollback = (snap) => {
-      const data = JSON.parse(snap);
-      FS._files = data.FS;
-      STORE._db = data.STORE;
-    };
-
-    // 5) Timeout protection
-    const MAX_EXEC_TIME = 1500;
-    const startTime = Date.now();
-    const checkTimeout = () => {
-      if (Date.now() - startTime > MAX_EXEC_TIME) {
-        throw new Error("VM Timeout: script exceeded execution limit");
-      }
-    };
-
-    // ------------------------------------------------
-    // EXECUTOR
-    // ------------------------------------------------
-
-    const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-
-    let state = input;
-
-    try {
-      for (let i = 0; i < scripts.length; i++) {
-        checkTimeout();
-
-        const code = scripts[i];
-
-        const func = new AsyncFunction(
-          "state", "FS", "STORE", "fetch", "console", "delay",
-          "emit", "on", "setTimeout", "setInterval",
-          "crypto", "require", "module", "snapshot", "rollback",
-          code
-        );
-
-        state = await func(
-          state, FS, STORE, fakeFetch, consoleProxy, delay,
-          emit, on, vmSetTimeout, vmSetInterval,
-          cryptoTools, requireModule, defineModule, snapshot, rollback
-        );
-      }
-
-      clearAllTimers();
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          result: state,
-          logs,
-          fs: FS._files,
-          store: STORE._db
-        }),
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-    } catch (err) {
-      clearAllTimers();
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: String(err),
-          logs
-        }),
-        { headers: { "Content-Type": "application/json",  ...corsHeaders } }
-      );
-    }
-      }
-   // ---------------------------------------------------------
-// /api/saveDeploy
-// ---------------------------------------------------------
-if (path === "/api/saveDeploy") {
-  const user = url.searchParams.get("user");
-  const filename = url.searchParams.get("filename");
-
-  if (!user || !filename) {
-    return new Response("Missing user or filename", { status: 400 });
+  const steps = body.steps;
+  if (!Array.isArray(steps)) {
+    return new Response(JSON.stringify({ error: "steps[] required" }), { status: 400 });
   }
 
-  // JUST CALL /api/load
-  const res = await fetch(
-    `https://code-mon.codemon.workers.dev/api/load?user=${user}&filename=${filename}`
-  );
+  /* ---------------- CORE STATE ---------------- */
 
-  // RETURN EXACTLY WHAT /api/load RETURNS
-  const text = await res.text();
+  const state = structuredClone(body.input ?? {});
+  const logs = [];
 
-  return new Response(text, {
-    status: res.status,
-    headers: {
-      "Content-Type": "text/plain",
-      "Access-Control-Allow-Origin": "*"
+  const FS = {};
+  const STORE = {};
+
+  /* ---------------- HELPERS ---------------- */
+
+  const get = (obj, path) =>
+    path.split(".").reduce((o, k) => o?.[k], obj);
+
+  const set = (obj, path, val) => {
+    const keys = path.split(".");
+    let cur = obj;
+    while (keys.length > 1) {
+      const k = keys.shift();
+      cur[k] ??= {};
+      cur = cur[k];
     }
-  });
-} 
+    cur[keys[0]] = val;
+  };
 
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  const safeExpr = (expr, ctx) => {
+    // extremely limited expression support
+    return Function(
+      ...Object.keys(ctx),
+      `"use strict"; return (${expr})`
+    )(...Object.values(ctx));
+  };
+
+  /* ---------------- OPERATIONS ---------------- */
+
+  const OPS = {
+
+    set({ path, value }) {
+      set(state, path, value);
+    },
+
+    add({ path, value }) {
+      set(state, path, (get(state, path) ?? 0) + value);
+    },
+
+    log({ msg }) {
+      logs.push(String(msg));
+    },
+
+    sleep: async ({ ms }) => {
+      await sleep(ms);
+    },
+
+    fs_write({ path, value }) {
+      FS[path] = { value, at: Date.now() };
+    },
+
+    fs_read({ path, into }) {
+      set(state, into, FS[path]?.value ?? null);
+    },
+
+    store_set({ ns, key, value }) {
+      STORE[ns] ??= {};
+      STORE[ns][key] = value;
+    },
+
+    store_get({ ns, key, into }) {
+      set(state, into, STORE[ns]?.[key] ?? null);
+    },
+
+    calc({ expr, into }) {
+      set(state, into, safeExpr(expr, state));
+    },
+
+    if: async ({ cond, then = [], else: other = [] }) => {
+      const res = safeExpr(cond, state);
+      await run(res ? then : other);
+    },
+
+    repeat: async ({ times, do: body }) => {
+      for (let i = 0; i < times; i++) {
+        await run(body);
+      }
+    },
+
+    fetch: async ({ url, into }) => {
+      const res = await fetch(url);
+      set(state, into, await res.text());
+    }
+  };
+
+  /* ---------------- EXECUTOR ---------------- */
+
+  const run = async steps => {
+    for (const step of steps) {
+      const fn = OPS[step.op];
+      if (!fn) throw new Error(`Unknown op: ${step.op}`);
+      await fn(step);
+    }
+  };
+
+  /* ---------------- RUN ---------------- */
+
+  try {
+    await run(steps);
+    return Response.json({
+      success: true,
+      state,
+      logs,
+      fs: FS,
+      store: STORE
+    });
+  } catch (e) {
+    return Response.json({
+      success: false,
+      error: String(e),
+      logs
+    }, { status: 500 });
+  }
+  }   
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
