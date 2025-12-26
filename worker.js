@@ -132,126 +132,6 @@ if (path === "/api/ai-get") {
 }
 
  
-if (path === "/api/engine") {
-
-  /* ---------------- CORS ---------------- */
-  
-
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  /* ---------------- SECURITY ---------------- */
-  const key = request.headers.get("x-api-key");
-  const master = await env.FILES.get("MASTER_KEY", { type: "text" });
-
-  if (!master || key !== master) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 403,
-      headers: corsHeaders
-    });
-  }
-
-  if (request.method !== "POST") {
-    return new Response(JSON.stringify({ error: "POST only" }), {
-      status: 405,
-      headers: corsHeaders
-    });
-  }
-
-  let body;
-  try { body = await request.json(); }
-  catch { 
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: corsHeaders
-    });
-  }
-
-  const steps = body.steps;
-  if (!Array.isArray(steps)) {
-    return new Response(JSON.stringify({ error: "steps[] required" }), {
-      status: 400,
-      headers: corsHeaders
-    });
-  }
-
-  /* ---------------- CORE STATE ---------------- */
-  const state = structuredClone(body.input ?? {});
-  const logs = [];
-  const FS = {};
-  const STORE = {};
-
-  /* ---------------- HELPERS ---------------- */
-  const get = (obj, path) =>
-    path.split(".").reduce((o, k) => o?.[k], obj);
-
-  const set = (obj, path, val) => {
-    const keys = path.split(".");
-    let cur = obj;
-    while (keys.length > 1) {
-      const k = keys.shift();
-      cur[k] ??= {};
-      cur = cur[k];
-    }
-    cur[keys[0]] = val;
-  };
-
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-  /* ---------------- OPERATIONS ---------------- */
-  const OPS = {
-    set({ path, value }) { set(state, path, value); },
-    add({ path, value }) { set(state, path, (get(state, path) ?? 0) + value); },
-    log({ msg }) { logs.push(String(msg)); },
-    sleep: async ({ ms }) => { await sleep(ms); },
-    fs_write({ path, value }) { FS[path] = { value, at: Date.now() }; },
-    fs_read({ path, into }) { set(state, into, FS[path]?.value ?? null); },
-    store_set({ ns, key, value }) { STORE[ns] ??= {}; STORE[ns][key] = value; },
-    store_get({ ns, key, into }) { set(state, into, STORE[ns]?.[key] ?? null); },
-
-    // SAFE conditional check
-    if_name_exists: async ({ then = [], else: other = [] }) => {
-      await run(state.name && state.name.trim() !== '' ? then : other);
-    },
-
-    repeat: async ({ times, do: body }) => {
-      for (let i = 0; i < times; i++) await run(body);
-    },
-
-    fetch: async ({ url, into }) => {
-      const res = await fetch(url);
-      set(state, into, await res.text());
-    }
-  };
-
-  /* ---------------- EXECUTOR ---------------- */
-  const run = async steps => {
-    for (const step of steps) {
-      const fn = OPS[step.op];
-      if (!fn) throw new Error(`Unknown op: ${step.op}`);
-      await fn(step);
-    }
-  };
-
-  /* ---------------- RUN ---------------- */
-  try {
-    await run(steps);
-    return new Response(JSON.stringify({
-      success: true,
-      state,
-      logs,
-      fs: FS,
-      store: STORE
-    }), { headers: corsHeaders });
-  } catch (e) {
-    return new Response(JSON.stringify({
-      success: false,
-      error: String(e),
-      logs
-    }), { status: 500, headers: corsHeaders });
-  }
-  }
 
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
@@ -283,7 +163,270 @@ if (path === "/api/img-save") {
 }
 
 
+if (path === "/api/engine") {
 
+
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  /* ---------------- SECURITY ---------------- */
+  const key = request.headers.get("x-api-key");
+  const master = "CODE-MON";
+
+  if (!master || key !== master) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 403,
+      headers: corsHeaders
+    });
+  }
+
+  if (request.method !== "POST") {
+    return new Response(JSON.stringify({ error: "POST only" }), {
+      status: 405,
+      headers: corsHeaders
+    });
+  }
+
+  let body;
+  try { body = await request.json(); }
+  catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  const steps = body.steps;
+  if (!Array.isArray(steps)) {
+    return new Response(JSON.stringify({ error: "steps[] required" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  /* ---------------- STATE ---------------- */
+  const state = structuredClone(body.input ?? {});
+  const logs = [];
+
+  /* ---------------- HELPERS ---------------- */
+  const get = (obj, path) =>
+    path.split(".").reduce((o, k) => o?.[k], obj);
+
+  const set = (obj, path, val) => {
+    const keys = path.split(".");
+    let cur = obj;
+    while (keys.length > 1) {
+      const k = keys.shift();
+      cur[k] ??= {};
+      cur = cur[k];
+    }
+    cur[keys[0]] = val;
+  };
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  /* ---------------- OPS ---------------- */
+  const OPS = {
+
+    /* ---- BASIC ---- */
+    set({ path, value }) { set(state, path, value); },
+    log({ msg }) { logs.push(String(msg)); },
+    warn({ msg }) { logs.push("WARN: " + msg); },
+    error({ msg }) { throw new Error(msg); },
+
+    return({ value }) {
+      throw { __return: value };
+    },
+
+    noop() {},
+
+    clone({ from, into }) {
+      set(state, into, structuredClone(get(state, from)));
+    },
+
+    default({ path, value }) {
+      const v = get(state, path);
+      if (v === undefined || v === null || v === "") {
+        set(state, path, value);
+      }
+    },
+
+    assert({ condition, msg }) {
+      if (!get(state, condition)) {
+        throw new Error(msg || "Assertion failed");
+      }
+    },
+
+    /* ---- STRING ---- */
+    trim({ from, into }) {
+      set(state, into, String(get(state, from)).trim());
+    },
+
+    uppercase({ from, into }) {
+      set(state, into, String(get(state, from)).toUpperCase());
+    },
+
+    lowercase({ from, into }) {
+      set(state, into, String(get(state, from)).toLowerCase());
+    },
+
+    replace({ from, search, value, into }) {
+      set(state, into, String(get(state, from)).split(search).join(value));
+    },
+
+    split({ from, sep, into }) {
+      set(state, into, String(get(state, from)).split(sep));
+    },
+
+    concat({ into, values }) {
+      set(state, into, values.map(v => get(state, v) ?? v).join(""));
+    },
+
+    length({ from, into }) {
+      set(state, into, String(get(state, from)).length);
+    },
+
+    template({ text, into }) {
+      set(state, into,
+        text.replace(/\{\{(.*?)\}\}/g, (_, p) => get(state, p.trim()) ?? "")
+      );
+    },
+
+    /* ---- CHECKS ---- */
+    equals({ a, b, into }) {
+      set(state, into, get(state, a) === get(state, b));
+    },
+
+    is_uppercase({ from, into }) {
+      const v = String(get(state, from));
+      set(state, into, v === v.toUpperCase());
+    },
+
+    is_lowercase({ from, into }) {
+      const v = String(get(state, from));
+      set(state, into, v === v.toLowerCase());
+    },
+
+    regex_match({ from, pattern, into }) {
+      set(state, into, new RegExp(pattern).test(String(get(state, from))));
+    },
+
+    /* ---- MATH ---- */
+    to_number({ from, into }) {
+      set(state, into, Number(get(state, from)));
+    },
+
+    add({ a, b, into }) {
+      set(state, into, Number(get(state, a)) + Number(get(state, b)));
+    },
+
+    multiply({ a, b, into }) {
+      set(state, into, Number(get(state, a)) * Number(get(state, b)));
+    },
+
+    /* ---- CONDITIONS ---- */
+    if_equals: async ({ path, value, then = [], else: other = [] }) =>
+      await run(get(state, path) === value ? then : other),
+
+    if_not_equals: async ({ path, value, then = [], else: other = [] }) =>
+      await run(get(state, path) !== value ? then : other),
+
+    if_exists: async ({ path, then = [], else: other = [] }) =>
+      await run(get(state, path) ? then : other),
+
+    if_contains: async ({ path, value, then = [], else: other = [] }) =>
+      await run(String(get(state, path)).includes(value) ? then : other),
+
+    if_greater: async ({ a, b, then = [], else: other = [] }) =>
+      await run(Number(get(state, a)) > Number(get(state, b)) ? then : other),
+
+    /* ---- FLOW ---- */
+    repeat: async ({ times, do: body }) => {
+      for (let i = 0; i < times; i++) await run(body);
+    },
+
+    try: async ({ do: body, catch: catcher = [] }) => {
+      try { await run(body); }
+      catch { await run(catcher); }
+    },
+
+    /* ---- SAFE EXPRESSION (NO EVAL) ---- */
+    expr({ expr, into }) {
+      const blocked = /(constructor|function|=>|this|global|window|self|process|eval|new)/;
+      if (blocked.test(expr)) {
+        throw new Error("Unsafe expression");
+      }
+
+      const allowed = /^[\w\d\s.+\-*/<>=!&|()]+$/;
+      if (!allowed.test(expr)) {
+        throw new Error("Invalid characters in expression");
+      }
+
+      const vars = Object.keys(state);
+      const fn = new Function(...vars, `return (${expr});`);
+      const result = fn(...vars.map(k => state[k]));
+
+      set(state, into, result);
+    },
+
+    parallel: async ({ do: groups }) => {
+      await Promise.all(groups.map(g => run(g)));
+    },
+
+    /* ---- NETWORK ---- */
+    build_url({ base, params, into }) {
+      const q = new URLSearchParams();
+      for (const k in params) q.set(k, get(state, params[k]) ?? params[k]);
+      set(state, into, `${base}?${q}`);
+    },
+
+    fetch: async ({ url, method = "GET", headers = {}, body, into, json }) => {
+      const res = await fetch(get(state, url) ?? url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      set(state, into, json ? await res.json() : await res.text());
+    },
+
+    /* ---- CRYPTO ---- */
+    uuid({ into }) { set(state, into, crypto.randomUUID()); },
+
+    base64_encode({ from, into }) {
+      set(state, into, btoa(String(get(state, from))));
+    },
+
+    base64_decode({ from, into }) {
+      set(state, into, atob(String(get(state, from))));
+    },
+
+    /* ---- TIMING ---- */
+    sleep: async ({ ms }) => await sleep(ms)
+  };
+
+  /* ---------------- EXECUTOR ---------------- */
+  const run = async steps => {
+    for (const step of steps) {
+      const fn = OPS[step.op];
+      if (!fn) throw new Error(`Unknown op: ${step.op}`);
+      await fn(step);
+    }
+  };
+
+  /* ---------------- RUN ---------------- */
+  try {
+    await run(steps);
+    return new Response(JSON.stringify({ success: true, state, logs }), { headers: corsHeaders });
+
+  } catch (e) {
+    if (e?.__return !== undefined) {
+      return new Response(JSON.stringify({ success: true, result: e.__return, state, logs }), { headers: corsHeaders });
+    }
+    return new Response(JSON.stringify({ success: false, error: String(e), logs }), { status: 500, headers: corsHeaders });
+  }
+                        }
 // ---------------------------------------------------------
 // /api/code-mon-ai  → OpenRouter single response (KV KEY)
 // ---------------------------------------------------------
