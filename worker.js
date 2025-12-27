@@ -163,9 +163,10 @@ if (path === "/api/img-save") {
 }
 
 
-if (path === "/api/engine") {
+ if (path === "/api/engine") {
 
-
+  /* ---------------- CORS ---------------- */
+  
 
   if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -173,7 +174,7 @@ if (path === "/api/engine") {
 
   /* ---------------- SECURITY ---------------- */
   const key = request.headers.get("x-api-key");
-  const master = "CODE-MON";
+  const master = await env.FILES.get("MASTER_KEY", { type: "text" });
 
   if (!master || key !== master) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -198,9 +199,38 @@ if (path === "/api/engine") {
     });
   }
 
-  const steps = body.steps;
+  /* ---------------- INPUT ---------------- */
+  const { username, key: vmKey } = body;
+
+  if (!username || !vmKey) {
+    return new Response(JSON.stringify({ error: "username and key required" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  /* ---------------- LOAD STEPS FROM KV ---------------- */
+  const vmRaw = await env.VM.get(`${username}/${vmKey}`, { type: "text" });
+
+  if (!vmRaw) {
+    return new Response(JSON.stringify({ error: "VM not found" }), {
+      status: 404,
+      headers: corsHeaders
+    });
+  }
+
+  let steps;
+  try {
+    steps = JSON.parse(vmRaw);
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid VM JSON" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
   if (!Array.isArray(steps)) {
-    return new Response(JSON.stringify({ error: "steps[] required" }), {
+    return new Response(JSON.stringify({ error: "VM must contain steps[]" }), {
       status: 400,
       headers: corsHeaders
     });
@@ -236,10 +266,7 @@ if (path === "/api/engine") {
     warn({ msg }) { logs.push("WARN: " + msg); },
     error({ msg }) { throw new Error(msg); },
 
-    return({ value }) {
-      throw { __return: value };
-    },
-
+    return({ value }) { throw { __return: value }; },
     noop() {},
 
     clone({ from, into }) {
@@ -263,31 +290,24 @@ if (path === "/api/engine") {
     trim({ from, into }) {
       set(state, into, String(get(state, from)).trim());
     },
-
     uppercase({ from, into }) {
       set(state, into, String(get(state, from)).toUpperCase());
     },
-
     lowercase({ from, into }) {
       set(state, into, String(get(state, from)).toLowerCase());
     },
-
     replace({ from, search, value, into }) {
       set(state, into, String(get(state, from)).split(search).join(value));
     },
-
     split({ from, sep, into }) {
       set(state, into, String(get(state, from)).split(sep));
     },
-
     concat({ into, values }) {
       set(state, into, values.map(v => get(state, v) ?? v).join(""));
     },
-
     length({ from, into }) {
       set(state, into, String(get(state, from)).length);
     },
-
     template({ text, into }) {
       set(state, into,
         text.replace(/\{\{(.*?)\}\}/g, (_, p) => get(state, p.trim()) ?? "")
@@ -298,90 +318,38 @@ if (path === "/api/engine") {
     equals({ a, b, into }) {
       set(state, into, get(state, a) === get(state, b));
     },
-
     is_uppercase({ from, into }) {
       const v = String(get(state, from));
       set(state, into, v === v.toUpperCase());
     },
-
     is_lowercase({ from, into }) {
       const v = String(get(state, from));
       set(state, into, v === v.toLowerCase());
     },
 
-    regex_match({ from, pattern, into }) {
-      set(state, into, new RegExp(pattern).test(String(get(state, from))));
-    },
-
     /* ---- MATH ---- */
-    to_number({ from, into }) {
-      set(state, into, Number(get(state, from)));
-    },
-
     add({ a, b, into }) {
       set(state, into, Number(get(state, a)) + Number(get(state, b)));
     },
-
     multiply({ a, b, into }) {
       set(state, into, Number(get(state, a)) * Number(get(state, b)));
     },
 
     /* ---- CONDITIONS ---- */
-    if_equals: async ({ path, value, then = [], else: other = [] }) =>
-      await run(get(state, path) === value ? then : other),
-
-    if_not_equals: async ({ path, value, then = [], else: other = [] }) =>
-      await run(get(state, path) !== value ? then : other),
-
-    if_exists: async ({ path, then = [], else: other = [] }) =>
-      await run(get(state, path) ? then : other),
-
-    if_contains: async ({ path, value, then = [], else: other = [] }) =>
-      await run(String(get(state, path)).includes(value) ? then : other),
-
     if_greater: async ({ a, b, then = [], else: other = [] }) =>
       await run(Number(get(state, a)) > Number(get(state, b)) ? then : other),
 
-    /* ---- FLOW ---- */
-    repeat: async ({ times, do: body }) => {
-      for (let i = 0; i < times; i++) await run(body);
-    },
-
-    try: async ({ do: body, catch: catcher = [] }) => {
-      try { await run(body); }
-      catch { await run(catcher); }
-    },
-
-    /* ---- SAFE EXPRESSION (NO EVAL) ---- */
+    /* ---- SAFE EXPRESSION ---- */
     expr({ expr, into }) {
-      const blocked = /(constructor|function|=>|this|global|window|self|process|eval|new)/;
-      if (blocked.test(expr)) {
-        throw new Error("Unsafe expression");
-      }
-
-      const allowed = /^[\w\d\s.+\-*/<>=!&|()]+$/;
-      if (!allowed.test(expr)) {
-        throw new Error("Invalid characters in expression");
-      }
+      const blocked = /(constructor|function|=>|this|global|window|eval|new)/;
+      if (blocked.test(expr)) throw new Error("Unsafe expression");
 
       const vars = Object.keys(state);
-      const fn = new Function(...vars, `return (${expr});`);
-      const result = fn(...vars.map(k => state[k]));
-
-      set(state, into, result);
-    },
-
-    parallel: async ({ do: groups }) => {
-      await Promise.all(groups.map(g => run(g)));
+      const fn = new Function(...vars, `return (${expr})`);
+      set(state, into, fn(...vars.map(k => state[k])));
     },
 
     /* ---- NETWORK ---- */
-    build_url({ base, params, into }) {
-      const q = new URLSearchParams();
-      for (const k in params) q.set(k, get(state, params[k]) ?? params[k]);
-      set(state, into, `${base}?${q}`);
-    },
-
     fetch: async ({ url, method = "GET", headers = {}, body, into, json }) => {
       const res = await fetch(get(state, url) ?? url, {
         method,
@@ -391,19 +359,35 @@ if (path === "/api/engine") {
       set(state, into, json ? await res.json() : await res.text());
     },
 
-    /* ---- CRYPTO ---- */
-    uuid({ into }) { set(state, into, crypto.randomUUID()); },
-
-    base64_encode({ from, into }) {
-      set(state, into, btoa(String(get(state, from))));
-    },
-
-    base64_decode({ from, into }) {
-      set(state, into, atob(String(get(state, from))));
-    },
-
     /* ---- TIMING ---- */
-    sleep: async ({ ms }) => await sleep(ms)
+    sleep: async ({ ms }) => await sleep(ms),
+
+    /* ================= KV OPS ================= */
+
+    kv_check: async ({ username, key, value, into }) => {
+      if (!username || !key || !value) {
+        set(state, into, { success: false, error: "Missing username, key or value" });
+        return;
+      }
+      const stored = await env.PRO.get(`${username}/${key}`, { type: "text" });
+      set(state, into, stored ? { success: stored === value } : { success: false, error: "Key not found" });
+    },
+
+    kv_auth: async ({ username, pass, into }) => {
+      const stored = await env.Pass.get(username, { type: "text" });
+      if (!stored) return set(state, into, { success: false, error: "Username not found" });
+      set(state, into, { success: stored === pass });
+    },
+
+    kv_write_read: async ({ username, method, name, value, into }) => {
+      if (method === "POST") {
+        await env.API.put(`${username}/${name}`, value);
+        set(state, into, { success: true });
+      } else {
+        const v = await env.API.get(`${username}/${name}`, { type: "text" });
+        set(state, into, { success: v !== null, value: v });
+      }
+    }
   };
 
   /* ---------------- EXECUTOR ---------------- */
@@ -419,14 +403,92 @@ if (path === "/api/engine") {
   try {
     await run(steps);
     return new Response(JSON.stringify({ success: true, state, logs }), { headers: corsHeaders });
-
   } catch (e) {
     if (e?.__return !== undefined) {
       return new Response(JSON.stringify({ success: true, result: e.__return, state, logs }), { headers: corsHeaders });
     }
     return new Response(JSON.stringify({ success: false, error: String(e), logs }), { status: 500, headers: corsHeaders });
   }
-                        }
+      }  
+    // ---------------------------------------------------------
+// /api/engine-add → Securely add/update VM steps
+// ---------------------------------------------------------
+if (path === "/api/engine-add") {
+
+  /* ---------------- CORS ---------------- */
+  
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== "POST") {
+    return new Response(JSON.stringify({ error: "POST only" }), {
+      status: 405,
+      headers: corsHeaders
+    });
+  }
+
+  /* ---------------- BODY ---------------- */
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  const { username, pass, key, steps } = body;
+
+  if (!username || !pass || !key || !Array.isArray(steps)) {
+    return new Response(JSON.stringify({
+      error: "username, pass, key and steps[] required"
+    }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  /* ---------------- AUTH ---------------- */
+  const storedPass = await env.Pass.get(username, { type: "text" });
+
+  if (!storedPass) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: "Username not found"
+    }), {
+      status: 404,
+      headers: corsHeaders
+    });
+  }
+
+  if (storedPass !== pass) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: "Incorrect password"
+    }), {
+      status: 403,
+      headers: corsHeaders
+    });
+  }
+
+  /* ---------------- STORE VM ---------------- */
+  await env.VM.put(
+    `${username}/${key}`,
+    JSON.stringify(steps)
+  );
+
+  return new Response(JSON.stringify({
+    success: true,
+    message: "VM saved successfully",
+    vm: `${username}/${key}`,
+    stepCount: steps.length
+  }), {
+    headers: corsHeaders
+  });
+      }
 // ---------------------------------------------------------
 // /api/code-mon-ai  → OpenRouter single response (KV KEY)
 // ---------------------------------------------------------
