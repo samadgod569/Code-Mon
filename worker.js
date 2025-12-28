@@ -48,7 +48,61 @@ const corsHeaders = {
       return new Response(`AI ${name} created successfully!`);
     }
 
+    // APP ORIGIN FOR THE SPACE
     
+if (path === "/api/engine") {
+
+  // ---------- POST : SAVE MANIFEST ----------
+  if (req.method === "POST") {
+    let body;
+
+    try {
+      body = await req.json();
+    } catch {
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
+    const { user, pass, name, manifest } = body;
+
+    if (!user || !pass || !name || !manifest) {
+      return new Response("Missing fields", { status: 400 });
+    }
+
+    const storedPass = await env.Pass.get(user);
+
+    if (!storedPass || storedPass !== pass) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    await env.APP.put(name, JSON.stringify(manifest));
+
+    return new Response(
+      JSON.stringify({ success: true }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // ---------- GET : FETCH MANIFEST ----------
+  if (req.method === "GET") {
+    const name = new URL(req.url).searchParams.get("name");
+
+    if (!name) {
+      return new Response("Missing name", { status: 400 });
+    }
+
+    const manifest = await env.APP.get(name);
+
+    if (!manifest) {
+      return new Response("Not Found", { status: 404 });
+    }
+
+    return new Response(manifest, {
+      headers: { "Content-Type": "application/manifest+json" }
+    });
+  }
+
+  return new Response("Method Not Allowed", { status: 405 });
+}
 
     // ---------------------------
     // Get AI response (Gemini)
