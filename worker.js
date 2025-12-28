@@ -50,7 +50,7 @@ const corsHeaders = {
 
     // APP ORIGIN FOR THE SPACE
     
-if (path === "/api/engine") {
+if (path === "/api/app") {
 
   // ---------- POST : SAVE MANIFEST ----------
   if (req.method === "POST") {
