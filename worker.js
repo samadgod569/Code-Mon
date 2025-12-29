@@ -1080,8 +1080,8 @@ if (path === "/api/save") {
       } catch {
         return json({ error: "Invalid JSON body" }, 400);
       }
-
-      const { user, filename } = body;
+const filename = "manifest.json";
+      const { user } = body;
       if (!user || !filename)
         return json({ error: "Missing params" }, 400);
 
@@ -1090,7 +1090,7 @@ if (path === "/api/save") {
       if (!stored)
         return json({ error: "File not found" }, 404);
 
-      await env.FILES.put(`public/${user}/${filename}`, stored);
+      await env.FILES.put(`${user}/${filename}`, stored);
 
       const githubToken = await env.FILES.get("GITHUB_TOKEN", { type: "text" });
 
