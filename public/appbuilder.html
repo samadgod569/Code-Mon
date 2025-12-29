@@ -219,7 +219,13 @@ self.addEventListener("fetch", event => {
   );
 });
 `);
-
+await fetch("https://code-mon.codemon.workers.dev/api/deploy", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    user: username
+  })
+});
   buildBtn.textContent = "Done ✔";
   installNow.style.display = "block";
 }
