@@ -1096,8 +1096,8 @@ const filename = "manifest.json";
 
       if (!githubToken)
         return json({ error: "GitHub token missing in KV" }, 500);
-
-      const githubApiUrl = `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${user}/${filename}`;
+const real = `${user}_${filename}`;
+      const githubApiUrl = `https://api.github.com/repos/samadgod569/Code-Mon-space/contents/public/${real}`;
 
       // Check if exists
       let fileSha = null;
@@ -1116,7 +1116,7 @@ const filename = "manifest.json";
       } catch {}
 
       const uploadBody = {
-        message: `Deploy ${user}/${filename}`,
+        message: `Deploy ${real}`,
         content: btoa(unescape(encodeURIComponent(stored))), // UTF-8 safe
         branch: "main",
         ...(fileSha ? { sha: fileSha } : {})
@@ -1147,7 +1147,7 @@ const filename = "manifest.json";
 
       return json({
         success: true,
-        url: `https://code-mon.codemon.workers.dev/public/${user}/${filename}`,
+        url: `https://code-mon.codemon.workers.dev/public/${real}`,
         github: ghJson.content?.html_url ?? null
       });
     }
