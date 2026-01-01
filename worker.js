@@ -1085,12 +1085,13 @@ const filename = "manifest.json";
       if (!user || !filename)
         return json({ error: "Missing params" }, 400);
 
-      const stored = await env.FILES.get(`${user}/${filename}`, { type: "text" });
-
+      let stored = await env.APP.get(user, { type: "text" });
+stored = stored.split("*");
+      stored = JSON.parse(stored[1].replace(/\\"/g, '"'));
       if (!stored)
         return json({ error: "File not found" }, 404);
 
-      await env.FILES.put(`${user}/${filename}`, stored);
+      
 
       const githubToken = await env.FILES.get("GITHUB_TOKEN", { type: "text" });
 
