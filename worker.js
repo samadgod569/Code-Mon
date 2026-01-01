@@ -1085,9 +1085,8 @@ const filename = "manifest.json";
       if (!user || !filename)
         return json({ error: "Missing params" }, 400);
 
-      let stored = await env.APP.get(user, { type: "text" });
-stored = stored.split("*");
-      stored = JSON.parse(stored[1].replace(/\\"/g, '"'));
+      const stored = await env.FILES.get(`${user}/${filename}`, { type: "text" });
+
       if (!stored)
         return json({ error: "File not found" }, 404);
 
