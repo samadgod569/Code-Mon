@@ -1,3 +1,27 @@
+const encoder = new TextEncoder();
+
+async function hashPassword(password, salt) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"]
+  );
+
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100_000,
+      hash: "SHA-256",
+    },
+    key,
+    256
+  );
+
+  return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -1033,43 +1057,60 @@ if (path === "/api/save") {
     // ---------------------------
     // LOGIN
     // ---------------------------
-    if (path === "/api/pass") {
-      const username = url.searchParams.get("username");
-      const pass = url.searchParams.get("pass");
+if (path === "/api/pass") {
+  const username = url.searchParams.get("username");
+  const pass = url.searchParams.get("pass");
 
-      if (!username || !pass)
-        return json({ success: false, error: "Missing username or password" }, 400);
+  if (!username || !pass)
+    return json({ success: false, error: "Missing username or password" }, 400);
 
-      const storedPass = await env.Pass.get(username, { type: "text" });
+  const recordRaw = await env.Pass.get(username, { type: "json" });
 
-      if (!storedPass)
-        return json({ success: false, error: "Username not found" }, 404);
+  if (!recordRaw)
+    return json({ success: false, error: "Username not found" }, 404);
 
-      if (storedPass !== pass)
-        return json({ success: false, error: "Incorrect username or password" }, 403);
+  const { salt, hash } = recordRaw;
 
-      return json({ success: true });
-    }
+  const computedHash = await hashPassword(
+    pass,
+    new Uint8Array(salt)
+  );
+
+  if (computedHash !== hash)
+    return json({ success: false, error: "Incorrect username or password" }, 403);
+
+  return json({ success: true });
+}
 
     // ---------------------------
     // SIGNUP
     // ---------------------------
-    if (path === "/api/pass-deploy") {
-      const username = url.searchParams.get("username");
-      const pass = url.searchParams.get("pass");
 
-      if (!username || !pass)
-        return json({ success: false, error: "Missing username or password" }, 400);
+if (path === "/api/pass-deploy") {
+  const username = url.searchParams.get("username");
+  const pass = url.searchParams.get("pass");
 
-      const existing = await env.Pass.get(username, { type: "text" });
+  if (!username || !pass)
+    return json({ success: false, error: "Missing username or password" }, 400);
 
-      if (existing)
-        return json({ success: false, error: "Username already exists" }, 409);
+  const existing = await env.Pass.get(username);
 
-      await env.Pass.put(username, pass);
-      return json({ success: true });
-    }
+  if (existing)
+    return json({ success: false, error: "Username already exists" }, 409);
 
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await hashPassword(pass, salt);
+
+  await env.Pass.put(
+    username,
+    JSON.stringify({
+      salt: Array.from(salt),
+      hash
+    })
+  );
+
+  return json({ success: true });
+}
     // ---------------------------------------------------
     // /api/deploy — Sync KV -> GitHub
     // ---------------------------------------------------
