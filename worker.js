@@ -1057,6 +1057,7 @@ if (path === "/api/save") {
     // ---------------------------
     // LOGIN
     // ---------------------------
+
 if (path === "/api/pass") {
   const username = url.searchParams.get("username");
   const pass = url.searchParams.get("pass");
@@ -1064,12 +1065,33 @@ if (path === "/api/pass") {
   if (!username || !pass)
     return json({ success: false, error: "Missing username or password" }, 400);
 
-  const recordRaw = await env.Pass.get(username, { type: "json" });
+  const stored = await env.Pass.get(username, { type: "text" });
 
-  if (!recordRaw)
+  if (!stored)
     return json({ success: false, error: "Username not found" }, 404);
 
-  const { salt, hash } = recordRaw;
+  // 🔁 OLD USER (plaintext)
+  if (!stored.startsWith("{")) {
+    if (stored !== pass)
+      return json({ success: false, error: "Incorrect username or password" }, 403);
+
+    // 🔐 auto-upgrade on successful login
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const hash = await hashPassword(pass, salt);
+
+    await env.Pass.put(
+      username,
+      JSON.stringify({
+        salt: Array.from(salt),
+        hash
+      })
+    );
+
+    return json({ success: true });
+  }
+
+  // 🔐 NEW USER (hashed)
+  const { salt, hash } = JSON.parse(stored);
 
   const computedHash = await hashPassword(
     pass,
@@ -1081,7 +1103,6 @@ if (path === "/api/pass") {
 
   return json({ success: true });
 }
-
     // ---------------------------
     // SIGNUP
     // ---------------------------
