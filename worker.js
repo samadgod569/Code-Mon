@@ -1,27 +1,3 @@
-const encoder = new TextEncoder();
-
-async function hashPassword(password, salt) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits"]
-  );
-
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations: 100_000,
-      hash: "SHA-256",
-    },
-    key,
-    256
-  );
-
-  return btoa(String.fromCharCode(...new Uint8Array(bits)));
-}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -1065,48 +1041,20 @@ if (path === "/api/pass") {
   if (!username || !pass)
     return json({ success: false, error: "Missing username or password" }, 400);
 
-  const stored = await env.Pass.get(username, { type: "text" });
+  const storedPass = await env.Pass.get(username, { type: "text" });
 
-  if (!stored)
+  if (!storedPass)
     return json({ success: false, error: "Username not found" }, 404);
 
-  // 🔁 OLD USER (plaintext)
-  if (!stored.startsWith("{")) {
-    if (stored !== pass)
-      return json({ success: false, error: "Incorrect username or password" }, 403);
-
-    // 🔐 auto-upgrade on successful login
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const hash = await hashPassword(pass, salt);
-
-    await env.Pass.put(
-      username,
-      JSON.stringify({
-        salt: Array.from(salt),
-        hash
-      })
-    );
-
-    return json({ success: true });
-  }
-
-  // 🔐 NEW USER (hashed)
-  const { salt, hash } = JSON.parse(stored);
-
-  const computedHash = await hashPassword(
-    pass,
-    new Uint8Array(salt)
-  );
-
-  if (computedHash !== hash)
+  if (storedPass !== pass)
     return json({ success: false, error: "Incorrect username or password" }, 403);
 
   return json({ success: true });
 }
-    // ---------------------------
-    // SIGNUP
-    // ---------------------------
 
+// ---------------------------
+// SIGNUP
+// ---------------------------
 if (path === "/api/pass-deploy") {
   const username = url.searchParams.get("username");
   const pass = url.searchParams.get("pass");
@@ -1114,22 +1062,12 @@ if (path === "/api/pass-deploy") {
   if (!username || !pass)
     return json({ success: false, error: "Missing username or password" }, 400);
 
-  const existing = await env.Pass.get(username);
+  const existing = await env.Pass.get(username, { type: "text" });
 
   if (existing)
     return json({ success: false, error: "Username already exists" }, 409);
 
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const hash = await hashPassword(pass, salt);
-
-  await env.Pass.put(
-    username,
-    JSON.stringify({
-      salt: Array.from(salt),
-      hash
-    })
-  );
-
+  await env.Pass.put(username, pass);
   return json({ success: true });
 }
     // ---------------------------------------------------
