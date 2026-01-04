@@ -180,7 +180,7 @@ async function build(){
 
     code = code.replace(
       /<link[^>]*rel=["']manifest["'][^>]*href=["'][^"']*_manifest\.json["'][^>]*>/i,
-      `<link rel="manifest" href="bay_manifest.json">`
+      `<link rel="manifest" href="${user}_manifest.json">`
     );
 
     log.textContent = "Manifest link replaced.\nSaving install.html…";
