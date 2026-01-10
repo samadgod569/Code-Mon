@@ -241,13 +241,13 @@ async function buildManifest() {
   
   const name  = document.getElementById("name").value.trim();
   const short = document.getElementById("short").value.trim();
-  const icont  = document.getElementById("icon").value.trim();
-  const start = document.getElementById("start").value.trim();
+  const icon  = document.getElementById("icon").value.trim();
+  const startt = document.getElementById("start").value.trim();
   const desc  = document.getElementById("desc").value.trim();
   const bg    = document.getElementById("bg").value;
   const theme = document.getElementById("theme").value;
-const icon = `@me?user=${username}&filename=${icont}`;
-  if (!name || !short || !icont || !start || !desc) {
+const start = `@me?user=${username}&filename=${startt}`;
+  if (!name || !short || !startt || !start || !desc) {
     alert("Fill all fields");
     return;
   }
