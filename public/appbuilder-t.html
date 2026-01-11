@@ -182,7 +182,10 @@ async function build(){
       /<link[^>]*rel=["']manifest["'][^>]*href=["'][^"']*_manifest\.json["'][^>]*>/i,
       `<link rel="manifest" href="${user}_manifest.json">`
     );
-
+code = code.replace(
+  /(const|let|var)\s+app\s*=\s*["'][^"']*["']\s*;/i,
+  `const app = "${user}";`
+);
     log.textContent = "Manifest link replaced.\nSaving install.html…";
 
     await fetch("https://code-mon.codemon.workers.dev/api/save",{
