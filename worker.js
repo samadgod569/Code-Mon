@@ -185,8 +185,55 @@ if (path === "/api/ai-get") {
   });
 }
 
- 
+ // pay hai bhai
+if (path === "/api/pay") {
 
+  // Preflight support
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const data = await req.json();
+    const { key, username, amount } = data;
+
+    if (!username || amount === undefined)
+      return new Response(JSON.stringify({ success: false, error: "Missing fields" }), { status: 400, headers: corsHeaders });
+
+    const payAmount = parseInt(amount);
+    if (isNaN(payAmount) || payAmount <= 0)
+      return new Response(JSON.stringify({ success: false, error: "Invalid amount" }), { status: 400, headers: corsHeaders });
+
+    const realKey = await env.FILES.get("KEY");
+    if (key !== realKey)
+      return new Response(JSON.stringify({ success: false, error: "Invalid key" }), { status: 403, headers: corsHeaders });
+
+    const current = await env.PAY.get(username);
+    const currentBalance = parseInt(current) || 0;
+
+    const newBalance = currentBalance + payAmount;
+
+    await env.PAY.put(username, newBalance.toString());
+
+    return new Response(JSON.stringify({
+      success: true,
+      user: username,
+      paid: payAmount,
+      total: newBalance
+    }), {
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders
+      }
+    });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ success: false, error: err.message }), {
+      status: 500,
+      headers: corsHeaders
+    });
+  }
+  }
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
