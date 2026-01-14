@@ -241,7 +241,7 @@ if (path === "/api/pay") {
     if (path === "/api/builder") {
 
   // ---------- GET ----------
-  if (req.method === "GET") {
+  if (request.method === "GET") {
     const name = url.searchParams.get("username");
 
     if (!name) {
@@ -270,11 +270,11 @@ if (path === "/api/pay") {
   }
 
   // ---------- POST ----------
-  if (req.method === "POST") {
+  if (request.method === "POST") {
     let body;
 
     try {
-      body = await req.json();
+      body = await request.json();
     } catch {
       return new Response("Invalid JSON", {
         status: 400,
@@ -350,7 +350,7 @@ if (path === "/api/pay") {
     //like hai bhai
     if (path === "/api/like") {
 
-  if (req.method !== "POST") {
+  if (request.method !== "POST") {
     return new Response("Method Not Allowed", {
       status: 405,
       headers: corsHeaders
@@ -359,7 +359,7 @@ if (path === "/api/pay") {
 
   let body;
   try {
-    body = await req.json();
+    body = await request.json();
   } catch {
     return new Response("Invalid JSON", {
       status: 400,
