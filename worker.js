@@ -188,25 +188,27 @@ if (path === "/api/ai-get") {
  // pay hai bhai
 if (path === "/api/pay") {
 
-  // Preflight support
-  if (req.method === "OPTIONS") {
+  if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const data = await req.json();
+    const data = await request.json();
     const { key, username, amount } = data;
 
     if (!username || amount === undefined)
-      return new Response(JSON.stringify({ success: false, error: "Missing fields" }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ success: false, error: "Missing fields" }),
+        { status: 400, headers: corsHeaders });
 
     const payAmount = parseInt(amount);
     if (isNaN(payAmount) || payAmount <= 0)
-      return new Response(JSON.stringify({ success: false, error: "Invalid amount" }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ success: false, error: "Invalid amount" }),
+        { status: 400, headers: corsHeaders });
 
     const realKey = await env.FILES.get("KEY");
     if (key !== realKey)
-      return new Response(JSON.stringify({ success: false, error: "Invalid key" }), { status: 403, headers: corsHeaders });
+      return new Response(JSON.stringify({ success: false, error: "Invalid key" }),
+        { status: 403, headers: corsHeaders });
 
     const current = await env.PAY.get(username);
     const currentBalance = parseInt(current) || 0;
@@ -233,7 +235,205 @@ if (path === "/api/pay") {
       headers: corsHeaders
     });
   }
+           }
+
+    //builder hai bhai
+    if (path === "/api/builder") {
+
+  // ---------- GET ----------
+  if (req.method === "GET") {
+    const name = url.searchParams.get("username");
+
+    if (!name) {
+      return new Response("Missing name", {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    const manifest = await env.APP.get(name);
+
+    if (!manifest) {
+      return new Response("Not Found", {
+        status: 404,
+        headers: corsHeaders
+      });
+    }
+
+    return new Response(manifest, {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/manifest+json"
+      }
+    });
   }
+
+  // ---------- POST ----------
+  if (req.method === "POST") {
+    let body;
+
+    try {
+      body = await req.json();
+    } catch {
+      return new Response("Invalid JSON", {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    const { name, manifest, username, pass } = body;
+
+    if (!name || !manifest || !username || !pass) {
+      return new Response("Missing fields", {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    const storedPass = await env.Pass.get(username);
+
+    if (!storedPass || storedPass !== pass) {
+      return new Response("Unauthorized: Invalid credentials", {
+        status: 401,
+        headers: corsHeaders
+      });
+    }
+
+    const existing = await env.APP.get(username);
+
+    if (existing) {
+      const [owner, storedManifest, description, ...likesArr] = existing.split("*");
+      const likes = likesArr.join("*");
+
+      if (owner !== username) {
+        return new Response("Forbidden: Not owner", {
+          status: 403,
+          headers: corsHeaders
+        });
+      }
+
+      await env.APP.put(
+        owner,
+        `${owner}*${JSON.stringify(manifest)}*${name || ""}*${likes}`
+      );
+
+      return new Response(JSON.stringify({ success: true, updated: true }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      });
+    }
+
+    await env.APP.put(
+      username,
+      `${username}*${JSON.stringify(manifest)}*${name}*`
+    );
+
+    return new Response(JSON.stringify({ success: true, created: true }), {
+      status: 201,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json"
+      }
+    });
+  }
+
+  return new Response("Method Not Allowed", {
+    status: 405,
+    headers: corsHeaders
+  });
+    }
+
+    //like hai bhai
+    if (path === "/api/like") {
+
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", {
+      status: 405,
+      headers: corsHeaders
+    });
+  }
+
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response("Invalid JSON", {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  const { username, pass, name } = body;
+
+  if (!username || !pass || !name) {
+    return new Response("Missing fields", {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  const storedPass = await env.Pass.get(username);
+  if (!storedPass || storedPass !== pass) {
+    return new Response("Unauthorized", {
+      status: 401,
+      headers: corsHeaders
+    });
+  }
+
+  const appValue = await env.APP.get(name);
+  if (!appValue) {
+    return new Response("App Not Found", {
+      status: 404,
+      headers: corsHeaders
+    });
+  }
+
+  const parts = appValue.split("*");
+
+  const owner = parts[0];
+  const manifest = parts[1];
+  const description = parts[2];
+  let likes = parts.slice(3).join("*");
+
+  let likedUsers = [];
+
+  if (likes && likes.trim() !== "") {
+    likedUsers = likes
+      .split("[*]")
+      .filter(u => u && u.trim() !== "");
+  }
+
+  if (likedUsers.includes(username)) {
+    return new Response("Already liked", {
+      status: 409,
+      headers: corsHeaders
+    });
+  }
+
+  likedUsers.push(username);
+
+  likes = likedUsers.map(u => `${u}[*]`).join("");
+
+  const updatedValue = `${owner}*${manifest}*${description}*${likes}`;
+
+  await env.APP.put(name, updatedValue);
+
+  return new Response(JSON.stringify({
+    success: true,
+    totalLikes: likedUsers.length,
+    likes
+  }), {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json"
+    }
+  });
+                                 }
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
