@@ -139,7 +139,7 @@ async function renderGallery() {
 
     const info = document.createElement("div");
     info.className = "image-info";
-    info.innerHTML = `${file}<br><code>&lt;img src="${file}" /&gt;</code>`; // for implementation snippet
+    info.innerHTML = `${file}<br><code>&lt;img src="/${file}" /&gt;</code>`; // for implementation snippet
 
     card.appendChild(img);
     card.appendChild(info);
