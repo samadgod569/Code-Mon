@@ -1,3 +1,21 @@
 name = "code-mon"
 main = "worker.js"
 compatibility_date = "2025-11-28"
+[[kv_namespaces]]
+binding = "APP"
+id = "16cae66906a24d1f8862fad185187cd9"
+[[kv_namespaces]]
+binding = "Pass"
+id = "144779e18a7e4a7c898f55f679ee825d"
+[[kv_namespaces]]
+binding = "FILES"
+id = "c70879b43b304bef9c0344fed6975247"
+[[kv_namespaces]]
+binding = "AI"
+id = "2015455cb9be4344af75850f83fc6348"
+[[kv_namespaces]]
+binding = "API"
+id = "af2c7fb23010406baff7a8500c03f8d6"
+[[kv_namespaces]]
+binding = "PRO"
+id = "fcd77d96fb7f4614b58eba32d69fd31e"
