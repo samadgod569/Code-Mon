@@ -50,60 +50,33 @@ const corsHeaders = {
 
     // APP ORIGIN FOR THE SPACE
     
-if (path === "/api/app") {
+if (path === "/api/app-list") {
+      if (request.method !== "GET") {
+        return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+      }
 
-  // ---------- POST : SAVE MANIFEST ----------
-  if (req.method === "POST") {
-    let body;
+      try {
+        let allApps = [];
+        let cursor = undefined;
 
-    try {
-      body = await req.json();
-    } catch {
-      return new Response("Invalid JSON", { status: 400 });
-    }
+        do {
+          const listResult = await env.APP.list({ limit: 1000, cursor });
+          allApps.push(...listResult.keys.map(k => k.name));
+          cursor = listResult.cursor;
+        } while (cursor);
 
-    const { user, pass, name, manifest } = body;
+        return new Response(JSON.stringify({ success: true, apps: allApps }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
 
-    if (!user || !pass || !name || !manifest) {
-      return new Response("Missing fields", { status: 400 });
-    }
-
-    const storedPass = await env.Pass.get(user);
-
-    if (!storedPass || storedPass !== pass) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-
-    await env.APP.put(name, JSON.stringify(manifest));
-
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  // ---------- GET : FETCH MANIFEST ----------
-  if (req.method === "GET") {
-    const name = new URL(req.url).searchParams.get("name");
-
-    if (!name) {
-      return new Response("Missing name", { status: 400 });
-    }
-
-    const manifest = await env.APP.get(name);
-
-    if (!manifest) {
-      return new Response("Not Found", { status: 404 });
-    }
-
-    return new Response(manifest, {
-      headers: { "Content-Type": "application/manifest+json" }
-    });
-  }
-
-  return new Response("Method Not Allowed", { status: 405 });
+      } catch (err) {
+        return new Response(JSON.stringify({ success: false, error: err.message }), {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
 }
-
     // ---------------------------
     // Get AI response (Gemini)
     // ---------------------------
