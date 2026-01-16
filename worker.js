@@ -77,6 +77,45 @@ if (path === "/api/app-list") {
         });
       }
 }
+    // ---------------------------------------------------------
+// /api/delete-file  → Delete user file securely
+// ---------------------------------------------------------
+if (path === "/api/delete-file") {
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const { username, pass, filename } = body;
+
+  if (!username || !pass || !filename) {
+    return json({ error: "username, pass and filename required" }, 400);
+  }
+
+  // 🔐 Verify password
+  const storedPass = await env.Pass.get(username, { type: "text" });
+
+  if (!storedPass) {
+    return json({ error: "User not found" }, 404);
+  }
+
+  if (storedPass !== pass) {
+    return json({ error: "Incorrect password" }, 403);
+  }
+
+  // 🗑 Delete file
+  const key = `${username}/${filename}`;
+  await env.FILES.delete(key);
+
+  return json({
+    success: true,
+    message: "File deleted successfully",
+    file: key
+  });
+}
     // ---------------------------
     // Get AI response (Gemini)
     // ---------------------------
