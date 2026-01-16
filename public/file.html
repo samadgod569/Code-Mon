@@ -33,6 +33,7 @@ header {
 #wrap {
     display: flex;
     height: calc(100vh - 80px);
+    min-height: 0;
 }
 
 /* FILE LIST PANEL */
@@ -44,6 +45,7 @@ header {
     backdrop-filter: blur(14px);
     display: flex;
     flex-direction: column;
+        min-height: 0;
 }
 
 /* Sidebar buttons */
@@ -69,6 +71,7 @@ header {
 #fileList {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .fileItem {
     padding: 12px;
