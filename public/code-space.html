@@ -33,6 +33,7 @@ header {
 #wrap {
     display: flex;
     height: calc(100vh - 80px);
+    min-height: 0;
 }
 
 /* FILE LIST PANEL */
@@ -44,6 +45,7 @@ header {
     backdrop-filter: blur(14px);
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 /* Sidebar buttons */
@@ -69,6 +71,7 @@ header {
 #fileList {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .fileItem {
     padding: 12px;
@@ -205,6 +208,27 @@ header {
 #uploadDrop:hover {
     background: rgba(0,255,130,0.15);
 }
+    #optionsMenu {
+    display: none;
+    margin-top: 10px;
+    background: rgba(34,211,238,0.15);
+    border: 1px solid #22d3ee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#optionsMenu div {
+    padding: 12px;
+    cursor: pointer;
+    color: #22d3ee;
+    font-family: Orbitron;
+    transition: 0.3s;
+}
+
+#optionsMenu div:hover {
+    background: #22d3ee;
+    color: #0f0c29;
+}
 /* Animation */
 @keyframes slideDown {
     from { top: -80px; opacity: 0; }
@@ -251,6 +275,12 @@ header {
     <button onclick="saveFile()">SAVE FILE</button>
     <button onclick="deploy()">PREVIEW</button>
       <button onclick="album()">Album</button>
+      <button onclick="toggleOptions()">OPTIONS ▾</button>
+
+<div id="optionsMenu">
+    <div onclick="downloadCurrentFile()">⬇ Download File</div>
+    <div onclick="deleteCurrentFile()"> Delete File</div>
+</div>
     <div id="fileList"></div>
   </div>
 
@@ -507,6 +537,65 @@ async function uploadAndDeployImageBinary() {
         showError("Upload failed: " + err.message);
     }
             }
+
+function toggleOptions(){
+    const menu = document.getElementById("optionsMenu");
+    menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+  function downloadCurrentFile(){
+    if(!currentFile) return showError("Select a file first");
+
+    let content = document.getElementById("editor").value;
+    let ext = currentFile.split(".").pop().toLowerCase();
+
+    const allowed = ["html","css","js","json","txt"];
+    if(!allowed.includes(ext)) ext = "txt";
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = currentFile.includes(".") ? currentFile : currentFile + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    showSuccess("File downloaded!");
+        }  
+
+async function deleteCurrentFile(){
+    if(!currentFile) return showError("Select a file first");
+
+    if(!confirm(`Delete ${currentFile}? This cannot be undone!`)) return;
+
+    try{
+        const res = await fetch(`${API}/api/delete-file`,{
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body:JSON.stringify({
+                username:user,
+                pass:pass,
+                filename:currentFile
+            })
+        });
+
+        const data = await res.json();
+
+        if(!data.success)
+            return showError(data.error || "Delete failed");
+
+        showSuccess("File deleted!");
+
+        currentFile = null;
+        document.getElementById("editor").value = "";
+        loadFiles();
+
+    }catch(err){
+        showError("Delete failed: "+err.message);
+    }
+        }
+    
 /* DEPLOY */
 async function deploy() {
         const content = document.getElementById("editor").value;
@@ -517,6 +606,8 @@ window.location.href = "preview.html";
 }
 
 /* LOAD ON START */
+
+    
 loadFiles();
 </script>
 
