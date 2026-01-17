@@ -311,7 +311,7 @@ likeBtn.onclick = async ()=>{
     return;
   }
 
-  const res = await fetch("https://code-mon-space.codemon.workers.dev/api/like",{
+  const res = await fetch("https://code-mon.codemon.workers.dev/api/like",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
