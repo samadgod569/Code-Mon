@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PWA Store</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+:root{
+  --bg:#0b0e13;
+  --card:#151a21;
+  --primary:#1a73e8;
+  --primary2:#245dff;
+  --text:#e8eaed;
+  --muted:#9aa0a6;
+  --divider:#2a2f36;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:linear-gradient(180deg,#0b0e13,#0f1422);
+  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont;
+}
+
+/* TOP BAR */
+.topbar{
+  height:56px;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  border-bottom:1px solid var(--divider);
+  backdrop-filter:blur(10px);
+  background:rgba(11,14,19,.85);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+/* CONTAINER */
+.container{
+  padding:16px;
+  max-width:480px;
+  margin:auto;
+}
+
+/* HEADER */
+.app-header{
+  display:flex;
+  gap:16px;
+  background:var(--card);
+  padding:16px;
+  border-radius:20px;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+}
+
+.app-header h1{
+  margin:0;
+  font-size:22px;
+}
+
+.dev{
+  color:var(--muted);
+  font-size:14px;
+}
+
+/* ICON */
+.app-icon{
+  width:80px;
+  height:80px;
+  border-radius:20px;
+  background:#000;
+  object-fit:cover;
+  box-shadow:0 4px 16px rgba(0,0,0,.6);
+}
+
+/* STATS */
+.stats{
+  display:flex;
+  justify-content:space-between;
+  margin:20px 0;
+  background:var(--card);
+  border-radius:18px;
+  padding:14px 8px;
+  text-align:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+
+.stats div{
+  flex:1;
+}
+
+.stats strong{
+  display:block;
+  font-size:18px;
+}
+
+.stats span{
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* BUTTONS */
+.install-btn{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:28px;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  color:white;
+  font-size:16px;
+  font-weight:600;
+  margin-top:10px;
+  box-shadow:0 6px 18px rgba(26,115,232,.4);
+  cursor:pointer;
+  transition:.2s;
+}
+
+.install-btn:hover{transform:scale(1.02)}
+.install-btn:active{transform:scale(.97)}
+
+.install-btn.like{
+  background:linear-gradient(135deg,#ff3b3b,#ff0066);
+}
+
+/* DESCRIPTION */
+.description{
+  margin-top:24px;
+  background:var(--card);
+  padding:16px;
+  border-radius:20px;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+}
+
+.description h2{margin-top:0}
+
+/* FLOATING OPEN BUTTON */
+.fab{
+  position:fixed;
+  top:70px;
+  right:16px;
+  padding:10px 16px;
+  border-radius:22px;
+  border:none;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  color:white;
+  font-size:14px;
+  font-weight:600;
+  box-shadow:0 6px 18px rgba(0,114,255,.45);
+  cursor:pointer;
+  z-index:20;
+  transition:.2s;
+}
+.fab:hover{transform:scale(1.05)}
+.fab:active{transform:scale(.95)}
+
+/* BOTTOM ACTION BUTTONS */
+.bottom-actions{
+  display:flex;
+  gap:12px;
+  margin-top:24px;
+}
+
+.action-btn{
+  flex:1;
+  padding:14px;
+  border-radius:24px;
+  border:1px solid var(--divider);
+  background:var(--card);
+  color:var(--text);
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.action-btn:hover{
+  background:#1b2230;
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <strong id="topTitle">App</strong>
+</header>
+
+<button id="openInApp" class="fab">Open in App</button>
+
+<main class="container">
+
+<section class="app-header">
+  <img class="app-icon" id="appIcon">
+  <div>
+    <h1 id="appName"></h1>
+    <span class="dev" id="owner"></span>
+  </div>
+</section>
+
+<section class="stats">
+  <div>
+    <strong id="likesCount">0</strong>
+    <span>People liked</span>
+  </div>
+  <div>
+    <strong id="shortName">-</strong>
+    <span>Short name</span>
+  </div>
+</section>
+
+<button id="installBtn" class="install-btn" hidden>Install App</button>
+<button id="likeBtn" class="install-btn like">Like App</button>
+
+<div class="bottom-actions">
+  <button class="action-btn">Explore More</button>
+  <button class="action-btn">Create Your App</button>
+</div>
+
+<section class="description">
+  <h2>About this app</h2>
+  <p id="description"></p>
+</section>
+
+</main>
+
+<script>
+const API = "https://code-mon.codemon.workers.dev/api";
+const app = "C69P2W";
+
+let deferredPrompt;
+let currentData = null;
+
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.hidden = false;
+});
+installBtn.onclick = ()=> deferredPrompt.prompt();
+
+function parseRaw(raw){
+  const parts = raw.split("*");
+
+  const owner = parts[0];
+  const manifestStr = parts[1];
+  const description = parts[2] || "";
+  const likesRaw = parts.slice(3).join("*");
+
+  let manifest = {};
+
+  try{
+    const match = manifestStr.match(/"({[\s\S]*})"/);
+    const unescaped = JSON.parse(`"${match[1]}"`);
+    manifest = JSON.parse(unescaped);
+  }catch(e){
+    console.error("Manifest parse error",e);
+  }
+
+  let likedUsers = [];
+  if(likesRaw){
+    likedUsers = likesRaw.split("[*]").filter(x=>x);
+  }
+
+  return { owner, manifest, description, likedUsers };
+}
+
+async function loadApp(){
+  const res = await fetch(`${API}/builder?username=${encodeURIComponent(app)}`);
+  const raw = await res.text();
+
+  const data = parseRaw(raw);
+  currentData = data;
+
+  appName.textContent = data.manifest.short_name;
+  topTitle.textContent = data.manifest.short_name;
+  shortName.textContent = data.manifest.short_name;
+  owner.textContent = "By " + data.owner;
+  description.textContent = data.description;
+  appIcon.src = data.manifest.icons[0].src;
+  likesCount.textContent = data.likedUsers.length;
+
+  const blob = new Blob([JSON.stringify(data.manifest)],{type:"application/json"});
+  manifestLink.href = URL.createObjectURL(blob);
+
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js");
+  }
+}
+
+loadApp();
+
+// OPEN IN APP
+openInApp.onclick = ()=>{
+  if(!currentData) return;
+  const url = "index.html";
+  window.location.href = url;
+};
+
+// LIKE SYSTEM
+likeBtn.onclick = async ()=>{
+  const username = localStorage.getItem("code-mon-username");
+  const pass = localStorage.getItem("code-mon-pass");
+
+  if(!username || !pass){
+    alert("Login required");
+    return;
+  }
+
+  const res = await fetch("https://code-mon-space.codemon.workers.dev/api/like",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username,
+      pass,
+      name: app
+    })
+  });
+
+  const txt = await res.text();
+
+  if(res.ok){
+    const data = JSON.parse(txt);
+    likesCount.textContent = data.totalLikes;
+    alert("Liked successfully ❤️");
+  }else{
+    alert(txt);
+  }
+};
+</script>
+
+</body>
+  </html>
