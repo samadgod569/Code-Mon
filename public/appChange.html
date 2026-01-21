@@ -4,35 +4,143 @@
 <meta charset="utf-8">
 <title>Code-Mon Editor</title>
 <style>
+:root{
+  --bg:#f4f6fb;
+  --panel:#ffffff;
+  --border:#e3e6ef;
+  --text:#1f2933;
+  --muted:#6b7280;
+  --primary:#6366f1;
+  --primary-hover:#4f46e5;
+  --success:#22c55e;
+  --success-hover:#16a34a;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
 body{
- background:#050812;
- color:#00eaff;
- font-family:monospace;
- padding:20px;
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  padding:24px;
 }
-textarea,input{
- width:100%;
- background:#0d1326;
- color:#00f7ff;
- border:1px solid #00eaff55;
- border-radius:10px;
- padding:12px;
- font-size:14px;
- margin-top:10px;
+
+/* HEADINGS */
+h2{
+  font-size:26px;
+  font-weight:600;
+  margin-bottom:6px;
 }
+
+h3{
+  font-size:16px;
+  font-weight:500;
+  margin-top:22px;
+  margin-bottom:8px;
+  color:var(--muted);
+}
+
+/* INFO BAR */
+#info{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:20px;
+}
+
+/* MAIN PANEL */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:22px;
+  box-shadow:0 6px 20px rgba(0,0,0,.04);
+}
+
+/* TEXTAREA EDITOR */
+textarea{
+  width:100%;
+  min-height:360px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  padding:14px;
+  font-size:14px;
+  line-height:1.6;
+  background:#fafbff;
+  color:#111827;
+  resize:vertical;
+  outline:none;
+  transition:.15s;
+}
+
+textarea:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(99,102,241,.15);
+  background:white;
+}
+
+/* INPUT */
+input{
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:white;
+  font-size:14px;
+  color:var(--text);
+  outline:none;
+  transition:.15s;
+}
+
+input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(99,102,241,.15);
+}
+
+/* BUTTON CONTAINER */
+.buttons{
+  display:flex;
+  gap:12px;
+  margin-top:18px;
+  flex-wrap:wrap;
+}
+
+/* BUTTONS */
 button{
- padding:12px 22px;
- margin-top:12px;
- border:none;
- border-radius:10px;
- background:#00eaff;
- color:#001219;
- font-weight:bold;
- cursor:pointer;
- box-shadow:0 0 15px #00eaffaa;
+  padding:12px 18px;
+  border-radius:10px;
+  border:none;
+  background:var(--primary);
+  color:white;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  transition:.15s;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
-button:hover{background:#00b8d4}
-#saveBtn{background:#00ff6a;color:#00240f}
+
+button:hover{
+  background:var(--primary-hover);
+  transform:translateY(-1px);
+}
+
+/* SAVE BUTTON */
+#saveBtn{
+  background:var(--success);
+}
+
+#saveBtn:hover{
+  background:var(--success-hover);
+}
+
+/* MOBILE */
+@media(max-width:720px){
+  body{padding:16px}
+  textarea{min-height:260px}
+  h2{font-size:22px}
+ }
 </style>
 </head>
 <body>
@@ -44,7 +152,7 @@ button:hover{background:#00b8d4}
 <h3>File Content</h3>
 <textarea id="editor"></textarea>
 
-<h3>Tell AI what to update</h3>
+<h3>Tell Code Mon AI what to update</h3>
 <input id="prompt" placeholder="Example: add dark mode button and animation">
 
 <button onclick="updateWithAI()">Update with AI</button>
@@ -107,6 +215,7 @@ async function updateWithAI(){
  if(!q){alert("Type update instruction");return;}
 
  const prompt=`
+
 Return ONLY raw file content.
 
 Previous code:
