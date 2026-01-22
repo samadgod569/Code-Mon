@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Code Mon - All-in-One Hosting Platform with AI-Powered Generators">
+  <title>Code Mon - Complete Hosting & Development Platform</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-hover: #30363d;
+      --accent-primary: #58a6ff;
+      --accent-secondary: #1f6feb;
+      --accent-success: #3fb950;
+      --accent-warning: #d29922;
+      --accent-purple: #bc8cff;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --text-tertiary: #6e7681;
+      --border-default: #30363d;
+      --border-muted: #21262d;
+      --shadow-lg: 0 16px 32px rgba(1, 4, 9, 0.85);
+      --shadow-md: 0 8px 24px rgba(1, 4, 9, 0.6);
+      --glow-blue: 0 0 20px rgba(88, 166, 255, 0.3);
+      --glow-purple: 0 0 20px rgba(188, 140, 255, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f6f8fa;
+      --bg-tertiary: #ffffff;
+      --bg-hover: #f3f4f6;
+      --accent-primary: #0969da;
+      --accent-secondary: #0550ae;
+      --accent-success: #1a7f37;
+      --text-primary: #24292f;
+      --text-secondary: #57606a;
+      --text-tertiary: #6e7781;
+      --border-default: #d0d7de;
+      --border-muted: #d8dee4;
+      --shadow-lg: 0 16px 32px rgba(140, 149, 159, 0.2);
+      --shadow-md: 0 8px 24px rgba(140, 149, 159, 0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(13, 17, 23, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-default);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: var(--shadow-md);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo::before {
+      content: "◆";
+      color: var(--accent-primary);
+      font-size: 1.8rem;
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent-primary);
+      transition: width 0.3s;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .theme-toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border-default);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-size: 1.2rem;
+    }
+
+    .theme-toggle:hover {
+      background: var(--bg-hover);
+      border-color: var(--text-tertiary);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: #ffffff;
+      border: 1px solid transparent;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-secondary);
+      box-shadow: var(--glow-blue);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      border-color: var(--text-tertiary);
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 8rem 2rem 4rem;
+    }
+
+    .hero-bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(88, 166, 255, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 60%, rgba(188, 140, 255, 0.1), transparent);
+    }
+
+    .grid-overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(var(--border-muted) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-muted) 1px, transparent 1px);
+      background-size: 50px 50px;
+      opacity: 0.3;
+    }
+
+    .hero-content {
+      max-width: 1200px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-default);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-weight: 500;
+    }
+
+    .hero-badge i {
+      color: var(--accent-success);
+      margin-right: 0.3rem;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.05em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      margin-bottom: 3rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      font-weight: 400;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .btn-hero-primary {
+      background: var(--accent-primary);
+      color: #ffffff;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-hero-primary:hover {
+      background: var(--accent-secondary);
+      transform: translateY(-2px);
+      box-shadow: var(--glow-blue);
+    }
+
+    .btn-hero-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+      padding: 1rem 2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-hero-secondary:hover {
+      background: var(--bg-hover);
+      border-color: var(--text-tertiary);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      display: block;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-top: 0.5rem;
+    }
+
+    .section {
+      padding: 6rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-badge {
+      display: inline-block;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-default);
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: var(--accent-primary);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+    }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .service-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      padding: 2rem;
+      position: relative;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-purple));
+      transform: scaleX(0);
+      transition: transform 0.3s;
+    }
+
+    .service-card:hover {
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+
+    .service-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .coming-soon-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--accent-warning);
+      color: var(--bg-primary);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .service-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .service-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: var(--accent-primary);
+      flex-shrink: 0;
+    }
+
+    .service-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .service-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .service-features {
+      list-style: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .service-features li {
+      color: var(--text-secondary);
+      padding: 0.5rem 0;
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .service-features li::before {
+      content: "✓";
+      color: var(--accent-success);
+      font-weight: bold;
+      margin-right: 0.7rem;
+      font-size: 1.1rem;
+    }
+
+    .service-btn {
+      width: 100%;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+      padding: 0.8rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .service-btn:hover:not(:disabled) {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: #ffffff;
+    }
+
+    .service-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      padding: 2rem;
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      color: var(--accent-primary);
+    }
+
+    .feature-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+    }
+
+    .feature-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-default);
+      padding: 4rem 2rem 2rem;
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+
+    .footer-brand h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer-brand h3::before {
+      content: "◆";
+      color: var(--accent-primary);
+    }
+
+    .footer-desc {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .social-link {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s;
+      font-size: 1.2rem;
+    }
+
+    .social-link:hover {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: #ffffff;
+    }
+
+    .footer-section h4 {
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .footer-links {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 0.7rem;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-primary);
+    }
+
+    .footer-bottom {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-default);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-tertiary);
+      font-size: 0.9rem;
+    }
+
+    .footer-legal {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-legal a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-legal a:hover {
+      color: var(--accent-primary);
+    }
+
+    @media (max-width: 1024px) {
+      .nav-center {
+        display: none;
+      }
+      .footer-content {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+      .hero-subtitle {
+        font-size: 1.1rem;
+      }
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+      .footer-content {
+        grid-template-columns: 1fr;
+      }
+      .footer-bottom {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    .animate-in {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+@media (max-width: 768px) {
+      .navbar {
+        padding: 1rem;
+      }
+      
+      .logo {
+        font-size: 1.2rem;
+      }
+      
+      .btn-primary {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+      }
+      
+      .hero {
+        padding: 6rem 1.5rem 3rem;
+      }
+      
+      .hero h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+      }
+      
+      .hero-subtitle {
+        font-size: 1rem;
+        padding: 0 0.5rem;
+      }
+      
+      .btn-hero-primary,
+      .btn-hero-secondary {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .cta-buttons {
+        width: 100%;
+        padding: 0 1rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+      
+      .stat-value {
+        font-size: 1.8rem;
+      }
+      
+      .stat-label {
+        font-size: 0.8rem;
+      }
+      
+      .section {
+        padding: 4rem 1.5rem;
+      }
+      
+      .section-title {
+        font-size: 1.8rem;
+      }
+      
+      .section-subtitle {
+        font-size: 1rem;
+      }
+      
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .service-card {
+        padding: 1.5rem;
+      }
+      
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .footer-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .footer-bottom {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: 1.75rem;
+      }
+      
+      .hero-subtitle {
+        font-size: 0.9rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .stat-value {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">CODE MON</div>
+    <div class="nav-center">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#services" class="nav-link">Services</a>
+      <a href="docs.html" class="nav-link">Docs</a>
+      <a href="https://discord.gg/eJJBzFD4TU" class="nav-link" target="_blank">Community</a>
+    </div>
+    <div class="nav-right">
+      <div class="theme-toggle" id="themeToggle">🌙</div>
+      <button class="btn-primary" onclick="location.href='dashboard.html'">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-badge animate-in">
+        <i class="fas fa-bolt"></i> Free Forever • No Credit Card Required
+      </div>
+      <h1 class="animate-in delay-1">
+        Build, host, and scale<br>everything in one place
+      </h1>
+      <p class="hero-subtitle animate-in delay-2">
+        Complete hosting platform for websites, PWA apps, games, and databases with AI-powered generators. 
+        From idea to production in minutes.
+      </p>
+      <div class="cta-buttons animate-in delay-3">
+        <button class="btn-hero-primary" onclick="location.href='dashboard.html'">
+          <i class="fas fa-rocket"></i> Start Building Free
+        </button>
+        <button class="btn-hero-secondary" onclick="document.getElementById('services').scrollIntoView({behavior: 'smooth'})">
+          <i class="fas fa-play-circle"></i> Explore Platform
+        </button>
+      </div>
+      <div class="stats-grid animate-in delay-3">
+        <div class="stat-item">
+          <span class="stat-value">100%</span>
+          <span class="stat-label">Free Forever</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">5+</span>
+          <span class="stat-label">Hosting Services</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">AI</span>
+          <span class="stat-label">Powered Generators</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section class="section" id="services" style="background: var(--bg-secondary);">
+    <div class="section-header">
+      <div class="section-badge">HOSTING SOLUTIONS</div>
+      <h2 class="section-title">Everything you need to build amazing projects</h2>
+      <p class="section-subtitle">
+        From dynamic websites to PWA apps, databases to games - deploy instantly with full control and AI assistance
+      </p>
+    </div>
+
+    <div class="services-grid">
+      <!-- Website Hosting -->
+      <div class="service-card">
+        <div class="service-header">
+          <div class="service-icon">
+            <i class="fas fa-globe"></i>
+          </div>
+          <div>
+            <h3 class="service-title">Website Hosting</h3>
+          </div>
+        </div>
+        <p class="service-desc">
+          Dynamic URL-based hosting with complete file manager access. Your websites are stored in our database with instant deployment to custom URLs.
+        </p>
+        <ul class="service-features">
+          <li>Full file manager control</li>
+          <li>Database-backed storage</li>
+          <li>Custom URL structure</li>
+          <li>AI website generator</li>
+          <li>Instant deployment</li>
+        </ul>
+        <button class="service-btn" onclick="location.href='dashboard.html'">
+          <i class="fas fa-rocket"></i> Deploy Website
+        </button>
+      </div>
+
+      <!-- PWA App Hosting -->
+      <div class="service-card">
+        <div class="service-header">
+          <div class="service-icon">
+            <i class="fas fa-mobile-alt"></i>
+          </div>
+          <div>
+            <h3 class="service-title">PWA App Hosting</h3>
+          </div>
+        </div>
+        <p class="service-desc">
+          Host Progressive Web Apps with integrated app store support. Build apps with our AI generator and deploy instantly to our PWA platform.
+        </p>
+        <ul class="service-features">
+          <li>PWA app hosting</li>
+          <li>App store integration</li>
+          <li>AI app generator</li>
+          <li>Offline functionality</li>
+          <li>Push notifications</li>
+        </ul>
+        <button class="service-btn" onclick="location.href='dashboard.html'">
+          <i class="fas fa-rocket"></i> Create App
+        </button>
+      </div>
+
+      <!-- Database Hosting -->
+      <div class="service-card">
+        <div class="service-header">
+          <div class="service-icon">
+            <i class="fas fa-database"></i>
+          </div>
+          <div>
+            <h3 class="service-title">Database Hosting</h3>
+          </div>
+        </div>
+        <p class="service-desc">
+          Multiple database types powered by Workers DB. Image storage, key-value pairs, and table databases - all user data securely stored.
+        </p>
+        <ul class="service-features">
+          <li>Image database</li>
+          <li>Key-Value database</li>
+          <li>Table database</li>
+          <li>Workers DB backend</li>
+          <li>Real-time access</li>
+        </ul>
+        <button class="service-btn" onclick="location.href='dashboard.html'">
+          <i class="fas fa-rocket"></i> Setup Database
+        </button>
+      </div>
+
+      <!-- Game Hosting -->
+      <div class="service-card">
+        <div class="coming-soon-badge">COMING SOON</div>
+        <div class="service-header">
+          <div class="service-icon">
+            <i class="fas fa-gamepad"></i>
+          </div>
+          <div>
+            <h3 class="service-title">Game Hosting</h3>
+          </div>
+        </div>
+        <p class="service-desc">
+          JavaScript-powered game engine with AI game generator. Install and play games directly through our PWA app store platform.
+        </p>
+        <ul class="service-features">
+          <li>JS game engine powered</li>
+          <li>AI game generator</li>
+          <li>App store support</li>
+          <li>Easy installation</li>
+          <li>Community sharing</li>
+        </ul>
+        <button class="service-btn" disabled>
+          <i class="fas fa-bell"></i> Notify Me
+        </button>
+      </div>
+
+      <!-- Mod Hosting -->
+      <div class="service-card">
+        <div class="coming-soon-badge">COMING SOON</div>
+        <div class="service-header">
+          <div class="service-icon">
+            <i class="fas fa-puzzle-piece"></i>
+          </div>
+          <div>
+            <h3 class="service-title">Mod Hosting</h3>
+          </div>
+        </div>
+        <p class="service-desc">
+          AI-powered modification hosting platform. Create, share, and install mods seamlessly with version control and community features.
+        </p>
+        <ul class="service-features">
+          <li>AI mod generation</li>
+          <li>Easy installation</li>
+          <li>Version control</li>
+          <li>Community hub</li>
+          <li>Auto updates</li>
+        </ul>
+        <button class="service-btn" disabled>
+          <i class="fas fa-bell"></i> Notify Me
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="section" id="features">
+    <div class="section-header">
+      <div class="section-badge">PLATFORM FEATURES</div>
+      <h2 class="section-title">Built for developers, designed for everyone</h2>
+      <p class="section-subtitle">
+        Professional-grade tools and infrastructure that scale with your ambitions
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-brain"></i>
+        </div>
+        <h3 class="feature-title">AI-Powered Generators</h3>
+        <p class="feature-desc">
+          Advanced AI generators for websites, apps, games, and mods. Transform ideas into production-ready code instantly.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-folder-open"></i>
+        </div>
+        <h3 class="feature-title">Complete File Manager</h3>
+        <p class="feature-desc">
+          Full control over your hosted files. Manage, edit, and organize everything with our intuitive file management system.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-server"></i>
+        </div>
+        <h3 class="feature-title">Workers DB Storage</h3>
+        <p class="feature-desc">
+          All user data securely stored in Workers database. Fast, reliable, and globally distributed infrastructure.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-link"></i>
+        </div>
+        <h3 class="feature-title">Custom URL Hosting</h3>
+        <p class="feature-desc">
+          Every project gets a unique, shareable URL. Professional hosting with custom domain structure included.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-store"></i>
+        </div>
+        <h3 class="feature-title">App Store Integration</h3>
+        <p class="feature-desc">
+          PWA app store for distribution and discovery. Share your apps and games with the Code Mon community.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-bolt"></i>
+        </div>
+        <h3 class="feature-title">Instant Deployment</h3>
+        <p class="feature-desc">
+          Zero build times, zero waiting. Your projects go live immediately with our instant deployment system.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <h3>CODE MON</h3>
+        <p class="footer-desc">
+          Complete hosting platform with AI-powered development tools. Build, host, and scale your projects for free.
+        </p>
+        <div class="social-links">
+          <a href="https://discord.gg/eJJBzFD4TU" class="social-link" target="_blank" aria-label="Discord">
+            <i class="fab fa-discord"></i>
+          </a>
+          <a href="#" class="social-link" aria-label="GitHub">
+            <i class="fab fa-github"></i>
+          </a>
+          <a href="#" class="social-link" aria-label="Twitter">
+            <i class="fab fa-twitter"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-section">
+        <h4>Product</h4>
+        <ul class="footer-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <ul class="footer-links">
+          <li><a href="docs.html">Documentation</a></li>
+          <li><a href="api.html">API Reference</a></li>
+          <li><a href="examples.html">Examples</a></li>
+          <li><a href="support.html">Support</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h4>Company</h4>
+        <ul class="footer-links">
+          <li><a href="about.html">About</a></li>
+          <li><a href="blog.html">Blog</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>© 2025 Code Mon. All rights reserved.</div>
+      <div class="footer-legal">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+    themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+    
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      themeToggle.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+      localStorage.setItem('theme', newTheme);
+    });
+
+    // Scroll reveal animation
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.service-card, .feature-card').forEach((el, index) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = `all 0.6s ease ${index * 0.1}s`;
+      observer.observe(el);
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+        
