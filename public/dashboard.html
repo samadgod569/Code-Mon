@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeMon Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Light theme */
+            --bg-color: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --nav-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --chat-user-bg: #3b82f6;
+            --chat-user-color: #ffffff;
+            --chat-ai-bg: #f1f5f9;
+            --chat-ai-color: #1e293b;
+            --card-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --transition: all 0.2s ease;
+        }
+
+        .dark-theme {
+            /* Dark theme */
+            --bg-color: #0f172a;
+            --sidebar-bg: #1e293b;
+            --nav-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --accent-color: #60a5fa;
+            --accent-hover: #93c5fd;
+            --chat-user-bg: #2563eb;
+            --chat-user-color: #ffffff;
+            --chat-ai-bg: #1e293b;
+            --chat-ai-color: #f1f5f9;
+            --card-bg: #1e293b;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: var(--transition);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navbar - SOLID */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: var(--nav-bg);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 24px;
+            color: var(--accent-color);
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .nav-title {
+            flex: 1;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-color);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--border-color);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-color);
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        /* Sidebar - ALWAYS OPEN ON DESKTOP, CAN'T CLOSE */
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 250px;
+            height: calc(100vh - 60px);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 900;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0 12px;
+        }
+
+        .sidebar-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .sidebar-item:hover {
+            background-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .sidebar-item.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .sidebar-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content - ADJUSTED TO SIDEBAR */
+        .main-content {
+            margin-left: 250px;
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            background-color: var(--bg-color);
+        }
+
+        /* AI Chat Container - PROPERLY ADJUSTED */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-color);
+        }
+
+        /* Welcome Message INSIDE CHAT AREA */
+        .welcome-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1;
+            transition: opacity 0.5s ease;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .welcome-message h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent-color), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-message p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .welcome-message.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Chat Messages Area */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+        }
+
+        .msg {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            animation: fadeInUp 0.3s ease;
+            font-size: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            background-color: var(--chat-user-bg);
+            color: var(--chat-user-color);
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg.ai {
+            align-self: flex-start;
+            background-color: var(--chat-ai-bg);
+            color: var(--chat-ai-color);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Chat Input - STATIC AT BOTTOM */
+        .chat-input-container {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            background-color: var(--card-bg);
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 14px 18px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 15px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .chat-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .chat-send-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0 24px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chat-send-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .logo-text {
+                display: none;
+            }
+            
+            .msg {
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 16px;
+            }
+            
+            .welcome-message h1 {
+                font-size: 24px;
+            }
+            
+            .welcome-message p {
+                font-size: 14px;
+            }
+            
+            .msg {
+                max-width: 90%;
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="light-theme">
+    <!-- Navbar -->
+    <nav class="navbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="logo-container">
+            <div class="logo-icon">
+                <i class="fas fa-code"></i>
+            </div>
+            <div class="logo-text">CODE MON</div>
+        </div>
+        
+        <div class="nav-title">Dashboard</div>
+        
+        <button class="theme-toggle" id="themeToggle">
+            <i class="fas fa-moon"></i>
+        </button>
+    </nav>
+
+    <!-- Sidebar - ALWAYS VISIBLE ON DESKTOP -->
+    <aside class="sidebar" id="sidebar">
+        <ul class="sidebar-menu">
+            <li class="sidebar-item active">
+                <i class="fas fa-server sidebar-icon"></i>
+                <span>Web Hosting</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-mobile-alt sidebar-icon"></i>
+                <span>App Hosting</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-database sidebar-icon"></i>
+                <span>Database Hosting</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-folder sidebar-icon"></i>
+                <span>File Manager</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-laptop-code sidebar-icon"></i>
+                <span>Code Space</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-robot sidebar-icon"></i>
+                <span>Create AI</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-code-branch sidebar-icon"></i>
+                <span>Create API</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-terminal sidebar-icon"></i>
+                <span>Console</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-store sidebar-icon"></i>
+                <span>App Store</span>
+            </li>
+            <li class="sidebar-item">
+                <i class="fas fa-sign-in-alt sidebar-icon"></i>
+                <span>Log in</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content - ADJUSTED TO SIDEBAR -->
+    <main class="main-content">
+        <div class="chat-container">
+            <!-- Status Indicator -->
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>CodeMon AI is ready</span>
+            </div>
+            
+            <!-- Welcome Message INSIDE Chat Area -->
+            <div class="welcome-message" id="welcomeMessage">
+                <h1 id="welcomeText">Hello Guest!</h1>
+                <p>What can I help you with today?</p>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="messages">
+                <!-- Messages will appear here -->
+            </div>
+            
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="input" placeholder="Type your message here...">
+                <button class="chat-send-btn" id="sendBtn">Send</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize variables
+        let database = "";
+        let username = localStorage.getItem("code-mon-username") || "Guest";
+        
+        // AI Endpoints - KEEPING YOUR ORIGINAL ENDPOINTS
+        const AI_ENDPOINTS = [
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-2",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-3",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-4",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-5",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-6",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-7",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-8",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-9",
+            "https://code-mon.codemon.workers.dev/api/ai-get?username=C69P2W&name=code-mon-10"
+        ];
+
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const welcomeText = document.getElementById('welcomeText');
+        const input = document.getElementById('input');
+        const sendBtn = document.getElementById('sendBtn');
+        const messages = document.getElementById('messages');
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+        // Load database.txt
+        fetch("database.txt")
+            .then(r => r.text())
+            .then(t => database = t)
+            .catch(() => database = "");
+
+        // Initialize page
+        function initPage() {
+            // Set username in welcome message
+            welcomeText.textContent = `Hello ${username}!`;
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('codemon-theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+            
+            // Check screen width for sidebar
+            // On desktop (>=1024px), sidebar is always open and can't be closed
+            // On mobile (<1024px), sidebar is hidden by default
+            if (window.innerWidth < 1024) {
+                sidebar.classList.remove('open');
+            } else {
+                sidebar.classList.add('open');
+                // Remove mobile menu button on desktop since sidebar can't be closed
+                mobileMenuBtn.style.display = 'none';
+            }
+        }
+
+        // Theme toggle functionality
+        themeToggle.addEventListener('click', () => {
+            if (document.body.classList.contains('light-theme')) {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('codemon-theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('codemon-theme', 'light');
+            }
+        });
+
+        // Mobile menu toggle - ONLY ON MOBILE
+        mobileMenuBtn.addEventListener('click', () => {
+            if (window.innerWidth < 1024) {
+                sidebar.classList.toggle('open');
+            }
+        });
+
+        // Sidebar item click handler
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                sidebarItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Close sidebar on mobile after selection
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        });
+
+        // Input focus handler - hide welcome message
+        input.addEventListener('focus', () => {
+            welcomeMessage.classList.add('fade-out');
+        });
+
+        // Input blur handler - show welcome message if empty
+        input.addEventListener('blur', () => {
+            if (input.value.trim() === '' && messages.children.length === 0) {
+                welcomeMessage.classList.remove('fade-out');
+            }
+        });
+
+        // Input keydown handler
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                send();
+            }
+        });
+
+        // Send button click handler
+        sendBtn.addEventListener('click', send);
+
+        // Send function with fallback - USING YOUR EXACT CODE
+        async function send() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            add(text, "user");
+            input.value = "";
+            
+            // Hide welcome message if not already hidden
+            welcomeMessage.classList.add('fade-out');
+
+            const q = encodeURIComponent(text + "/database:" + database);
+
+            for (let i = 0; i < AI_ENDPOINTS.length; i++) {
+                const url = `${AI_ENDPOINTS[i]}&question=${q}`;
+
+                try {
+                    const res = await fetch(url);
+
+                    if (!res.ok) {
+                        throw new Error("HTTP " + res.status);
+                    }
+
+                    const data = await res.text();
+
+                    if (!data || !data.trim()) {
+                        throw new Error("Empty response");
+                    }
+
+                    console.log(`✅ AI success from endpoint ${i + 2}`);
+                    add(data, "ai");
+                    return;
+
+                } catch (err) {
+                    console.warn(`❌ Endpoint ${i + 2} failed`, err);
+                    // Try next endpoint
+                }
+            }
+
+            // If all endpoints fail
+            add("All AI servers are currently busy or exhausted. Please try again later.", "ai");
+        }
+
+        // UI helper to add messages
+        function add(text, type) {
+            const div = document.createElement("div");
+            div.className = "msg " + type;
+            div.textContent = text;
+
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Window resize handler for sidebar
+        window.addEventListener('resize', () => {
+            if (window.innerWidth < 1024) {
+                sidebar.classList.remove('open');
+                mobileMenuBtn.style.display = 'block';
+            } else {
+                sidebar.classList.add('open');
+                mobileMenuBtn.style.display = 'none';
+            }
+        });
+
+        // Initialize page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

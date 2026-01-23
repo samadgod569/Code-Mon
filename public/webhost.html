@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Hosting | CodeMon</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light theme variables */
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --border: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.1), 0 10px 20px -5px rgba(0, 0, 0, 0.04);
+            --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            --gradient-accent: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark-theme {
+            /* Dark theme variables */
+            --primary: #4895ef;
+            --primary-light: #4cc9f0;
+            --secondary: #560bad;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border: #334155;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.4), 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+            --gradient-primary: linear-gradient(135deg, #4895ef 0%, #560bad 100%);
+            --gradient-accent: linear-gradient(135deg, #f72585 0%, #7209b7 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header & Navigation */
+        header {
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background-color: rgba(var(--surface-rgb), 0.9);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .theme-toggle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background-color: var(--surface);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            font-size: 20px;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Main Content */
+        main {
+            padding: 80px 0;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Cards Container */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 32px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 40px 32px;
+            text-decoration: none;
+            display: block;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--primary);
+        }
+
+        .card-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 36px;
+            color: white;
+        }
+
+        .static-card .card-icon {
+            background: var(--gradient-primary);
+        }
+
+        .dynamic-card .card-icon {
+            background: var(--gradient-accent);
+        }
+
+        .card h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+
+        .card-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .card-features i {
+            color: var(--success);
+            font-size: 14px;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price {
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin-left: 4px;
+        }
+
+        .card-cta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .card:hover .card-cta {
+            color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .badge {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: var(--accent);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 80px;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .hero p {
+                font-size: 18px;
+            }
+            
+            .cards-container {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .card {
+                padding: 32px 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .hero h1 {
+                font-size: 28px;
+            }
+            
+            .card h2 {
+                font-size: 24px;
+            }
+            
+            .price {
+                font-size: 28px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .static-card {
+            animation-delay: 0.1s;
+        }
+
+        .dynamic-card {
+            animation-delay: 0.2s;
+        }
+
+        /* Utility Classes */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body class="light-theme">
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <span class="logo-text">CodeMon</span>
+                </a>
+                
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <div class="hero">
+                <h1>Choose Your Hosting Solution</h1>
+                <p>Select the perfect hosting type for your web project. Scale effortlessly with our optimized infrastructure.</p>
+            </div>
+
+            <div class="cards-container">
+                <!-- Static Web Hosting Card -->
+                <a href="https://static-hosting.codemon.com" target="_blank" class="card static-card">
+                    <div class="card-icon">
+                        <i class="fas fa-file-code"></i>
+                    </div>
+                    
+                    <h2>Static Web Hosting</h2>
+                    <p class="card-description">
+                        Perfect for websites built with HTML, CSS, and JavaScript. Lightning-fast performance with global CDN delivery.
+                    </p>
+                    
+                    <ul class="card-features">
+                        <li><i class="fas fa-check-circle"></i> Instant deployment from Git</li>
+                        <li><i class="fas fa-check-circle"></i> Global CDN & DDoS protection</li>
+                        <li><i class="fas fa-check-circle"></i> Free SSL certificates</li>
+                        <li><i class="fas fa-check-circle"></i> Automatic cache invalidation</li>
+                        <li><i class="fas fa-check-circle"></i> Custom domain support</li>
+                    </ul>
+                    
+                    <div class="card-footer">
+                        <div>
+                            <span class="price">$0<span class="price-period">/month</span></span>
+                            <div class="price-note">Free tier available</div>
+                        </div>
+                        <div class="card-cta">
+                            <span>Get Started</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Dynamic Web Hosting Card -->
+                <a href="https://dynamic-hosting.codemon.com" target="_blank" class="card dynamic-card">
+                    <div class="badge">POPULAR</div>
+                    <div class="card-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    
+                    <h2>Dynamic Web Hosting</h2>
+                    <p class="card-description">
+                        Full-stack applications with Node.js, Python, PHP, and databases. Complete backend support with auto-scaling.
+                    </p>
+                    
+                    <ul class="card-features">
+                        <li><i class="fas fa-check-circle"></i> Node.js, Python, PHP, Ruby</li>
+                        <li><i class="fas fa-check-circle"></i> MySQL & PostgreSQL databases</li>
+                        <li><i class="fas fa-check-circle"></i> Auto-scaling & load balancing</li>
+                        <li><i class="fas fa-check-circle"></i> CI/CD pipeline included</li>
+                        <li><i class="fas fa-check-circle"></i> 24/7 monitoring & alerts</li>
+                    </ul>
+                    
+                    <div class="card-footer">
+                        <div>
+                            <span class="price">$9<span class="price-period">/month</span></span>
+                            <div class="price-note">Starter plan</div>
+                        </div>
+                        <div class="card-cta">
+                            <span>Get Started</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>© 2024 CodeMon Hosting. All rights reserved.</p>
+            <p style="margin-top: 8px; font-size: 13px;">
+                <i class="fas fa-shield-alt"></i> 99.9% Uptime SLA • 
+                <i class="fas fa-globe"></i> 15 Global Data Centers •
+                <i class="fas fa-headset"></i> 24/7 Support
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('i');
+        
+        // Check for saved theme preference or prefer-color-scheme
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const savedTheme = localStorage.getItem('codemon-theme');
+        
+        // Set initial theme
+        if (savedTheme === 'dark' || (!savedTheme && prefersDarkScheme.matches)) {
+            document.body.classList.add('dark-theme');
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
+        
+        // Theme toggle functionality
+        themeToggle.addEventListener('click', () => {
+            if (document.body.classList.contains('dark-theme')) {
+                document.body.classList.remove('dark-theme');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+                localStorage.setItem('codemon-theme', 'light');
+            } else {
+                document.body.classList.add('dark-theme');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+                localStorage.setItem('codemon-theme', 'dark');
+            }
+        });
+        
+        // Listen for system theme changes
+        prefersDarkScheme.addEventListener('change', (e) => {
+            if (!localStorage.getItem('codemon-theme')) {
+                if (e.matches) {
+                    document.body.classList.add('dark-theme');
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                }
+            }
+        });
+        
+        // Card hover effects enhancement
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-8px)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
