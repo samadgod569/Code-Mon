@@ -2,124 +2,323 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code-Mon Generator</title>
+    <title>Code-Mon AI</title>
     <link rel="icon" type="image/png" href="img/icon.png">
     <style>
-    /* GLOBAL */
-    body {
+    * {
         margin: 0;
-        padding: 40px;
-        font-family: "Segoe UI", "Roboto Mono", monospace;
-        background: radial-gradient(circle at top, #0b0f1e, #081124, #050812);
-        color: #00eaff;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
         min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
     }
 
-    h2, h3 {
-        color: #00eaff;
-        text-shadow: 0 0 12px #00eaffaa;
-        margin-bottom: 10px;
-        font-weight: 600;
-        letter-spacing: 1px;
-    }
-
-    /* OUTPUT TEXTAREA */
-    textarea {
+    .container {
         width: 100%;
-        height: 350px;
-        background: #0d1326;
-        color: #00f7ff;
-        border: 1px solid #00eaff55;
-        border-radius: 12px;
-        padding: 15px;
-        font-size: 15px;
-        resize: vertical;
-        box-shadow: 0 0 20px #00eaff22;
-        outline: none;
-        font-family: "Roboto Mono", monospace;
-        transition: 0.15s;
+        max-width: 900px;
+        background: rgba(17, 25, 40, 0.95);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(0, 234, 255, 0.1);
+        border: 1px solid rgba(0, 234, 255, 0.2);
+        display: flex;
+        flex-direction: column;
+        height: 85vh;
+        max-height: 700px;
     }
 
-    textarea:focus {
-        border-color: #00eaff;
-        box-shadow: 0 0 25px #00eaff55;
+    .header {
+        background: linear-gradient(135deg, #00eaff, #0099ff);
+        padding: 24px 30px;
+        color: #000;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
     }
 
-    /* BUTTONS */
-    button {
-        padding: 12px 24px;
-        font-size: 17px;
-        margin-top: 20px;
-        margin-right: 10px;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        background: #00eaff;
-        color: #001219;
+    .header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .chat-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        background: rgba(10, 15, 30, 0.4);
+    }
+
+    .chat-area::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-area::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .chat-area::-webkit-scrollbar-thumb {
+        background: rgba(0, 234, 255, 0.3);
+        border-radius: 4px;
+    }
+
+    .message {
+        display: flex;
+        gap: 12px;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message.user {
+        flex-direction: row-reverse;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-weight: bold;
-        letter-spacing: 0.5px;
-        transition: 0.2s;
-        box-shadow: 0 0 15px #00eaffaa;
+        flex-shrink: 0;
+        font-size: 18px;
     }
 
-    button:hover {
-        background: #00b8d4;
-        box-shadow: 0 0 25px #00eaff;
+    .message.user .avatar {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+    }
+
+    .message.ai .avatar {
+        background: linear-gradient(135deg, #00eaff, #0099ff);
+        color: #000;
+    }
+
+    .bubble {
+        max-width: 70%;
+        padding: 14px 18px;
+        border-radius: 18px;
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+    .message.user .bubble {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message.ai .bubble {
+        background: rgba(0, 234, 255, 0.1);
+        color: #00eaff;
+        border: 1px solid rgba(0, 234, 255, 0.3);
+        border-bottom-left-radius: 4px;
+    }
+
+    .code-output {
+        background: #0d1117;
+        border: 1px solid rgba(0, 234, 255, 0.4);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 12px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        color: #58a6ff;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .action-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .preview-btn {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .preview-btn:hover {
         transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
     }
 
-    /* GREEN DEPLOY BUTTON */
-    #deployBtn {
-        background: #00ff6a;
-        box-shadow: 0 0 15px #00ff6a99;
-        color: #00240f;
+    .deploy-btn {
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        color: #000;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
     }
 
-    #deployBtn:hover {
-        background: #00e05c;
-        box-shadow: 0 0 25px #00ff6a;
+    .deploy-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
     }
 
-    /* LAYOUT CONTAINER */
-    .wrapper {
-        max-width: 800px;
-        margin: auto;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 0 40px #00eaff22;
-        border: 1px solid #00eaff33;
-        backdrop-filter: blur(15px);
-        animation: fadeIn 0.6s ease-out;
+    .input-area {
+        padding: 20px 25px;
+        background: rgba(0, 0, 0, 0.3);
+        border-top: 1px solid rgba(0, 234, 255, 0.2);
+        display: flex;
+        gap: 12px;
+        align-items: center;
     }
 
-    /* ANIMATIONS */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(15px); }
-        to { opacity: 1; transform: translateY(0); }
+    #userInput {
+        flex: 1;
+        padding: 14px 18px;
+        border: 2px solid rgba(0, 234, 255, 0.3);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.4);
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    #userInput:focus {
+        border-color: #00eaff;
+        box-shadow: 0 0 20px rgba(0, 234, 255, 0.2);
+    }
+
+    #sendBtn {
+        padding: 14px 28px;
+        background: linear-gradient(135deg, #00eaff, #0099ff);
+        color: #000;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(0, 234, 255, 0.3);
+    }
+
+    #sendBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 234, 255, 0.4);
+    }
+
+    #sendBtn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .typing-indicator {
+        display: flex;
+        gap: 4px;
+        padding: 12px;
+    }
+
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background: #00eaff;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.5;
+        }
+        30% {
+            transform: translateY(-10px);
+            opacity: 1;
+        }
     }
     </style>
 </head>
 <body>
-<div class="wrapper">
-<h2>Generating code…</h2>
-
-<h3>Output</h3>
-<textarea id="output"></textarea>
-
-<br><br>
-<button onclick="preview()">Preview</button>
-
-<button id="deployBtn">Deploy</button>
+<div class="container">
+    <div class="header">
+        <h1>⚡ CODE-MON AI</h1>
+    </div>
+    
+    <div class="chat-area" id="chatArea">
+        <div class="message ai">
+            <div class="avatar">🤖</div>
+            <div class="bubble">
+                Hey! I'm Code-Mon AI. Tell me what you want to build and I'll generate the code for you instantly! 🚀
+            </div>
+        </div>
+    </div>
+    
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Describe what you want to create..." />
+        <button id="sendBtn">Send</button>
+    </div>
 </div>
-<script>
-    (async function() {
-    const API = "https://code-mon.codemon.workers.dev";
 
+<script>
+(async function() {
+    const API = "https://code-mon.codemon.workers.dev";
     const username = localStorage.getItem("code-mon-username");
     const password = localStorage.getItem("code-mon-pass");
 
-    //  No credentials → go to login
     if (!username || !password) {
         localStorage.clear();
         location.href = "login.html";
@@ -130,64 +329,103 @@
         const res = await fetch(`${API}/api/pass?username=${username}&pass=${password}`);
         const data = await res.json();
 
-        //  Wrong password / user not found
         if (!data.success) {
             localStorage.removeItem("code-mon-username");
             localStorage.removeItem("code-mon-pass");
             localStorage.removeItem("user");
-
             location.href = "login.html";
             return;
         }
 
-        //  Auth success → continue loading file.html normally
         console.log("User authenticated:", username);
-
     } catch (err) {
-        // Network failure = prevent access
         localStorage.clear();
         location.href = "login.html";
     }
 })();
-    // Existing generate() function stays the same
 
-// ----------------------
-// DEPLOY BUTTON FUNCTION
-// ----------------------
-const deployBtn = document.getElementById("deployBtn");
-deployBtn.addEventListener("click", async () => {
-    const code = document.getElementById("output").value;
-    if (!code) {
-        alert("No generated code to deploy!");
-        return;
-    }
+const chatArea = document.getElementById("chatArea");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 
-    try {
-        // Copy to clipboard
-        await navigator.clipboard.writeText(code);
-        
+let generatedCode = "";
 
-        // Redirect to file.html
-        window.location.href = "file.html";
-    } catch (err) {
-        alert("Failed to copy code: " + err);
-    }
-});
-// Read text from URL
-const params = new URLSearchParams(window.location.search);
-const userQuery = params.get("text") || "";
-
-// AUTO-GENERATE on page load
-window.onload = () => {
-    if (!userQuery) {
-        document.getElementById("output").value = "⚠ No ?text= provided.";
-        return;
-    }
-    generate(userQuery);
+function addMessage(text, isUser = false) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+    
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = isUser ? "U" : "🤖";
+    
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+    
+    msgDiv.appendChild(avatar);
+    msgDiv.appendChild(bubble);
+    chatArea.appendChild(msgDiv);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    
+    return bubble;
 }
 
-async function generate(q) {
-    // EXACT prompt from Node.js bot (unchanged)
+function addCodeMessage(code) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "message ai";
+    
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "🤖";
+    
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerHTML = `
+        ✨ Code generated successfully!
+        <div class="code-output">${escapeHtml(code)}</div>
+        <div class="action-buttons">
+            <button class="action-btn preview-btn" onclick="preview()">👁️ Preview</button>
+            <button class="action-btn deploy-btn" onclick="deploy()">🚀 Deploy</button>
+        </div>
+    `;
+    
+    msgDiv.appendChild(avatar);
+    msgDiv.appendChild(bubble);
+    chatArea.appendChild(msgDiv);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showTyping() {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "message ai";
+    msgDiv.id = "typingIndicator";
+    
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "🤖";
+    
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+    
+    msgDiv.appendChild(avatar);
+    msgDiv.appendChild(bubble);
+    chatArea.appendChild(msgDiv);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function removeTyping() {
+    const typing = document.getElementById("typingIndicator");
+    if (typing) typing.remove();
+}
+
+async function generateCode(query) {
     const prompt = `
 Return ONLY raw HTML code.
 Do NOT include \`\`\`, html\`\`\`, js\`\`\`, css\`\`\`, or any wrappers.
@@ -245,31 +483,78 @@ Do not include comments.
 Do not include explanations.
 Do not escape newlines.
 Output only the plain text.
-${q}
+${query}
 `;
 
-    const res = await fetch(`https://code-mon.codemon.workers.dev/api/code-mon-ai?question= ${encodeURIComponent(prompt)}`);
+    const res = await fetch(`https://code-mon.codemon.workers.dev/api/code-mon-ai?question=${encodeURIComponent(prompt)}`);
     let data = await res.json();
 
     let output = data.answer || "";
 
-    // CLEANING — same as Node.js
     output = output
         .replace(/```[\s\S]*?```/g, "")
         .replace(/```/g, "")
-        .replace(/^html|^css|^js|^javascript/gi, "")
+        .replace(/^html|^css|^js|^javascript\n/gi, "")
         .replace(/\r/g, "")
         .trim();
 
-    document.getElementById("output").value = output;
-
-    localStorage.setItem("codeMonGenerated", output);
+    return output;
 }
+
+async function handleSend() {
+    const query = userInput.value.trim();
+    if (!query) return;
+
+    addMessage(query, true);
+    userInput.value = "";
+    sendBtn.disabled = true;
+
+    showTyping();
+
+    try {
+        const code = await generateCode(query);
+        removeTyping();
+        
+        generatedCode = code;
+        localStorage.setItem("codeMonGenerated", code);
+        
+        addCodeMessage(code);
+    } catch (err) {
+        removeTyping();
+        addMessage("❌ Sorry, something went wrong. Please try again!");
+    }
+
+    sendBtn.disabled = false;
+    userInput.focus();
+}
+
+sendBtn.addEventListener("click", handleSend);
+
+userInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") handleSend();
+});
 
 function preview() {
+    if (!generatedCode) {
+        alert("No code generated yet!");
+        return;
+    }
     window.location.href = "preview.html";
 }
-</script>
 
+async function deploy() {
+    if (!generatedCode) {
+        alert("No code generated yet!");
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(generatedCode);
+        window.location.href = "file.html";
+    } catch (err) {
+        alert("Failed to copy code: " + err);
+    }
+}
+</script>
 </body>
 </html>
