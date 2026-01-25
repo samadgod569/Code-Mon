@@ -13,7 +13,7 @@
 
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        background: #0a0e17;
         min-height: 100vh;
         display: flex;
         align-items: center;
@@ -24,11 +24,11 @@
     .container {
         width: 100%;
         max-width: 900px;
-        background: rgba(17, 25, 40, 0.95);
-        border-radius: 24px;
+        background: #13171f;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(0, 234, 255, 0.1);
-        border: 1px solid rgba(0, 234, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        border: 1px solid #1f2937;
         display: flex;
         flex-direction: column;
         height: 85vh;
@@ -36,36 +36,24 @@
     }
 
     .header {
-        background: linear-gradient(135deg, #00eaff, #0099ff);
-        padding: 24px 30px;
-        color: #000;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: shimmer 3s linear infinite;
-    }
-
-    @keyframes shimmer {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        background: #1a1f2e;
+        padding: 20px 30px;
+        border-bottom: 1px solid #2d3748;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .header h1 {
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        position: relative;
-        z-index: 1;
+        font-size: 20px;
+        font-weight: 600;
+        color: #e2e8f0;
+        letter-spacing: 0.5px;
+    }
+
+    .user-info {
+        font-size: 14px;
+        color: #94a3b8;
     }
 
     .chat-area {
@@ -75,32 +63,32 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        background: rgba(10, 15, 30, 0.4);
+        background: #0f1419;
     }
 
     .chat-area::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
     }
 
     .chat-area::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.2);
+        background: transparent;
     }
 
     .chat-area::-webkit-scrollbar-thumb {
-        background: rgba(0, 234, 255, 0.3);
-        border-radius: 4px;
+        background: #2d3748;
+        border-radius: 3px;
     }
 
     .message {
         display: flex;
         gap: 12px;
-        animation: slideIn 0.3s ease-out;
+        animation: slideIn 0.2s ease-out;
     }
 
     @keyframes slideIn {
         from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(5px);
         }
         to {
             opacity: 1;
@@ -113,57 +101,58 @@
     }
 
     .avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
+        font-weight: 600;
         flex-shrink: 0;
-        font-size: 18px;
+        font-size: 14px;
+        text-transform: uppercase;
     }
 
     .message.user .avatar {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: #3b82f6;
         color: #fff;
     }
 
     .message.ai .avatar {
-        background: linear-gradient(135deg, #00eaff, #0099ff);
-        color: #000;
+        background: #1f2937;
+        color: #60a5fa;
+        border: 1px solid #374151;
     }
 
     .bubble {
         max-width: 70%;
-        padding: 14px 18px;
-        border-radius: 18px;
+        padding: 12px 16px;
+        border-radius: 10px;
         line-height: 1.5;
         word-wrap: break-word;
+        font-size: 14px;
     }
 
     .message.user .bubble {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: #3b82f6;
         color: #fff;
-        border-bottom-right-radius: 4px;
     }
 
     .message.ai .bubble {
-        background: rgba(0, 234, 255, 0.1);
-        color: #00eaff;
-        border: 1px solid rgba(0, 234, 255, 0.3);
-        border-bottom-left-radius: 4px;
+        background: #1a1f2e;
+        color: #e2e8f0;
+        border: 1px solid #2d3748;
     }
 
     .code-output {
         background: #0d1117;
-        border: 1px solid rgba(0, 234, 255, 0.4);
-        border-radius: 12px;
+        border: 1px solid #30363d;
+        border-radius: 6px;
         padding: 16px;
         margin-top: 12px;
         font-family: 'Courier New', monospace;
         font-size: 13px;
-        color: #58a6ff;
+        color: #c9d1d9;
         max-height: 300px;
         overflow-y: auto;
         white-space: pre-wrap;
@@ -179,39 +168,36 @@
     .action-btn {
         padding: 8px 16px;
         border: none;
-        border-radius: 8px;
+        border-radius: 6px;
         cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.2s;
+        font-weight: 500;
+        font-size: 13px;
+        transition: all 0.15s;
     }
 
     .preview-btn {
-        background: linear-gradient(135deg, #f093fb, #f5576c);
-        color: #fff;
-        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        background: #2d3748;
+        color: #e2e8f0;
+        border: 1px solid #4a5568;
     }
 
     .preview-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        background: #374151;
     }
 
     .deploy-btn {
-        background: linear-gradient(135deg, #4facfe, #00f2fe);
-        color: #000;
-        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+        background: #3b82f6;
+        color: #fff;
     }
 
     .deploy-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
+        background: #2563eb;
     }
 
     .input-area {
         padding: 20px 25px;
-        background: rgba(0, 0, 0, 0.3);
-        border-top: 1px solid rgba(0, 234, 255, 0.2);
+        background: #1a1f2e;
+        border-top: 1px solid #2d3748;
         display: flex;
         gap: 12px;
         align-items: center;
@@ -219,55 +205,52 @@
 
     #userInput {
         flex: 1;
-        padding: 14px 18px;
-        border: 2px solid rgba(0, 234, 255, 0.3);
-        border-radius: 12px;
-        background: rgba(0, 0, 0, 0.4);
-        color: #fff;
-        font-size: 15px;
+        padding: 12px 16px;
+        border: 1px solid #2d3748;
+        border-radius: 8px;
+        background: #0f1419;
+        color: #e2e8f0;
+        font-size: 14px;
         outline: none;
-        transition: all 0.2s;
+        transition: all 0.15s;
     }
 
     #userInput:focus {
-        border-color: #00eaff;
-        box-shadow: 0 0 20px rgba(0, 234, 255, 0.2);
+        border-color: #3b82f6;
+        background: #13171f;
     }
 
     #sendBtn {
-        padding: 14px 28px;
-        background: linear-gradient(135deg, #00eaff, #0099ff);
-        color: #000;
+        padding: 12px 24px;
+        background: #3b82f6;
+        color: #fff;
         border: none;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
         cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: 0 4px 15px rgba(0, 234, 255, 0.3);
+        transition: all 0.15s;
     }
 
     #sendBtn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 234, 255, 0.4);
+        background: #2563eb;
     }
 
     #sendBtn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        transform: none;
     }
 
     .typing-indicator {
         display: flex;
         gap: 4px;
-        padding: 12px;
+        padding: 8px;
     }
 
     .typing-indicator span {
-        width: 8px;
-        height: 8px;
-        background: #00eaff;
+        width: 6px;
+        height: 6px;
+        background: #60a5fa;
         border-radius: 50%;
         animation: typing 1.4s infinite;
     }
@@ -283,10 +266,10 @@
     @keyframes typing {
         0%, 60%, 100% {
             transform: translateY(0);
-            opacity: 0.5;
+            opacity: 0.4;
         }
         30% {
-            transform: translateY(-10px);
+            transform: translateY(-6px);
             opacity: 1;
         }
     }
@@ -295,14 +278,15 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>⚡ CODE-MON AI</h1>
+        <h1>Code-Mon AI</h1>
+        <div class="user-info" id="userInfo"></div>
     </div>
     
     <div class="chat-area" id="chatArea">
         <div class="message ai">
-            <div class="avatar">🤖</div>
+            <div class="avatar">AI</div>
             <div class="bubble">
-                Hey! I'm Code-Mon AI. Tell me what you want to build and I'll generate the code for you instantly! 🚀
+                Hey! I'm Code-Mon AI. Tell me what you want to build and I'll generate the code for you.
             </div>
         </div>
     </div>
@@ -324,6 +308,8 @@
         location.href = "login.html";
         return;
     }
+
+    document.getElementById("userInfo").textContent = username;
 
     try {
         const res = await fetch(`${API}/api/pass?username=${username}&pass=${password}`);
@@ -347,6 +333,7 @@
 const chatArea = document.getElementById("chatArea");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
+const username = localStorage.getItem("code-mon-username");
 
 let generatedCode = "";
 
@@ -356,7 +343,7 @@ function addMessage(text, isUser = false) {
     
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = isUser ? "U" : "🤖";
+    avatar.textContent = isUser ? username.substring(0, 2) : "AI";
     
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -376,16 +363,16 @@ function addCodeMessage(code) {
     
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = "🤖";
+    avatar.textContent = "AI";
     
     const bubble = document.createElement("div");
     bubble.className = "bubble";
     bubble.innerHTML = `
-        ✨ Code generated successfully!
+        Code generated successfully
         <div class="code-output">${escapeHtml(code)}</div>
         <div class="action-buttons">
-            <button class="action-btn preview-btn" onclick="preview()">👁️ Preview</button>
-            <button class="action-btn deploy-btn" onclick="deploy()">🚀 Deploy</button>
+            <button class="action-btn preview-btn" onclick="preview()">Preview</button>
+            <button class="action-btn deploy-btn" onclick="deploy()">Deploy</button>
         </div>
     `;
     
@@ -408,7 +395,7 @@ function showTyping() {
     
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = "🤖";
+    avatar.textContent = "AI";
     
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -521,7 +508,7 @@ async function handleSend() {
         addCodeMessage(code);
     } catch (err) {
         removeTyping();
-        addMessage("❌ Sorry, something went wrong. Please try again!");
+        addMessage("Sorry, something went wrong. Please try again.");
     }
 
     sendBtn.disabled = false;
