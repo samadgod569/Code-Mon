@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Code-Mon Store</title>
+<meta name="description" content="APP and Game store - By Code Mon.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<style>
+:root{
+ --bg:#0b0e13;
+ --card:#141821;
+ --text:#fff;
+ --muted:#9aa0a6;
+ --chip:#1d2230;
+ --accent:#8b5cf6;
+}
+
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:linear-gradient(180deg,#0b0e13,#0f1422);
+ font-family:system-ui;
+ color:var(--text);
+}
+
+.hero{
+ padding:22px;
+ font-size:22px;
+ font-weight:700;
+ letter-spacing:.5px;
+}
+
+.container{padding:16px;max-width:1200px;margin:auto}
+
+.searchbar{
+ display:flex;
+ gap:10px;
+ margin-bottom:14px;
+}
+
+.searchbar input,.searchbar select{
+ flex:1;
+ padding:12px;
+ border-radius:14px;
+ border:none;
+ background:#121722;
+ color:white;
+ outline:none;
+}
+
+.chips{
+ display:flex;
+ gap:10px;
+ overflow-x:auto;
+ margin-bottom:16px;
+}
+
+.chip{
+ padding:8px 14px;
+ border-radius:20px;
+ background:var(--chip);
+ white-space:nowrap;
+ font-size:14px;
+ cursor:pointer;
+ opacity:.6;
+ transition:.2s;
+}
+
+.chip:hover{opacity:1}
+
+.grid{
+ display:grid;
+ grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+ gap:14px;
+}
+
+.card{
+ background:var(--card);
+ border-radius:20px;
+ padding:14px;
+ text-align:center;
+ box-shadow:0 6px 20px rgba(0,0,0,.5);
+ transition:.25s;
+ cursor:pointer;
+}
+
+.card:hover{
+ transform:translateY(-6px) scale(1.03);
+ box-shadow:0 10px 30px rgba(0,0,0,.8);
+}
+
+.icon{
+ width:64px;
+ height:64px;
+ border-radius:16px;
+ object-fit:cover;
+ margin-bottom:8px;
+}
+
+.name{font-weight:600}
+.owner{font-size:13px;color:var(--muted)}
+.likes{font-size:13px;color:#ff5da2;margin-top:4px}
+
+.skeleton{
+ background:linear-gradient(90deg,#222,#333,#222);
+ background-size:200% 100%;
+ animation:s 1.2s infinite;
+ border-radius:10px;
+}
+@keyframes s{
+ 0%{background-position:0%}
+ 100%{background-position:200%}
+}
+
+.installBar{
+ position:fixed;
+ bottom:0;
+ left:0;
+ right:0;
+ background:#121722;
+ padding:14px;
+ display:none;
+ box-shadow:0 -4px 20px rgba(0,0,0,.8);
+}
+
+.installBar button{
+ width:100%;
+ padding:14px;
+ border:none;
+ border-radius:20px;
+ background:linear-gradient(135deg,#8b5cf6,#6366f1);
+ color:white;
+ font-size:16px;
+ font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="hero">Code-Mon App Store</div>
+
+<div class="container">
+
+<div class="searchbar">
+<input id="search" placeholder="Search apps...">
+<select id="sort">
+<option value="desc">Most liked</option>
+<option value="asc">Least liked</option>
+</select>
+</div>
+
+<div class="chips">
+<div class="chip" style="opacity:1">All</div>
+<div class="chip">Music</div>
+<div class="chip">AI</div>
+<div class="chip">Game</div>
+<div class="chip">Tool</div>
+</div>
+
+<div id="grid" class="grid"></div>
+
+</div>
+
+<div class="installBar" id="installBar">
+<button id="installBtn">Open App</button>
+</div>
+
+<script>
+const API="https://code-mon.codemon.workers.dev/api";
+let apps=[];
+let activeChip="All";
+
+const grid=document.getElementById("grid");
+const installBar=document.getElementById("installBar");
+const installBtn=document.getElementById("installBtn");
+const search=document.getElementById("search");
+const sort=document.getElementById("sort");
+
+// skeleton
+for(let i=0;i<8;i++){
+ grid.innerHTML+=`
+ <div class="card">
+  <div class="skeleton" style="width:64px;height:64px;margin:auto"></div>
+  <div class="skeleton" style="height:14px;margin-top:8px"></div>
+  <div class="skeleton" style="height:12px;width:60%;margin:6px auto"></div>
+ </div>`;
+}
+
+// load apps
+fetch(API+"/app-list")
+.then(r=>r.json())
+.then(async d=>{
+ apps=[];
+ for(const k of d.apps){
+  const r=await fetch(API+"/builder?username="+k);
+  const raw=await r.text();
+  apps.push(parse(raw,k));
+ }
+ render();
+});
+function parse(raw,key){
+ const p = raw.split("*");
+ const owner = p[0];
+
+ let m={};
+ try{
+   const match = p[1].match(/"({[\s\S]*})"/);
+   const unescaped = JSON.parse(`"${match[1]}"`);
+   m = JSON.parse(unescaped);
+ }catch(e){
+   console.error("Manifest parse error",e);
+ }
+
+ const likes = p.slice(3).join("*").split("[*]").filter(x=>x).length;
+ const cat = m.name ? m.name.split(" ")[0] : "Other";
+
+ return {owner,manifest:m,likes,key,category:cat};
+}
+
+function render(){
+ let list=[...apps];
+
+ const q=search.value.toLowerCase();
+ if(q) list=list.filter(a=>a.manifest.name.toLowerCase().includes(q));
+
+ if(activeChip!=="All"){
+  list=list.filter(a=>a.category.toLowerCase()===activeChip.toLowerCase());
+ }
+
+ list.sort((a,b)=> sort.value=="desc"?b.likes-a.likes:a.likes-b.likes);
+
+ grid.innerHTML="";
+ list.forEach(a=>{
+  const c=document.createElement("div");
+  c.className="card";
+  c.innerHTML=`
+   <img class="icon" src="${a.manifest.icons[0].src}">
+   <div class="name">${a.manifest.short_name}</div>
+   <div class="owner">${a.owner}</div>
+   <div class="likes">${a.likes} likes</div>`;
+  c.onclick=()=>{
+    installBar.style.display="block";
+installBtn.onclick=()=>{
+  
+    location.href=`https://code-mon-space.pages.dev/@me?user=${a.owner}&filename=install.html`;
+  
+}
+  }
+  grid.appendChild(c);
+ });
+}
+
+search.oninput=render;
+sort.onchange=render;
+
+document.querySelectorAll(".chip").forEach(ch=>{
+ ch.onclick=()=>{
+  document.querySelectorAll(".chip").forEach(c=>c.style.opacity=.6);
+  ch.style.opacity=1;
+  activeChip=ch.innerText;
+  render();
+ }
+});
+</script>
+
+</body>
+  </html>
