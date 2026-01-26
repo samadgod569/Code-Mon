@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Code Mon - Pixel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root {
+  --bg:#0b0b11;
+  --panel:#141420;
+  --accent:#6c63ff;
+  --accent2:#00ffd5;
+  --border:rgba(255,255,255,.08);
+  --recent-color-size:30px;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  height:100vh;
+  display:flex;
+  font-family:system-ui;
+  background:radial-gradient(circle at top,#151525,#0b0b11);
+  color:white;
+  overflow:hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width:260px;
+  min-width:260px;
+  background:linear-gradient(180deg,#17172a,#11111d);
+  border-right:1px solid var(--border);
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  overflow-y:auto;
+}
+.sidebar h2 {
+  text-align:center;
+  font-size:20px;
+  margin-bottom:6px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  color:transparent;
+}
+label { font-size:13px; opacity:.8; }
+button,input,select { width:100%; padding:8px; border-radius:10px; border:none; background:#1f1f32; color:white; font-size:14px; }
+button { background:linear-gradient(135deg,var(--accent),#4f46e5); cursor:pointer; font-weight:600; }
+button.secondary { background:#22223a; }
+button:hover { filter:brightness(1.15); }
+input[type=color]{height:42px; padding:4px;}
+.recent-colors { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.recent-colors div { width:var(--recent-color-size); height:var(--recent-color-size); border-radius:4px; cursor:pointer; border:1px solid rgba(255,255,255,.2); }
+
+/* Layers panel */
+.layers-panel { background:var(--panel); border-radius:8px; padding:6px; display:flex; flex-direction:column; gap:4px; max-height:150px; overflow-y:auto; }
+.layers-panel div { padding:4px 6px; border-radius:6px; background:rgba(255,255,255,.05); display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.layers-panel div.active { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#fff; }
+
+/* ===== MAIN ===== */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+/* TOP BAR */
+.toolbar {
+  height:48px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 12px;
+  background:rgba(20,20,40,.7);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  flex-wrap:wrap;
+}
+.toolbar button { width:auto; padding:6px 12px; background:#1f1f32; }
+
+/* CANVAS ZONE */
+.canvas-zone {
+  flex:1;
+  overflow:auto;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  touch-action:none;
+  position:relative;
+}
+.canvas-frame { padding:20px; position:relative; }
+canvas {
+  background:transparent;
+  image-rendering:pixelated;
+  box-shadow:0 0 0 1px rgba(255,255,255,.15),0 0 25px rgba(108,99,255,.25);
+  border-radius:6px;
+}
+
+/* MAGNIFIER */
+.magnifier {
+  position:absolute;
+  width:120px;
+  height:120px;
+  border:2px solid var(--accent);
+  border-radius:50%;
+  pointer-events:none;
+  display:none;
+  overflow:hidden;
+  z-index:10;
+  background:white;
+}
+
+/* MOBILE RESPONSIVE */
+@media(max-width:900px){
+  body{flex-direction:column;}
+  .sidebar{width:100%; min-width:100%; flex-direction:row; flex-wrap:wrap; gap:6px; padding:8px;}
+  .sidebar h2{width:100%; text-align:center;}
+  .sidebar button,input,select{flex:1 1 30%; font-size:14px; padding:10px;}
+  .toolbar{justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2> Pixel</h2>
+  <input type="color" id="color" value="#ff004c">
+  <select id="tool">
+    <option value="pen">Pen</option>
+    <option value="eraser">Eraser</option>
+    <option value="fill">Bucket Fill</option>
+    <option value="picker">Eyedropper</option>
+  </select>
+  <input type="number" id="brush" value="1" min="1" max="8">
+  <div class="recent-colors" id="recentColors"></div>
+  
+  <div class="layers-panel" id="layersPanel"></div>
+  <button onclick="addLayer()">Add Layer</button>
+  
+  <div id="framesPanel" class="layers-panel"></div>
+  <button onclick="addFrame()">Add Frame</button>
+  
+  <button onclick="undo()">Undo</button>
+  <button onclick="redo()">Redo</button>
+  <button class="secondary" onclick="toggleGrid()">Toggle Grid</button>
+  <button class="secondary" onclick="clearCanvas()">Clear</button>
+  
+  <input type="number" id="size" value="32" min="8" max="128">
+  <button onclick="resizeCanvas()">Resize</button>
+  <button onclick="downloadPNG()">Download PNG</button>
+</div>
+
+<div class="main">
+  <div class="toolbar">
+    <button onclick="zoom(1.25)">Zoom +</button>
+    <button onclick="zoom(0.8)">Zoom −</button>
+    <span style="opacity:.6;font-size:13px">Scroll / pinch to zoom • Pixels stay sharp</span>
+  </div>
+  <div class="canvas-zone">
+    <div class="canvas-frame">
+      <canvas id="canvas"></canvas>
+      <canvas class="magnifier" id="magnifier"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const magCanvas = document.getElementById("magnifier");
+const magCtx = magCanvas.getContext("2d");
+const recentColorsEl = document.getElementById("recentColors");
+const layersPanel = document.getElementById("layersPanel");
+const framesPanel = document.getElementById("framesPanel");
+
+let GRID = true, SIZE = 32, PIXEL = 20, SCALE = 1;
+let layers = [], frames = [], activeLayer = 0, activeFrame = 0;
+let history = [], redoStack = [], recentColors = [];
+let drawing = false, lastPos = { x:0, y:0 };
+
+const toolEl = tool, colorEl = color, brushEl = brush, sizeEl = size;
+
+// ===== Setup =====
+function setup(){
+  canvas.width = SIZE * PIXEL;
+  canvas.height = SIZE * PIXEL;
+  addLayer();
+  addFrame();
+  redraw();
+}
+setup();
+
+// ===== Layers =====
+function addLayer(){
+  if(layers.length >= 8) return alert("Max 8 layers!");
+  layers.push({name:`Layer ${layers.length+1}`, pixels:{}, visible:true});
+  renderLayers();
+}
+function renderLayers(){
+  layersPanel.innerHTML = "";
+  layers.forEach((l,i)=>{
+    const div = document.createElement("div");
+    div.className = i===activeLayer ? "active" : "";
+    div.textContent = l.name;
+    div.onclick = ()=>{ activeLayer=i; renderLayers(); redraw(); }
+    layersPanel.appendChild(div);
+  });
+}
+
+// ===== Frames =====
+function addFrame(){
+  if(frames.length >= 16) return alert("Max 16 frames!");
+  const frameLayers = layers.map(l => ({ ...l, pixels: {...l.pixels} }));
+  frames.push({ layers: frameLayers });
+  activeFrame = frames.length - 1;
+  renderFrames();
+}
+function renderFrames(){
+  framesPanel.innerHTML = "";
+  frames.forEach((f,i)=>{
+    const div = document.createElement("div");
+    div.className = i===activeFrame ? "active" : "";
+    div.textContent = `Frame ${i+1}`;
+    div.onclick = ()=>{
+
+      activeFrame = i;
+      layers = frames[i].layers.map(l => ({ ...l, pixels:{...l.pixels} }));
+      activeLayer = 0;
+      renderLayers();
+      renderFrames();
+      redraw();
+    }
+    framesPanel.appendChild(div);
+  });
+}
+
+// ===== Core Drawing =====
+function getCurrentPixels(){ return layers[activeLayer].pixels; }
+function setCurrentPixels(p){ layers[activeLayer].pixels = p; }
+
+function saveState(){
+  history.push(JSON.stringify(layers));
+  if(history.length > 100) history.shift(); // optional limit
+  redoStack = [];
+}
+
+function undo(){
+  if(history.length === 0) return;
+  redoStack.push(JSON.stringify(layers));
+  layers = JSON.parse(history.pop()).map(
+    l => ({ ...l, pixels:{...l.pixels} })
+  );
+  renderLayers();
+  redraw();
+}
+function redo(){
+  if(redoStack.length === 0) return;
+  history.push(JSON.stringify(layers));
+  layers = JSON.parse(redoStack.pop()).map(
+    l => ({ ...l, pixels:{...l.pixels} })
+  );
+  renderLayers();
+  redraw();
+}
+
+
+function toggleGrid(){ GRID=!GRID; redraw(); }
+function clearCanvas(){ saveState(); setCurrentPixels({}); redraw(); }
+function resizeCanvas(){ SIZE=parseInt(sizeEl.value); canvas.width=SIZE*PIXEL; canvas.height=SIZE*PIXEL; redraw(); }
+function zoom(f){ SCALE=Math.min(4,Math.max(.3,SCALE*f)); canvas.style.transform=`scale(${SCALE})`; }
+
+// ===== Drawing =====
+function drawGrid(){
+  if(!GRID) return;
+  ctx.strokeStyle = "rgba(255,255,255,.08)";
+  for(let i=0;i<=SIZE;i++){
+    ctx.beginPath(); ctx.moveTo(i*PIXEL,0); ctx.lineTo(i*PIXEL,canvas.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,i*PIXEL); ctx.lineTo(canvas.width,i*PIXEL); ctx.stroke();
+  }
+}
+function redraw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  layers.forEach((l,i)=>{
+    if(!l.visible) return;
+    ctx.globalAlpha = i===activeLayer?1:0.6;
+    for(const k in l.pixels){
+      const [x,y] = k.split(",").map(Number);
+      ctx.fillStyle = l.pixels[k];
+      ctx.fillRect(x*PIXEL, y*PIXEL, PIXEL, PIXEL);
+    }
+  });
+  ctx.globalAlpha = 1;
+  drawGrid();
+}
+
+// ===== Helpers =====
+function getPos(e){
+  const r=canvas.getBoundingClientRect();
+  const x=(e.clientX||e.touches[0].clientX)-r.left;
+  const y=(e.clientY||e.touches[0].clientY)-r.top;
+  return {x:Math.floor(x/(PIXEL*SCALE)), y:Math.floor(y/(PIXEL*SCALE)), rawX:x, rawY:y};
+}
+function floodFill(x,y,target,repl){
+  if(target===repl) return;
+  const s=[[x,y]];
+  while(s.length){
+    const [cx,cy] = s.pop();
+    const k=`${cx},${cy}`;
+    if(getCurrentPixels()[k]!==target) continue;
+    getCurrentPixels()[k]=repl;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{
+      const nx=cx+d[0], ny=cy+d[1];
+      if(nx>=0 && ny>=0 && nx<SIZE && ny<SIZE) s.push([nx,ny]);
+    });
+  }
+}
+function addRecentColor(c){
+  if(!c || recentColors.includes(c)) return;
+  recentColors.unshift(c);
+  if(recentColors.length>8) recentColors.pop();
+  renderRecentColors();
+}
+function renderRecentColors(){
+  recentColorsEl.innerHTML = "";
+  recentColors.forEach(c=>{
+    const div=document.createElement("div");
+    div.style.background = c;
+    div.onclick = ()=>{ colorEl.value=c; };
+    recentColorsEl.appendChild(div);
+  });
+}
+function drawAt(e){
+  const tool = toolEl.value, col=colorEl.value, b=parseInt(brushEl.value), p=getPos(e);
+  if(!p) return; addRecentColor(col);
+  const pixels = getCurrentPixels();
+  if(tool==="pen") for(let dx=0;dx<b;dx++) for(let dy=0;dy<b;dy++) pixels[`${p.x+dx},${p.y+dy}`]=col;
+  if(tool==="eraser") for(let dx=0;dx<b;dx++) for(let dy=0;dy<b;dy++) delete pixels[`${p.x+dx},${p.y+dy}`];
+  if(tool==="picker"){ const c=pixels[`${p.x},${p.y}`]; if(c) colorEl.value=c; addRecentColor(c); }
+  if(tool==="fill") floodFill(p.x,p.y,pixels[`${p.x},${p.y}`],col);
+  redraw();
+}
+
+// ===== Magnifier =====
+function updateMagnifier(){
+  if(!drawing) return;
+  magCanvas.style.left = (lastPos.rawX-60)+"px";
+  magCanvas.style.top = (lastPos.rawY-60)+"px";
+  magCanvas.style.display = "block";
+  magCtx.clearRect(0,0,120,120);
+  magCtx.imageSmoothingEnabled = false;
+  magCtx.drawImage(canvas, lastPos.x*PIXEL-3, lastPos.y*PIXEL-3,7,7,0,0,120,120);
+}
+function hideMagnifier(){ magCanvas.style.display="none"; }
+
+// ===== Events =====
+canvas.addEventListener("mousedown", e=>{
+  drawing=true;
+  saveState();   
+  lastPos=getPos(e);
+  drawAt(e);
+  updateMagnifier();
+});
+
+canvas.addEventListener("mousemove", e=>{ if(drawing){ lastPos=getPos(e); drawAt(e); updateMagnifier(); }});
+canvas.addEventListener("mouseup", ()=>{ drawing=false; hideMagnifier(); });
+canvas.addEventListener("mouseleave", ()=>{ drawing=false; hideMagnifier(); });
+
+canvas.addEventListener("touchstart", e=>{ e.preventDefault(); drawing=true; saveState(); lastPos=getPos(e.touches[0]); drawAt(e.touches[0]); updateMagnifier(); }, {passive:false});
+canvas.addEventListener("touchmove", e=>{ e.preventDefault(); if(drawing){ lastPos=getPos(e.touches[0]); drawAt(e.touches[0]); updateMagnifier(); } }, {passive:false});
+canvas.addEventListener("touchend", ()=>{ drawing=false; hideMagnifier(); });
+
+// ===== Download =====
+function downloadPNG(){
+  let minX=SIZE,minY=SIZE,maxX=0,maxY=0;
+  const pixels=getCurrentPixels();
+  for(const k in pixels){
+    const [x,y]=k.split(",").map(Number);
+    minX=Math.min(minX,x); minY=Math.min(minY,y);
+    maxX=Math.max(maxX,x); maxY=Math.max(maxY,y);
+  }
+  const w=maxX-minX+1, h=maxY-minY+1;
+  const out = document.createElement("canvas");
+  out.width=w; out.height=h;
+  const o = out.getContext("2d");
+  for(const k in pixels){
+    const [x,y]=k.split(",").map(Number);
+    o.fillStyle=pixels[k]; o.fillRect(x-minX,y-minY,1,1);
+  }
+  const a=document.createElement("a");
+  a.download="pixel-art.png"; a.href=out.toDataURL(); a.click();
+}
+</script>
+</body>
+    </html>
+  
