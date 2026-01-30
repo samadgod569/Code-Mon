@@ -926,13 +926,20 @@ header {
    MOBILE RESPONSIVE STYLES
    ============================== */
 
+
 @media (max-width: 1024px) {
+    body {
+        overflow: auto !important; 
+        height: auto;
+    }
+    
     .main-container {
-        height: calc(100vh - 85px);
+        height: calc(100vh - 107px);
+        overflow: visible;
     }
     
     .sidebar {
-        width: 260px;
+        width: 280px;
         position: fixed;
         top: 107px;
         left: 0;
@@ -940,6 +947,7 @@ header {
         z-index: 100;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        overflow-y: auto;
     }
     
     .sidebar.active {
@@ -951,26 +959,70 @@ header {
         width: 100%;
     }
     
+    /* Keep button text visible on desktop, hide only on smaller screens */
+    .header-btn span {
+        display: inline;
+    }
+    
+    .header-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .header-btn {
+        padding: 6px 12px;
+    }
+    
+    /* Action buttons should show text on tablet */
+    .action-btn span {
+        display: inline;
+    }
+    
+    .action-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .action-btn {
+        padding: 8px 12px;
+        justify-content: flex-start;
+    }
+    
+    .sidebar-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .action-btn.full {
+        grid-column: span 2;
+    }
+    
+    .modal {
+        width: 90%;
+        max-width: 450px;
+        margin: 20px auto;
+    }
+    
+    /* Output panel should be visible */
+    .output-panel {
+        display: none; /* Default hidden, shown via JS */
+        position: relative;
+        z-index: 10;
+    }
+}
+
+/* Tablet size */
+@media (max-width: 900px) {
     .header-btn span {
         display: none;
     }
     
-    .header-btn svg {
-        width: 18px;
-        height: 18px;
-    }
-    
     .header-btn {
         padding: 8px;
+        min-width: 40px;
     }
     
     .action-btn span {
         display: none;
-    }
-    
-    .action-btn svg {
-        width: 18px;
-        height: 18px;
     }
     
     .action-btn {
@@ -985,59 +1037,63 @@ header {
     .action-btn.full {
         grid-column: span 3;
     }
-    
-    .modal {
-        width: 95%;
-        max-width: 95%;
-        margin: 10px;
-    }
 }
 
 @media (max-width: 768px) {
     body {
-        font-size: 13px;
+        font-size: 14px; /* Keep readable font size */
+        overflow-x: hidden;
     }
     
     header {
-        padding: 0 10px;
-        height: 45px;
+        padding: 0 15px;
+        height: 50px;
     }
     
     .header-brand span {
-        font-size: 14px;
+        font-size: 15px;
     }
     
     .breadcrumb {
-        padding: 6px 10px;
+        padding: 8px 15px;
         font-size: 12px;
     }
     
     .status-bar {
         padding: 0 10px;
         font-size: 11px;
-        gap: 10px;
+        gap: 15px;
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 22px;
+        padding: 4px 10px;
+    }
+    
+    .status-item {
+        flex: none;
     }
     
     .main-container {
-        height: calc(100vh - 67px);
+        height: calc(100vh - 72px);
     }
     
     .sidebar {
         width: 280px;
-        top: 67px;
+        top: 72px;
+        bottom: 22px;
     }
     
     .sidebar-section {
-        padding: 15px 12px;
+        padding: 15px;
     }
     
     .section-title {
-        font-size: 10px;
+        font-size: 11px;
     }
     
     .sidebar-actions {
         grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
+        gap: 8px;
     }
     
     .action-btn.full {
@@ -1045,14 +1101,14 @@ header {
     }
     
     .explorer-header {
-        padding: 10px 12px;
-        font-size: 12px;
+        padding: 12px 15px;
+        font-size: 13px;
     }
     
     .folder-header,
     .file-item {
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 8px 15px;
+        font-size: 13px;
     }
     
     .tabs-container {
@@ -1069,16 +1125,19 @@ header {
     #editor,
     #highlightedCode {
         padding: 15px;
-        font-size: 13px;
+        font-size: 14px;
+        line-height: 1.6;
     }
     
     .output-panel {
-        height: 180px;
+        height: 200px;
+        display: flex; /* Ensure it can be shown */
+        flex-direction: column;
     }
     
     .output-content {
-        padding: 12px;
-        font-size: 12px;
+        padding: 15px;
+        font-size: 13px;
     }
     
     .modal-header,
@@ -1088,17 +1147,17 @@ header {
     }
     
     .modal-title {
-        font-size: 16px;
+        font-size: 17px;
     }
     
     .form-input {
-        padding: 8px 10px;
-        font-size: 13px;
+        padding: 10px 12px;
+        font-size: 14px;
     }
     
     .btn {
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 8px 16px;
+        font-size: 13px;
     }
     
     .notification {
@@ -1112,14 +1171,15 @@ header {
 @media (max-width: 480px) {
     .sidebar {
         width: 85%;
+        max-width: 300px;
     }
     
     .header-actions {
-        gap: 4px;
+        gap: 5px;
     }
     
     .header-btn {
-        padding: 6px;
+        padding: 8px;
     }
     
     .sidebar-actions {
@@ -1131,12 +1191,12 @@ header {
     }
     
     .tabs-container {
-        height: 45px;
+        height: 40px;
     }
     
     .tab {
         min-width: 100px;
-        padding: 0 8px;
+        padding: 0 10px;
         font-size: 11px;
     }
     
@@ -1147,34 +1207,32 @@ header {
     #editor,
     #highlightedCode {
         padding: 12px;
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.5;
     }
     
     .output-panel {
-        height: 160px;
+        height: 180px;
     }
     
     .output-header {
-        padding: 6px 12px;
+        padding: 8px 12px;
+        font-size: 12px;
     }
     
     .output-content {
-        padding: 10px;
-        font-size: 11px;
+        padding: 12px;
+        font-size: 12px;
     }
     
-    .status-item {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    .status-bar {
+        font-size: 10px;
+        gap: 10px;
     }
     
     .modal {
-        width: 98%;
-        margin: 5px;
+        width: 95%;
+        margin: 10px auto;
     }
     
     .file-upload {
@@ -1185,36 +1243,49 @@ header {
         width: 36px;
         height: 36px;
     }
+    
+    /* Make status items stack on very small screens */
+    .status-bar {
+        flex-direction: column;
+        height: auto;
+        padding: 6px 10px;
+        gap: 3px;
+        align-items: flex-start;
+    }
+    
+    .status-item {
+        width: 100%;
+    }
 }
 
 /* Mobile Toggle Button */
 .mobile-menu-toggle {
     display: none;
     position: fixed;
-    bottom: 30px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
+    bottom: 25px;
+    right: 25px;
+    width: 56px;
+    height: 56px;
     background: var(--accent-blue);
     border: none;
     border-radius: 50%;
     color: white;
     cursor: pointer;
     z-index: 1000;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-heavy);
     align-items: center;
     justify-content: center;
+    transition: all 0.2s;
+}
+
+.mobile-menu-toggle:hover {
+    background: #4a8bc8;
+    transform: scale(1.05);
 }
 
 @media (max-width: 1024px) {
     .mobile-menu-toggle {
         display: flex;
-    }
-    
-    .mobile-menu-toggle svg {
-        width: 24px;
-        height: 24px;
-        fill: currentColor;
     }
 }
 
@@ -1231,16 +1302,20 @@ header {
     }
     
     .breadcrumb-item {
-        padding: 8px 4px;
+        padding: 10px 6px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
     }
     
     .tab {
         padding: 0 16px;
+        min-height: 44px;
     }
     
     .form-input,
     textarea {
-        font-size: 16px !important; /* Prevents iOS zoom on focus */
+        font-size: 16px !important;
     }
     
     ::-webkit-scrollbar {
@@ -1249,15 +1324,13 @@ header {
     }
 }
 
-/* Prevent text selection on interactive elements */
-.header-btn,
-.action-btn,
-.btn,
-.tab,
-.file-item,
-.folder-header {
-    user-select: none;
-    -webkit-user-select: none;
+/* Fix for output panel links on mobile */
+@media (max-width: 768px) {
+    .output-content a {
+        font-size: 13px;
+        padding: 4px 0;
+        word-break: break-word;
+    }
 }
 
 /* Landscape mode adjustments */
@@ -1268,46 +1341,96 @@ header {
     
     .sidebar {
         top: 50px;
+        bottom: 22px;
     }
     
     .output-panel {
-        height: 120px;
+        height: 150px;
     }
     
     .modal {
         max-height: 90vh;
         overflow-y: auto;
     }
-}
-    /* Style for links in output panel */
-.output-content a {
-    color: var(--accent-blue);
-    text-decoration: underline;
-    word-break: break-all;
-    display: inline-block;
-    margin: 5px 0;
-}
-
-.output-content a:hover {
-    color: #4a8bc8;
-    text-decoration: none;
-}
-
-/* Better output panel for HTML messages */
-.output-content.info {
-    line-height: 1.5;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-/* Dark mode adjustments for mobile */
-@media (prefers-color-scheme: dark) {
-    @media (max-width: 768px) {
-        :root {
-            --shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
+    
+    .mobile-menu-toggle {
+        bottom: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
     }
-        }
+}
+
+/* Fix for desktop sidebar - ensure buttons are visible */
+@media (min-width: 1025px) {
+    .sidebar {
+        width: 280px;
+        min-width: 280px;
+        overflow: visible;
+    }
+    
+    .sidebar-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .action-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        overflow: visible;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .action-btn span {
+        display: inline;
+        overflow: visible;
+        text-overflow: clip;
+    }
+    
+    .action-btn.full {
+        grid-column: 1 / -1;
+    }
+    
+    /* Make sure output panel is visible when shown */
+    .output-panel {
+        display: none;
+    }
+    
+    .output-panel.show {
+        display: flex;
+    }
+    }      
+/* Ensure output panel is visible when needed */
+.output-panel {
+    display: none;
+    flex-direction: column;
+    height: 200px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+}
+
+.output-panel.show {
+    display: flex;
+}
+
+
+.output-close {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.output-close:hover {
+    opacity: 1;
+    background: var(--bg-hover);
+    }
 </style>
 </head>
 <body>
@@ -1508,7 +1631,32 @@ let allFiles = [];
 })();
     
 function toggleSidebar() {
-    document.querySelector('.sidebar').classList.toggle('active');
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('active');
+    
+    // Close sidebar when clicking outside on mobile
+    if (sidebar.classList.contains('active')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+            display: block;
+        `;
+        overlay.onclick = function() {
+            sidebar.classList.remove('active');
+            this.remove();
+        };
+        document.body.appendChild(overlay);
+    } else {
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (overlay) overlay.remove();
+    }
 }
 // Language Detection
 function getLanguage(filename) {
@@ -2202,6 +2350,7 @@ async function runCode() {
         const outputPanel = document.getElementById('outputPanel');
         const outputContent = document.getElementById('outputContent');
         outputPanel.style.display = 'flex';
+outputPanel.classList.add('show');
         outputContent.className = 'output-content error';
         outputContent.textContent = `Language not supported for execution.\n\nFile: ${currentFile}\nDetected language: ${language}`;
         return;
@@ -2265,7 +2414,9 @@ function closeModal(modalId) {
 }
 
 function closeOutput() {
-    document.getElementById('outputPanel').style.display = 'none';
+    const outputPanel = document.getElementById('outputPanel');
+    outputPanel.style.display = 'none';
+    outputPanel.classList.remove('show'); 
 }
 
 function showNotification(message, type = 'info') {
