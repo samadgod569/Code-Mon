@@ -233,23 +233,7 @@ The File Manager is the central hub for creating, managing, and deploying all pr
 - Configuration files
 - Media assets
 
-4. Code Space  
-Code Space provides an isolated testing and development environment before public deployment.
 
-**Features:**
-- Create and edit files same as File Manager
-- Preview functionality before deployment
-- Test code behavior and design
-- Debug and refine projects
-- No public exposure until deployment
-
-**Workflow:**
-1. Create files in Code Space
-2. Write/paste code
-3. Save changes
-4. Use Preview to test
-5. Iterate until satisfied
-6. Deploy to File Manager for public hosting
 
 5. AI Website Generator  
 AI-powered code generation accessible from the home page.
