@@ -1476,6 +1476,6 @@ const real = `${user}_${filename}`;
     // ---------------------------
     // DEFAULT
     // ---------------------------
-    return new Response("Worker Online", { headers: corsHeaders });
+    return new Response("Code Mon Server Online", { headers: corsHeaders });
   }
 };
