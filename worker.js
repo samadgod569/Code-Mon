@@ -205,50 +205,92 @@ if (path === "/api/pay") {
   }
 
   try {
-    const data = await request.json();
-    const { key, username, amount } = data;
 
-    if (!username || amount === undefined)
-      return new Response(JSON.stringify({ success: false, error: "Missing fields" }),
-        { status: 400, headers: corsHeaders });
+    if (request.method === "GET") {
+      const url = new URL(request.url);
+      const username = url.searchParams.get("username");
 
-    const payAmount = parseInt(amount);
-    if (isNaN(payAmount) || payAmount <= 0)
-      return new Response(JSON.stringify({ success: false, error: "Invalid amount" }),
-        { status: 400, headers: corsHeaders });
-
-    const realKey = await env.FILES.get("KEY");
-    if (key !== realKey)
-      return new Response(JSON.stringify({ success: false, error: "Invalid key" }),
-        { status: 403, headers: corsHeaders });
-
-    const current = await env.PAY.get(username);
-    const currentBalance = parseInt(current) || 0;
-
-    const newBalance = currentBalance + payAmount;
-
-    await env.PAY.put(username, newBalance.toString());
-
-    return new Response(JSON.stringify({
-      success: true,
-      user: username,
-      paid: payAmount,
-      total: newBalance
-    }), {
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders
+      if (!username) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Username required" }),
+          { status: 400, headers: corsHeaders }
+        );
       }
-    });
+
+      const current = await env.PAY.get(username);
+      const balance = parseInt(current) || 0;
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          user: username,
+          balance: balance
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
+
+    if (request.method === "POST") {
+      const data = await request.json();
+      const { key, username, amount } = data;
+
+      if (!username || amount === undefined) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing fields" }),
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const payAmount = parseInt(amount);
+      if (isNaN(payAmount) || payAmount <= 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid amount" }),
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const realKey = await env.FILES.get("KEY");
+      if (key !== realKey) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid key" }),
+          { status: 403, headers: corsHeaders }
+        );
+      }
+
+      const current = await env.PAY.get(username);
+      const currentBalance = parseInt(current) || 0;
+      const newBalance = currentBalance + payAmount;
+
+      await env.PAY.put(username, newBalance.toString());
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          user: username,
+          paid: payAmount,
+          total: newBalance
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
 
   } catch (err) {
-    return new Response(JSON.stringify({ success: false, error: err.message }), {
-      status: 500,
-      headers: corsHeaders
-    });
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { status: 500, headers: corsHeaders }
+    );
   }
-           }
-
+                          }
     //builder hai bhai
     if (path === "/api/builder") {
 
