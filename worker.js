@@ -1300,10 +1300,7 @@ if (path === "/api/pro-api-deploy") {
     // ---------------------------
     // SAVE FILE
     // ---------------------------
-    // ---------------------------
-// SAVE FILE (with password check)
-// ---------------------------
-if (path === "/api/save") {
+    if (path === "/api/save") {
   let body;
   try {
     body = await request.json();
@@ -1317,7 +1314,6 @@ if (path === "/api/save") {
     return json({ error: "Missing user, pass or filename" }, 400);
   }
 
-  // Validate password
   const storedPass = await env.Pass.get(user, { type: "text" });
 
   if (!storedPass)
@@ -1326,11 +1322,34 @@ if (path === "/api/save") {
   if (storedPass !== pass)
     return json({ success: false, error: "Incorrect password" }, 403);
 
-  // Save file AFTER password is verified
-  await env.FILES.put(`${user}/${filename}`, content ?? "");
+  const fileKey = `${user}/${filename}`;
 
-  return json({ success: true, message: "File saved successfully" });
-}
+  const existingFile = await env.FILES.get(fileKey);
+
+  if (!existingFile) {
+    const current = await env.PAY.get(user);
+    const balance = parseInt(current) || 0;
+
+    if (balance < 5) {
+      return json({
+        success: false,
+        error: "Insufficient balance"
+      }, 402);
+    }
+
+    const newBalance = balance - 5;
+    await env.PAY.put(user, newBalance.toString());
+  }
+
+  await env.FILES.put(fileKey, content ?? "");
+
+  return json({
+    success: true,
+    message: existingFile
+      ? "File updated successfully"
+      : "File created successfully (5 credits charged)"
+  });
+    }
 
     // ---------------------------
     // LOGIN
