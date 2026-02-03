@@ -172,6 +172,7 @@ button:active {
       const u = localStorage.getItem("code-mon-username");
       let user = document.getElementById("username");
       user.value = u;
+      let pass = localStorage.getItem("code-mon-pass");
 async function createAI() {
      
     const n = document.getElementById("name").value.trim();
@@ -195,7 +196,8 @@ async function createAI() {
             `${endpoint}?username=${encodeURIComponent(u)}` +
             `&name=${encodeURIComponent(n)}` +
             `&key=${encodeURIComponent(k)}` +
-            `&trainingText=${encodeURIComponent(t)}`;
+            `&trainingText=${encodeURIComponent(t)}` +
+            `&pass=${pass}`;
 
         const res = await fetch(url);
 
