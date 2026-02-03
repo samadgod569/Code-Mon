@@ -75,7 +75,164 @@ const corsHeaders = {
       : `AI ${name} created successfully (10 credits charged)`
   );
     }
+    
+// database-setup
+    if (path === "/api/database-setup") {
 
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+
+    const url = new URL(request.url);
+
+    if (request.method === "POST") {
+      const body = await request.json();
+      const { username, pass } = body;
+
+      if (!username || !pass) {
+        return new Response("Missing username or pass", { status: 400 });
+      }
+
+      const storedPass = await env.Pass.get(username, { type: "text" });
+
+      if (!storedPass)
+        return new Response("Username not found", { status: 404 });
+
+      if (storedPass !== pass)
+        return new Response("Incorrect password", { status: 403 });
+
+      const balanceRaw = await env.PAY.get(username);
+      const balance = parseInt(balanceRaw) || 0;
+
+      if (balance < 1000) {
+        return new Response("Insufficient balance", { status: 402 });
+      }
+
+      await env.PAY.put(username, (balance - 1000).toString());
+
+      const fiveGB = 5 * 1024 * 1024 * 1024;
+      const today = new Date().toISOString().split("T")[0];
+
+      const dbJson = {
+        storage: fiveGB,
+        "used-storage": 0,
+        "req-limit": 10000,
+        "req-today": `0[*]${today}`,
+        auto: false
+      };
+
+      await env.STORAGE.put(
+        `database/kv/${username}`,
+        JSON.stringify(dbJson)
+      );
+
+      return new Response("Database setup completed");
+    }
+
+    if (request.method === "GET") {
+      const username = url.searchParams.get("username");
+
+      if (!username) {
+        return new Response("Missing username", { status: 400 });
+      }
+
+      const data = await env.STORAGE.get(
+        `database/kv/${username}`,
+        { type: "json" }
+      );
+
+      if (!data) {
+        return new Response("Database not found", { status: 404 });
+      }
+
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
+
+    if (request.method === "UPDATE") {
+      const body = await request.json();
+      const { username, pass, type, "new-limit": newLimit } = body;
+
+      if (!username || !pass || !type || newLimit === undefined) {
+        return new Response("Missing fields", { status: 400 });
+      }
+
+      const storedPass = await env.Pass.get(username, { type: "text" });
+
+      if (!storedPass)
+        return new Response("Username not found", { status: 404 });
+
+      if (storedPass !== pass)
+        return new Response("Incorrect password", { status: 403 });
+
+      const key = `database/kv/${username}`;
+      const data = await env.STORAGE.get(key, { type: "json" });
+
+      if (!data) {
+        return new Response("Database not found", { status: 404 });
+      }
+
+      const balanceRaw = await env.PAY.get(username);
+      let balance = parseInt(balanceRaw) || 0;
+
+      if (type === "STORAGE") {
+        const currentBytes = data.storage;
+        const newGB = Number(newLimit);
+        const newBytes = newGB * 1024 * 1024 * 1024;
+
+        if (newBytes <= currentBytes) {
+          return new Response("New limit must be greater", { status: 400 });
+        }
+
+        const increaseGB = (newBytes - currentBytes) / (1024 * 1024 * 1024);
+        const cost = increaseGB * 200;
+
+        if (balance < cost) {
+          return new Response("Insufficient balance", { status: 402 });
+        }
+
+        balance -= cost;
+        data.storage = newBytes;
+
+        await env.PAY.put(username, balance.toString());
+      }
+
+      if (type === "REQ") {
+        const addReq = Number(newLimit);
+
+        if (addReq % 50000 !== 0) {
+          return new Response("new-limit must be multiple of 50000", { status: 400 });
+        }
+
+        if (data["req-limit"] + addReq > 1_000_000) {
+          return new Response("Request limit exceeds maximum", { status: 400 });
+        }
+
+        const units = addReq / 50000;
+        const cost = units * 100;
+
+        if (balance < cost) {
+          return new Response("Insufficient balance", { status: 402 });
+        }
+
+        balance -= cost;
+        data["req-limit"] += addReq;
+
+        await env.PAY.put(username, balance.toString());
+      }
+
+      await env.STORAGE.put(key, JSON.stringify(data));
+
+      return new Response("Database updated successfully");
+    }
+
+  } catch (err) {
+    return new Response(err.message, { status: 500 });
+  }
+      }
     // APP ORIGIN FOR THE SPACE
     
 if (path === "/api/app-list") {
