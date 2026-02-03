@@ -33,19 +33,47 @@ const corsHeaders = {
 
 
     if (path === "/api/ai") {
-      const username = url.searchParams.get("username");
-      const name = url.searchParams.get("name");
-      const key = url.searchParams.get("key");
-      const trainingText = url.searchParams.get("trainingText") || "";
+  const username = url.searchParams.get("username");
+  const pass = url.searchParams.get("pass");
+  const name = url.searchParams.get("name");
+  const key = url.searchParams.get("key");
+  const trainingText = url.searchParams.get("trainingText") || "";
 
-      if (!username || !name || !key) {
-        return new Response("Missing required fields", { status: 400 });
-      }
+  if (!username || !pass || !name || !key) {
+    return new Response("Missing required fields", { status: 400 });
+  }
 
-      // Store in KV (AI is a bound KV namespace in Worker)
-      await env.AI.put(`ai/${username}/${name}`, `${key}[*]${trainingText}`);
+  const storedPass = await env.Pass.get(username, { type: "text" });
 
-      return new Response(`AI ${name} created successfully!`);
+  if (!storedPass)
+    return new Response("Username not found", { status: 404 });
+
+  if (storedPass !== pass)
+    return new Response("Incorrect password", { status: 403 });
+
+  const aiKey = `ai/${username}/${name}`;
+
+  const existingAI = await env.AI.get(aiKey);
+
+  if (!existingAI) {
+    const current = await env.PAY.get(username);
+    const balance = parseInt(current) || 0;
+
+    if (balance < 10) {
+      return new Response("Insufficient balance", { status: 402 });
+    }
+
+    const newBalance = balance - 10;
+    await env.PAY.put(username, newBalance.toString());
+  }
+
+  await env.AI.put(aiKey, `${key}[*]${trainingText}`);
+
+  return new Response(
+    existingAI
+      ? `AI ${name} updated successfully`
+      : `AI ${name} created successfully (10 credits charged)`
+  );
     }
 
     // APP ORIGIN FOR THE SPACE
