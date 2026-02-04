@@ -103,6 +103,12 @@ const corsHeaders = {
       if (storedPass !== pass)
         return new Response("Incorrect password", { status: 403 });
 
+const existingDb = await env.STORAGE.get(`database/kv/${username}`);
+
+if (existingDb) {
+  return new Response("Database already exists", { status: 409 });
+}
+      
       const balanceRaw = await env.PAY.get(username);
       const balance = parseInt(balanceRaw) || 0;
 
@@ -114,14 +120,16 @@ const corsHeaders = {
 
       const fiveGB = 5 * 1024 * 1024 * 1024;
       const today = new Date().toISOString().split("T")[0];
-
+const apiKey ="cm_" +  crypto.randomUUID().replace(/-/g, "");
+      
       const dbJson = {
-        storage: fiveGB,
-        "used-storage": 0,
-        "req-limit": 10000,
-        "req-today": `0[*]${today}`,
-        auto: false
-      };
+  api: apiKey,
+  storage: fiveGB,
+  "used-storage": 0,
+  "req-limit": 10000,
+  "req-today": `0[*]${today}`,
+  auto: false
+};
 
       await env.STORAGE.put(
         `database/kv/${username}`,
@@ -133,11 +141,19 @@ const corsHeaders = {
 
     if (request.method === "GET") {
       const username = url.searchParams.get("username");
+const pass = url.searchParams.get("pass");
 
-      if (!username) {
-        return new Response("Missing username", { status: 400 });
-      }
+if (!username || !pass) {
+  return new Response("Missing username or pass", { status: 400 });
+}
+const storedPass = await env.Pass.get(username, { type: "text" });
 
+if (!storedPass)
+  return new Response("Username not found", { status: 404 });
+
+if (storedPass !== pass)
+  return new Response("Incorrect password", { status: 403 });
+    
       const data = await env.STORAGE.get(
         `database/kv/${username}`,
         { type: "json" }
