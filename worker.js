@@ -152,7 +152,7 @@ const corsHeaders = {
       });
     }
 
-    if (request.method === "UPDATE") {
+    if (request.method === "PUT") {
       const body = await request.json();
       const { username, pass, type, "new-limit": newLimit } = body;
 
