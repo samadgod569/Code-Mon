@@ -2256,31 +2256,40 @@ async function openUpload() {
     openModal('uploadModal');
 }
 
+
 async function uploadFile() {
     const fileInput = document.getElementById('fileInput');
     const uploadPath = document.getElementById('uploadPath').value.trim();
-    
+
     if (!fileInput.files.length) {
         showNotification('Please select a file', 'error');
         return;
     }
-    
+
     if (!uploadPath) {
         showNotification('Please enter a target path', 'error');
         return;
     }
-    
+
     if (!validatePath(uploadPath)) {
         return;
     }
-    
+
     const file = fileInput.files[0];
+    const isImage = file.type.startsWith('image/');
+
     const reader = new FileReader();
-    
-    reader.onload = async function(e) {
+
+    reader.onload = async function (e) {
         try {
-            const content = e.target.result;
-            
+            let content = e.target.result;
+
+            // If it's an image, the result is a data URL (e.g., data:image/png;base64,....)
+            // The backend might expect only the base64 part. Adjust if needed.
+            // If your album page expects the full data URL, keep as is.
+            // If it needs raw base64, uncomment the next line:
+            // if (isImage) content = content.split(',')[1];
+
             const res = await fetch(`${API}/api/save`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -2291,25 +2300,28 @@ async function uploadFile() {
                     content: content
                 })
             });
-            
+
             const data = await res.json();
             if (data.error) {
                 showNotification('Failed to upload file: ' + data.error, 'error');
                 return;
             }
-            
+
             showNotification('File uploaded successfully', 'success');
             closeModal('uploadModal');
-            loadFiles();
-            
+            // Do NOT reload the file list if you don't want images to appear
+            // loadFiles(); // optional – but would show images if filter removed
         } catch (error) {
             showNotification('Failed to upload file: ' + error.message, 'error');
         }
     };
-    
-    reader.readAsText(file);
-}
 
+    if (isImage) {
+        reader.readAsDataURL(file);   // get Base64 data URL
+    } else {
+        reader.readAsText(file);      // normal text files
+    }
+        }
 // Code Execution with Judge0 - UPDATED for HTML files
 async function runCode() {
     if (!currentFile) {
