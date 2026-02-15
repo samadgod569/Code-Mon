@@ -29,9 +29,115 @@ const corsHeaders = {
 
 
     
-    // Cloudflare Worker example
+    
 
+// ---------------------------------------------------------
+// /api/external  → Verify GitHub Pages ownership (Code-Mon)
+// ---------------------------------------------------------
+if (path === "/api/external") {
 
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== "POST") {
+    return new Response("POST only", {
+      status: 405,
+      headers: corsHeaders
+    });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { token, repo, type, username, pass } = body;
+
+  if (!token || !repo || !type || !username || !pass) {
+    return json({ error: "Missing required fields" }, 400);
+  }
+
+  // 🔐 Verify CodeMon credentials
+  const storedPass = await env.Pass.get(username, { type: "text" });
+  if (!storedPass) {
+    return json({ error: "User not found" }, 404);
+  }
+
+  if (storedPass !== pass) {
+    return json({ error: "Incorrect password" }, 403);
+  }
+
+  // 🧠 Parse repo
+  const parts = repo.split("/");
+  if (parts.length !== 2) {
+    return json({ error: "Invalid repo format" }, 400);
+  }
+
+  let owner = parts[0].toLowerCase();
+  const repoName = parts[1];
+
+  // 🌍 Build GitHub Pages URLs
+let fetchURL;
+let storeURL;
+
+if (type === "single") {
+  fetchURL = `https://${owner}.github.io/${repoName}/`;
+  storeURL = `https://${owner}.github.io/${repoName}`;
+} else if (type === "org") {
+  fetchURL = `https://${owner}.github.io/${repoName}/`;
+  storeURL = `https://${owner}.github.io/${repoName}`;
+} else {
+  return json({ error: "type must be 'single' or 'org'" }, 400);
+}
+
+// 🌐 Fetch homepage (WITH slash)
+let html;
+try {
+  const resp = await fetch(fetchURL);
+  if (!resp.ok) {
+    return json({ error: "Failed to fetch GitHub Pages site" }, 502);
+  }
+  html = await resp.text();
+} catch {
+  return json({ error: "Fetch error" }, 502);
+}
+
+// 🔍 Verify meta tag
+const metaRegex =
+  /<meta\s+name=["']Code-Mon["']\s+content=["']([^"']+)["']/i;
+const match = html.match(metaRegex);
+
+if (!match || match[1] !== token) {
+  return json({ error: "Ownership verification failed" }, 403);
+}
+
+// 📦 Check existing configuration
+const storageKey = `website/git/${owner}`;
+const exists = await env.STORAGE.get(storageKey);
+
+if (exists) {
+  return json({ error: "Website already configured" }, 409);
+}
+
+// 📝 Save configuration (NO slash)
+const data = {
+  owner: username,
+  url: storeURL,
+  domain: ""
+};
+
+await env.STORAGE.put(storageKey, JSON.stringify(data));
+
+return json({
+  success: true,
+  owner,
+  url: storeURL
+});
+  
+      }
     if (path === "/api/ai") {
   const username = url.searchParams.get("username");
   const pass = url.searchParams.get("pass");
