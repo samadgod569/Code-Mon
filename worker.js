@@ -1177,7 +1177,7 @@ if (path === "/api/code-mon-ai") {
   }
 
   // 🔐 Load OpenRouter API key from KV
-  const apiKey = await env.FILES.get("OPENROUTER_KEY", { type: "text" });
+  const apiKey = await env.FILES.get("CMC-API", { type: "text" });
 question = question + "MAIN: YOU ARE AN CODE MON AI REMEMBER THIS";
   if (!apiKey) {
     return json({ error: "OpenRouter API key not configured" }, 500);
