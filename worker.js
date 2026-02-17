@@ -1155,18 +1155,14 @@ if (path === "/api/engine-add") {
 // /api/code-mon-ai  → OpenRouter single response (KV KEY)
 // ---------------------------------------------------------
 if (path === "/api/code-mon-ai") {
-
   let question = "";
 
-  // Accept GET or POST
   if (request.method === "GET") {
     question = url.searchParams.get("question") || "";
-  } 
-  else if (request.method === "POST") {
+  } else if (request.method === "POST") {
     try {
       const body = await request.json();
       question = body.question || "";
-      
     } catch {
       return json({ error: "Invalid JSON body" }, 400);
     }
@@ -1176,34 +1172,28 @@ if (path === "/api/code-mon-ai") {
     return json({ error: "Missing question" }, 400);
   }
 
-  // 🔐 Load OpenRouter API key from KV
   const apiKey = await env.FILES.get("CMC", { type: "text" });
-question = question + "MAIN: YOU ARE AN CODE MON AI REMEMBER THIS";
+
   if (!apiKey) {
     return json({ error: "OpenRouter API key not configured" }, 500);
   }
 
-  // 🔒 Single OpenRouter call with reasoning enabled
-  const res = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-20b:free",
-        messages: [
-          {
-            role: "user",
-            content: question
-          }
-        ],
-        reasoning: { enabled: true }
-      })
-    }
-  );
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "google/gemma-3-27b-it:free",
+      messages: [
+        {
+          role: "user",
+          content: question
+        }
+      ]
+    })
+  });
 
   if (!res.ok) {
     let err;
@@ -1218,12 +1208,8 @@ question = question + "MAIN: YOU ARE AN CODE MON AI REMEMBER THIS";
 
   const data = await res.json();
 
-  const message = data?.choices?.[0]?.message;
-
   return json({
-    answer: message?.content?.trim() || "No response from AI",
-    // Optional: include reasoning details if you want them
-    reasoning_details: message?.reasoning_details ?? null
+    answer: data?.choices?.[0]?.message?.content?.trim() || "No response from AI"
   });
 }
 // ---------------------------------------------------------
