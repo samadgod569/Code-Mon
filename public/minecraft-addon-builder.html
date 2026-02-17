@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minecraft Addon Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --border: #222;
+    --border-active: #3a3a3a;
+    --text: #e8e8e8;
+    --muted: #555;
+    --accent: #4ade80;
+    --accent-dim: #16532a;
+    --danger: #f87171;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 48px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    background: var(--surface);
+  }
+
+  header .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  header .divider {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+  }
+
+  header .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  header .user-chip {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--border);
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+
+  header .user-chip span {
+    color: var(--text);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* ── Step Indicator ── */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    transition: all 0.15s;
+    cursor: default;
+  }
+
+  .step.active {
+    background: rgba(74,222,128,0.07);
+    color: var(--text);
+  }
+
+  .step.done {
+    color: var(--accent);
+  }
+
+  .step-num {
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .step.active .step-num {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .step.done .step-num {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #000;
+  }
+
+  /* ── Manifest preview in sidebar ── */
+  .manifest-preview {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .manifest-preview pre {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #888;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.7;
+  }
+
+  .manifest-preview pre .key { color: #7dd3fc; }
+  .manifest-preview pre .str { color: #86efac; }
+  .manifest-preview pre .num { color: #fde68a; }
+
+  /* ── Main content ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Panels (steps) ── */
+  .panel {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+
+  .panel.active {
+    display: flex;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .panel-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    max-width: 560px;
+  }
+
+  /* ── Form elements ── */
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    transition: border-color 0.15s;
+    outline: none;
+    resize: vertical;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--border-active);
+  }
+
+  textarea {
+    min-height: 80px;
+    line-height: 1.7;
+  }
+
+  .field {
+    margin-bottom: 20px;
+  }
+
+  .field-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+
+  .btn-primary:hover {
+    background: #22c55e;
+    border-color: #22c55e;
+  }
+
+  .btn-primary:disabled {
+    background: var(--accent-dim);
+    color: #1a4a2a;
+    cursor: not-allowed;
+    border-color: var(--accent-dim);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--border);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--border-active);
+    color: var(--text);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border-color: #3a1a1a;
+  }
+
+  .btn-danger:hover {
+    background: rgba(248,113,113,0.08);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    align-items: center;
+  }
+
+  /* ── AI Response box ── */
+  .ai-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-top: 20px;
+  }
+
+  .ai-box-header {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ai-box-header .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .ai-box-header .status-dot.loading {
+    background: #facc15;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  .ai-box-header .status-dot.done {
+    background: var(--accent);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .manifest-code {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #86efac;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.8;
+    min-height: 40px;
+  }
+
+  /* ── File builder ── */
+  .file-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    animation: slideIn 0.15s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .file-row .file-path {
+    flex: 1;
+    color: var(--accent);
+  }
+
+  .file-row .file-status {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .file-row .file-status.fetched {
+    color: var(--accent);
+  }
+
+  .file-row .file-status.error {
+    color: var(--danger);
+  }
+
+  .file-row .remove-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+    transition: color 0.1s;
+  }
+
+  .file-row .remove-btn:hover {
+    color: var(--danger);
+  }
+
+  .add-file-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .add-file-row input {
+    flex: 1;
+  }
+
+  /* ── Build summary ── */
+  .build-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .summary-row:last-child {
+    border-bottom: none;
+  }
+
+  .summary-row .k { color: var(--muted); }
+  .summary-row .v { color: var(--text); }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    margin-top: 20px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .panel { padding: 24px 20px; }
+  }
+
+  .uuid-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--border);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .notice {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    border-left: 2px solid var(--border);
+    padding: 8px 12px;
+    margin-top: 12px;
+  }
+
+  .notice.warn {
+    border-color: #facc15;
+    color: #a16207;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">addon.builder</div>
+    <div class="divider"></div>
+    <div class="subtitle">minecraft bedrock / file assembler</div>
+    <div class="user-chip" id="userChip">user: <span id="usernameDisplay">—</span></div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="steps">
+      <div class="step active" id="step-indicator-1">
+        <div class="step-num">1</div>
+        <span>Generate manifest</span>
+      </div>
+      <div class="step" id="step-indicator-2">
+        <div class="step-num">2</div>
+        <span>Structure files</span>
+      </div>
+      <div class="step" id="step-indicator-3">
+        <div class="step-num">3</div>
+        <span>Build &amp; download</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">manifest.json</div>
+      <div class="manifest-preview" id="sidebarManifestPreview">
+        <pre id="sidebarManifestCode" style="color: #333;">— not generated yet —</pre>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Panel 1: Generate Manifest -->
+    <div class="panel active" id="panel1">
+      <div class="panel-title">Generate manifest.json</div>
+      <div class="panel-desc">Describe your addon. The AI will generate a valid Bedrock manifest with a unique UUID.</div>
+
+      <div class="field">
+        <label>Addon description</label>
+        <textarea id="addonPrompt" placeholder="A sword that shoots lightning bolts and gives the player speed when held..."></textarea>
+        <div class="field-hint">Describe what your addon does, its name, and any special behavior.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="generateBtn" onclick="generateManifest()">Generate manifest</button>
+        <span id="genStatus" style="font-family: var(--mono); font-size: 11px; color: var(--muted);"></span>
+      </div>
+
+      <div class="ai-box" id="manifestBox" style="display:none;">
+        <div class="ai-box-header">
+          <div class="status-dot" id="aiDot"></div>
+          <span id="aiStatusText">waiting</span>
+          <span style="margin-left: auto;">UUID: <span id="uuidDisplay" class="uuid-badge" style="display:none;"></span></span>
+        </div>
+        <pre class="manifest-code" id="manifestOutput"></pre>
+      </div>
+
+      <div class="btn-row" id="nextToStep2Wrap" style="display:none; margin-top: 24px;">
+        <button class="btn btn-primary" onclick="goToStep(2)">Next: structure files</button>
+      </div>
+    </div>
+
+    <!-- Panel 2: Structure files -->
+    <div class="panel" id="panel2">
+      <div class="panel-title">Structure your addon</div>
+      <div class="panel-desc">Add the file paths that exist on your server. Each path will be fetched from your code-mon space. The manifest is already included.</div>
+
+      <div class="notice">
+        Files are fetched from <span style="color: var(--text);">https://&lt;username&gt;.code-mon-space.shop/&lt;path&gt;</span>
+      </div>
+
+      <div class="add-file-row" style="margin-top: 20px;">
+        <input type="text" id="newFilePath" placeholder="textures/items/sword.png" onkeydown="if(event.key==='Enter') addFile()" />
+        <button class="btn btn-ghost" onclick="addFile()">Add</button>
+      </div>
+
+      <div class="file-list" id="fileList"></div>
+
+      <div class="btn-row" style="margin-top: 24px;">
+        <button class="btn btn-ghost" onclick="goToStep(1)">Back</button>
+        <button class="btn btn-primary" id="confirmFilesBtn" onclick="goToStep(3)" disabled>Confirm &amp; build</button>
+      </div>
+    </div>
+
+    <!-- Panel 3: Build & Download -->
+    <div class="panel" id="panel3">
+      <div class="panel-title">Build addon</div>
+      <div class="panel-desc">Fetch all files from your server and package everything into a .mcaddon zip.</div>
+
+      <div class="build-summary" id="buildSummary">
+        <div class="summary-row"><span class="k">username</span><span class="v" id="sumUser">—</span></div>
+        <div class="summary-row"><span class="k">manifest.json</span><span class="v">included (generated)</span></div>
+        <div class="summary-row"><span class="k">additional files</span><span class="v" id="sumFiles">0</span></div>
+        <div class="summary-row"><span class="k">output</span><span class="v">addon_pack.mcaddon</span></div>
+      </div>
+
+      <div id="fetchLog" class="file-list" style="margin-top: 20px; max-height: 240px; overflow-y: auto;"></div>
+
+      <div class="progress-wrap" id="progressWrap" style="display:none;">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-label" id="progressLabel"></div>
+
+      <div class="btn-row" style="margin-top: 24px;">
+        <button class="btn btn-ghost" onclick="goToStep(2)">Back</button>
+        <button class="btn btn-primary" id="buildBtn" onclick="buildAddon()">Fetch &amp; build zip</button>
+        <button class="btn btn-primary" id="downloadBtn" style="display:none;" onclick="downloadZip()">Download .mcaddon</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+let state = {
+  username: '',
+  uuid: '',
+  manifestJson: '',
+  files: [],        // [{path: 'textures/sword.png'}]
+  fetchedFiles: {}, // path -> ArrayBuffer or string
+  zipBlob: null,
+  currentStep: 1
+};
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+(function init() {
+  const username = localStorage.getItem('code-mon-username') || '';
+  state.username = username;
+  document.getElementById('usernameDisplay').textContent = username || 'not set';
+})();
+
+// ─────────────────────────────────────────────
+// UUID generator
+// ─────────────────────────────────────────────
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ─────────────────────────────────────────────
+// Step navigation
+// ─────────────────────────────────────────────
+function goToStep(n) {
+  // Update panels
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i + 1 === n);
+  });
+
+  // Update step indicators
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`step-indicator-${i}`);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+
+  state.currentStep = n;
+
+  if (n === 3) updateBuildSummary();
+}
+
+// ─────────────────────────────────────────────
+// Step 1: Generate manifest
+// ─────────────────────────────────────────────
+async function generateManifest() {
+  const prompt = document.getElementById('addonPrompt').value.trim();
+  if (!prompt) {
+    document.getElementById('addonPrompt').focus();
+    return;
+  }
+
+  const uuid1 = generateUUID();
+  const uuid2 = generateUUID();
+  state.uuid = uuid1;
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+
+  const box = document.getElementById('manifestBox');
+  box.style.display = 'block';
+
+  const dot = document.getElementById('aiDot');
+  const statusText = document.getElementById('aiStatusText');
+  const output = document.getElementById('manifestOutput');
+  const uuidBadge = document.getElementById('uuidDisplay');
+  const nextWrap = document.getElementById('nextToStep2Wrap');
+
+  dot.className = 'status-dot loading';
+  statusText.textContent = 'asking AI...';
+  output.textContent = '';
+  uuidBadge.style.display = 'none';
+  nextWrap.style.display = 'none';
+
+  const aiPrompt = [
+    `You are a Minecraft Bedrock Edition addon expert. Generate a manifest.json file ONLY.`,
+    `Addon description: "${prompt}"`,
+    `Use this exact UUID for header: ${uuid1}`,
+    `Use this exact UUID for the module: ${uuid2}`,
+    `Output ONLY valid JSON. No explanation, no markdown fences, no extra text.`,
+    `The manifest must include: format_version 2, header (name, description, uuid, version, min_engine_version), modules array.`,
+    `Pick appropriate type (data or resources based on description).`
+  ].join('\n');
+
+  try {
+    const url = `https://code-mon.codemon.workers.dev/api/code-mon-ai?question=${encodeURIComponent(aiPrompt)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const data = await res.json();
+
+    let raw = data.response || data.answer || data.text || JSON.stringify(data);
+
+    // Strip any markdown fences if AI ignored instructions
+    raw = raw.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim();
+
+    // Try to extract JSON object
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in AI response');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const pretty = JSON.stringify(parsed, null, 2);
+
+    state.manifestJson = pretty;
+
+    output.textContent = pretty;
+    uuidBadge.textContent = uuid1.slice(0, 18) + '...';
+    uuidBadge.style.display = 'inline-block';
+    dot.className = 'status-dot done';
+    statusText.textContent = 'manifest ready';
+    nextWrap.style.display = 'flex';
+
+    // Update sidebar
+    document.getElementById('sidebarManifestCode').textContent = pretty;
+
+  } catch (err) {
+    dot.className = 'status-dot';
+    dot.style.background = 'var(--danger)';
+    statusText.textContent = 'error: ' + err.message;
+    output.textContent = err.message;
+  }
+
+  btn.disabled = false;
+}
+
+// ─────────────────────────────────────────────
+// Step 2: File management
+// ─────────────────────────────────────────────
+function addFile() {
+  const input = document.getElementById('newFilePath');
+  const raw = input.value.trim().replace(/^\/+/, '');
+  if (!raw) return;
+
+  // Prevent duplicates
+  if (state.files.find(f => f.path === raw)) {
+    input.value = '';
+    return;
+  }
+
+  state.files.push({ path: raw });
+  input.value = '';
+  renderFileList();
+  updateConfirmBtn();
+}
+
+function removeFile(path) {
+  state.files = state.files.filter(f => f.path !== path);
+  renderFileList();
+  updateConfirmBtn();
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+
+  if (state.files.length === 0) {
+    list.innerHTML = '<div style="font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 12px 0;">No files added yet.</div>';
+    return;
+  }
+
+  state.files.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'file-row';
+    row.innerHTML = `
+      <span class="file-path">${escapeHtml(f.path)}</span>
+      <button class="remove-btn" onclick="removeFile('${escapeAttr(f.path)}')">x</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function updateConfirmBtn() {
+  document.getElementById('confirmFilesBtn').disabled = state.files.length === 0;
+}
+
+function updateBuildSummary() {
+  document.getElementById('sumUser').textContent = state.username || '(not set)';
+  document.getElementById('sumFiles').textContent = state.files.length;
+}
+
+// ─────────────────────────────────────────────
+// Step 3: Build
+// ─────────────────────────────────────────────
+async function buildAddon() {
+  if (!state.username) {
+    alert('Username not found in localStorage (key: code-mon-username). Please set it first.');
+    return;
+  }
+
+  const buildBtn = document.getElementById('buildBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const fetchLog = document.getElementById('fetchLog');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressLabel = document.getElementById('progressLabel');
+
+  buildBtn.disabled = true;
+  downloadBtn.style.display = 'none';
+  fetchLog.innerHTML = '';
+  progressWrap.style.display = 'block';
+  progressBar.style.width = '0%';
+
+  const total = state.files.length + 1; // +1 for manifest
+  let done = 0;
+
+  function progress(pct, label) {
+    progressBar.style.width = pct + '%';
+    progressLabel.textContent = label;
+  }
+
+  function logRow(path, status, msg) {
+    const row = document.createElement('div');
+    row.className = 'file-row';
+    row.innerHTML = `
+      <span class="file-path">${escapeHtml(path)}</span>
+      <span class="file-status ${status}">${escapeHtml(msg)}</span>
+    `;
+    fetchLog.appendChild(row);
+    fetchLog.scrollTop = fetchLog.scrollHeight;
+  }
+
+  // Prepare zip
+  const zip = new JSZip();
+
+  // Add manifest.json at root
+  zip.file('manifest.json', state.manifestJson);
+  done++;
+  logRow('manifest.json', 'fetched', 'included');
+  progress(Math.round((done / total) * 100), `Added manifest.json`);
+
+  // Fetch each file
+  for (const fileEntry of state.files) {
+    const { path } = fileEntry;
+    const url = `https://${state.username}.code-mon-space.shop/${path}`;
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+
+      if (contentType.includes('text') || contentType.includes('json') || contentType.includes('javascript') || path.match(/\.(json|js|txt|mcfunction|lang|properties|yml|yaml)$/i)) {
+        data = await res.text();
+        zip.file(path, data);
+      } else {
+        data = await res.arrayBuffer();
+        zip.file(path, data);
+      }
+
+      done++;
+      logRow(path, 'fetched', 'ok');
+    } catch (err) {
+      done++;
+      logRow(path, 'error', err.message);
+    }
+
+    progress(Math.round((done / total) * 100), `Fetched ${path}`);
+    // Small delay so browser doesn't block
+    await new Promise(r => setTimeout(r, 30));
+  }
+
+  // Generate zip
+  progress(95, 'Packaging zip...');
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
+
+  state.zipBlob = blob;
+  progress(100, 'Done');
+
+  buildBtn.disabled = false;
+  downloadBtn.style.display = 'inline-flex';
+}
+
+function downloadZip() {
+  if (!state.zipBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(state.zipBlob);
+  a.download = 'addon_pack.mcaddon';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(str) {
+  return String(str).replace(/'/g, "\\'");
+}
+</script>
+</body>
+</html>
