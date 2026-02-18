@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="img/icon.png" />
+<link rel="icon" type="image/png" href="img/icon.png" />
 <title>Code-Mon Album</title>
 <style>
 body {
@@ -24,12 +24,12 @@ h1 {
 
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 25px;
   padding: 0 20px;
 }
 
-.image-card {
+.media-card {
   background: rgba(15, 15, 30, 0.6);
   border-radius: 15px;
   overflow: hidden;
@@ -38,35 +38,44 @@ h1 {
   backdrop-filter: blur(6px);
   transition: transform 0.3s, box-shadow 0.3s;
   border: 1px solid rgba(0,255,255,0.2);
+  display: flex;
+  flex-direction: column;
 }
 
-.image-card:hover {
+.media-card:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 0 25px rgba(0,255,255,0.7),
               0 15px 35px rgba(0,255,255,0.3);
 }
 
-.image-card img {
+.media-card img,
+.media-card video,
+.media-card audio {
   width: 100%;
-  height: 160px;
-  object-fit: cover;
   display: block;
   border-bottom: 1px solid rgba(0,255,255,0.2);
-  transition: transform 0.3s;
+  object-fit: cover;
 }
 
-.image-card img:hover {
-  transform: scale(1.05);
+.media-card img,
+.media-card video {
+  height: 160px;
+  background: #000;
 }
 
-.image-info {
+.media-card audio {
+  height: 60px;
+  margin-top: 20px;
+}
+
+.media-info {
   padding: 12px;
   text-align: center;
   font-size: 14px;
   color: #0ff;
 }
 
-.image-info code {
+.media-info code {
   display: block;
   background: rgba(0,0,0,0.3);
   padding: 4px 6px;
@@ -91,65 +100,136 @@ h1 {
 
 <h1>Code-Mon Album</h1>
 <div id="gallery" class="gallery"></div>
-<div id="loading" class="loading">Loading images...</div>
+<div id="loading" class="loading">Loading media...</div>
 
 <script>
-const API = "https://code-mon.codemon.workers.dev";
-const user = localStorage.getItem("code-mon-username");
-
-if (!user) {
-  alert("No username found in localStorage (code-mon-username)");
-}
-
-/* Fetch list of image files */
-async function fetchImageFiles() {
-  const res = await fetch(`${API}/api/list?user=${user}`);
-  const data = await res.json();
-  if (!data.files) return [];
-  return data.files.filter(f =>
-    f.endsWith(".png") ||
-    f.endsWith(".jpg") ||
-    f.endsWith(".jpeg") ||
-    f.endsWith(".webp") ||
-    f.endsWith(".gif")
-  );
-}
-
-/* Load image as object URL (works in <img src>) */
-async function loadImageURL(filename) {
-  const res = await fetch(`${API}/api/load?user=${user}&filename=${filename}`);
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
-}
-
-/* Render gallery */
-async function renderGallery() {
-  const gallery = document.getElementById("gallery");
-  const loading = document.getElementById("loading");
-  loading.style.display = "block";
-
-  const files = await fetchImageFiles();
-
-  for (const file of files) {
-    const card = document.createElement("div");
-    card.className = "image-card";
-
-    const img = document.createElement("img");
-    img.src = await loadImageURL(file); // show the image
-
-    const info = document.createElement("div");
-    info.className = "image-info";
-    info.innerHTML = `${file}<br><code>&lt;img src="/${file}" /&gt;</code>`; // for implementation snippet
-
-    card.appendChild(img);
-    card.appendChild(info);
-    gallery.appendChild(card);
+(function() {
+  // 1. Get username from localStorage
+  const user = localStorage.getItem('code-mon-username');
+  if (!user) {
+    alert('No username found. Please log in first.');
+    window.location.href = 'login.html';
+    return;
   }
 
-  loading.style.display = "none";
-}
+  // 2. Media extensions we want to show
+  const MEDIA_EXTENSIONS = /\.(png|jpg|jpeg|webp|gif|mp4|webm|mov|avi|mkv|mp3|wav|ogg|m4a)$/i;
 
-renderGallery();
+  // 3. DOM elements
+  const gallery = document.getElementById('gallery');
+  const loading = document.getElementById('loading');
+
+  // 4. Fetch file list from API
+  async function fetchMediaFiles() {
+    const response = await fetch(
+      `https://code-mon.codemon.workers.dev/api/list?user=${encodeURIComponent(user)}`
+    );
+
+    if (!response.ok) {
+      console.error('Failed to fetch file list');
+      return [];
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (err) {
+      console.error('Invalid JSON response');
+      return [];
+    }
+
+    if (!Array.isArray(data.files)) {
+      return [];
+    }
+
+    // Filter only media files
+    return data.files.filter(file => MEDIA_EXTENSIONS.test(file));
+  }
+
+  // 5. Determine media type and return appropriate HTML element
+  function createMediaElement(file, url) {
+    const ext = file.split('.').pop().toLowerCase();
+    const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    const videoExts = ['mp4', 'webm', 'mov', 'avi', 'mkv'];
+    const audioExts = ['mp3', 'wav', 'ogg', 'm4a'];
+
+    if (imageExts.includes(ext)) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = file;
+      return img;
+    } else if (videoExts.includes(ext)) {
+      const video = document.createElement('video');
+      video.controls = true;
+      video.src = url;
+      return video;
+    } else if (audioExts.includes(ext)) {
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = url;
+      return audio;
+    } else {
+      // fallback (should never happen due to filter)
+      const div = document.createElement('div');
+      div.textContent = 'Unsupported media';
+      return div;
+    }
+  }
+
+  // 6. Generate the correct code snippet based on type
+  function getCodeSnippet(file, ext) {
+    const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    const videoExts = ['mp4', 'webm', 'mov', 'avi', 'mkv'];
+    const audioExts = ['mp3', 'wav', 'ogg', 'm4a'];
+
+    if (imageExts.includes(ext)) {
+      return `&lt;img src="${file}" /&gt;`;
+    } else if (videoExts.includes(ext)) {
+      return `&lt;video src="${file}" controls&gt;&lt;/video&gt;`;
+    } else if (audioExts.includes(ext)) {
+      return `&lt;audio src="${file}" controls&gt;&lt;/audio&gt;`;
+    }
+    return '';
+  }
+
+  // 7. Render the gallery
+  async function renderGallery() {
+    loading.style.display = 'block';
+    gallery.innerHTML = '';
+
+    const files = await fetchMediaFiles();
+
+    if (files.length === 0) {
+      loading.textContent = 'No media files found';
+      return;
+    }
+
+    files.forEach(file => {
+      // Build the new URL: https://<username>.code-mon-space.shop/<filename>
+      // Ensure filename is URL-encoded
+      const encodedFile = encodeURIComponent(file);
+      const mediaUrl = `https://${user}.code-mon-space.shop/${encodedFile}`;
+      const ext = file.split('.').pop().toLowerCase();
+
+      const card = document.createElement('div');
+      card.className = 'media-card';
+
+      const mediaElement = createMediaElement(file, mediaUrl);
+      card.appendChild(mediaElement);
+
+      const info = document.createElement('div');
+      info.className = 'media-info';
+      info.innerHTML = `${file}<br><code>${getCodeSnippet(file, ext)}</code>`;
+
+      card.appendChild(info);
+      gallery.appendChild(card);
+    });
+
+    loading.style.display = 'none';
+  }
+
+  renderGallery();
+})();
 </script>
 
 </body>
