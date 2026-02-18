@@ -2263,7 +2263,6 @@ async function openUpload() {
     openModal('uploadModal');
 }
 
-
 async function uploadFile() {
     const fileInput = document.getElementById('fileInput');
     const uploadPath = document.getElementById('uploadPath').value.trim();
@@ -2283,52 +2282,99 @@ async function uploadFile() {
     }
 
     const file = fileInput.files[0];
-    const isImage = file.type.startsWith('image/');
+    
+    // Check if it's a media file (images, videos, audio, GIFs)
+    const mediaTypes = [
+        'image/',      // png, jpg, jpeg, webp, gif, etc.
+        'video/',      // mp4, webm, mov, avi, mkv, etc.
+        'audio/'       // mp3, wav, ogg, m4a, etc.
+    ];
+    
+    const isMedia = mediaTypes.some(type => file.type.startsWith(type));
+    
+    // Also check common extensions for GIF since it might be image/gif
+    const extension = file.name.split('.').pop().toLowerCase();
+    const mediaExtensions = ['gif', 'mp4', 'webm', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'ogg', 'm4a'];
+    const isMediaExtension = mediaExtensions.includes(extension);
+    
+    const shouldUseBinaryUpload = isMedia || isMediaExtension;
 
-    const reader = new FileReader();
+    if (shouldUseBinaryUpload) {
+        // For all media files: send raw binary to /api/img-save
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            try {
+                const arrayBuffer = e.target.result; // ArrayBuffer (raw binary)
+                
+                const res = await fetch(`${API}/api/img-save`, {
+                    method: "POST",
+                    headers: {
+                        "x-user": currentUser,
+                        "x-pass": currentPass,
+                        "x-filename": uploadPath
+                        // No Content-Type header - browser will set appropriate one
+                    },
+                    body: arrayBuffer // raw binary data
+                });
 
-    reader.onload = async function (e) {
-        try {
-            let content = e.target.result;
+                const data = await res.json();
+                if (data.error) {
+                    showNotification('Failed to upload media: ' + data.error, 'error');
+                    return;
+                }
 
-            // If it's an image, the result is a data URL (e.g., data:image/png;base64,....)
-            // The backend might expect only the base64 part. Adjust if needed.
-            // If your album page expects the full data URL, keep as is.
-            // If it needs raw base64, uncomment the next line:
-            // if (isImage) content = content.split(',')[1];
-
-            const res = await fetch(`${API}/api/save`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user: currentUser,
-                    pass: currentPass,
-                    filename: uploadPath,
-                    content: content
-                })
-            });
-
-            const data = await res.json();
-            if (data.error) {
-                showNotification('Failed to upload file: ' + data.error, 'error');
-                return;
+                showNotification('Media uploaded successfully', 'success');
+                closeModal('uploadModal');
+                
+                // Optionally reload file list (if you want media to appear in explorer)
+                // Note: loadFiles() currently filters out media files
+                // You may want to remove the filter from loadFiles() if you want to see them
+                // loadFiles();
+                
+            } catch (error) {
+                showNotification('Failed to upload media: ' + error.message, 'error');
             }
-
-            showNotification('File uploaded successfully', 'success');
-            closeModal('uploadModal');
-            // Do NOT reload the file list if you don't want images to appear
-            // loadFiles(); // optional – but would show images if filter removed
-        } catch (error) {
-            showNotification('Failed to upload file: ' + error.message, 'error');
-        }
-    };
-
-    if (isImage) {
-        reader.readAsDataURL(file);   // get Base64 data URL
+        };
+        reader.readAsArrayBuffer(file); // Read as ArrayBuffer for binary
+        
     } else {
-        reader.readAsText(file);      // normal text files
+        // For text/code files: keep using the existing JSON /api/save endpoint
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            try {
+                const content = e.target.result; // string
+                
+                const res = await fetch(`${API}/api/save`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user: currentUser,
+                        pass: currentPass,
+                        filename: uploadPath,
+                        content: content
+                    })
+                });
+
+                const data = await res.json();
+                if (data.error) {
+                    showNotification('Failed to upload file: ' + data.error, 'error');
+                    return;
+                }
+
+                showNotification('File uploaded successfully', 'success');
+                closeModal('uploadModal');
+                
+                // Reload file list for text files
+                loadFiles();
+                
+            } catch (error) {
+                showNotification('Failed to upload file: ' + error.message, 'error');
+            }
+        };
+        reader.readAsText(file); // Read as text for code files
     }
         }
+
 // Code Execution with Judge0 - UPDATED for HTML files
 async function runCode() {
     if (!currentFile) {
