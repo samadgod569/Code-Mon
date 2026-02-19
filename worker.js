@@ -798,11 +798,8 @@ if (path === "/api/pay") {
 // /api/img-save  (store binary image into KV)
 // ---------------------------------------------------------
 if (path === "/api/img-save") {
-
-  // Read raw binary
   const binary = new Uint8Array(await request.arrayBuffer());
 
-  // Extract metadata from headers
   const user = request.headers.get("x-user");
   const pass = request.headers.get("x-pass");
   const filename = request.headers.get("x-filename");
@@ -810,7 +807,6 @@ if (path === "/api/img-save") {
   if (!user || !pass || !filename)
     return json({ error: "Missing user, pass, or filename header" }, 400);
 
-  // Validate password
   const storedPass = await env.Pass.get(user, { type: "text" });
   if (!storedPass)
     return json({ error: "User not found" }, 404);
@@ -818,12 +814,22 @@ if (path === "/api/img-save") {
   if (storedPass !== pass)
     return json({ error: "Incorrect password" }, 403);
 
-  // Store binary directly into KV
-  await env.FILES.put(`${user}/${filename}`, binary);
+  const fileKey = `${user}/${filename}`;
+  const existingFile = await env.FILES.get(fileKey);
 
+  if (!existingFile) {
+    const payRaw = await env.PAY.get(user, { type: "text" });
+    const pay = Number(payRaw ?? 0);
+
+    if (pay < 10)
+      return json({ error: "Insufficient balance" }, 402);
+
+    await env.PAY.put(user, String(pay - 10));
+  }
+
+  await env.FILES.put(fileKey, binary);
   return json({ success: true });
 }
-
 
  if (path === "/api/engine") {
 
@@ -1560,6 +1566,9 @@ if (path === "/api/pass-deploy") {
 
   if (!username || !pass)
     return json({ success: false, error: "Missing username or password" }, 400);
+
+  if (!/^[a-zA-Z0-9]+$/.test(username))
+    return json({ success: false, error: "Invalid username" }, 400);
 
   const existing = await env.Pass.get(username, { type: "text" });
 
