@@ -1567,6 +1567,7 @@ if (path === "/api/pass-deploy") {
     return json({ success: false, error: "Username already exists" }, 409);
 
   await env.Pass.put(username, pass);
+  await env.PAY.put(username, "30");
   return json({ success: true });
 }
     // ---------------------------------------------------
