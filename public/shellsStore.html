@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shells Shop</title>
+  <style>
+    body {
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  font-family: Inter, system-ui, sans-serif;
+  color: white;
+  margin: 0;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 40px;
+  align-items: center;
+}
+
+#balance {
+  background: rgba(255,255,255,0.1);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.shop {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  padding: 40px;
+}
+
+.card {
+  background: linear-gradient(180deg, #111827, #020617);
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(0,0,0,.6);
+  transition: transform .2s;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+}
+
+.card img {
+  width: 80px;
+  margin-bottom: 12px;
+}
+
+.card p {
+  color: #38bdf8;
+  font-size: 1.2rem;
+}
+
+.offers {
+  padding: 40px;
+  text-align: center;
+}
+
+.offer {
+  margin: 12px 0;
+  font-size: 1.1rem;
+}
+
+.checkout {
+  display: inline-block;
+  margin-top: 20px;
+  background: linear-gradient(90deg, #6366f1, #22d3ee);
+  color: black;
+  padding: 14px 24px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Shells Shop</h1>
+    <div id="balance">Loading...</div>
+  </header>
+
+  <section class="shop">
+    <div class="card">
+      <img src="img/shells.png">
+      <h3>200 Shells</h3>
+      <p>$1</p>
+    </div>
+
+    <div class="card">
+      <img src="img/shells.png">
+      <h3>500 Shells</h3>
+      <p>$2.5</p>
+    </div>
+
+    <div class="card">
+      <img src="img/shells.png">
+      <h3>800 Shells</h3>
+      <p>$3.5</p>
+    </div>
+
+    <div class="card">
+      <img src="img/shells.png">
+      <h3>1500 Shells</h3>
+      <p>$7</p>
+    </div>
+
+    <div class="card">
+      <img src="img/shells.png">
+      <h3>3000 Shells</h3>
+      <p>$14</p>
+    </div>
+
+    <div class="card">
+      <img src="img/shells.png">
+      <h3>5000 Shells</h3>
+      <p>$23</p>
+    </div>
+  </section>
+
+  <section class="offers">
+    <h2> Limited-Time Offers</h2>
+    <div class="offer">🚀 1 Boost — <b>900 Shells</b></div>
+    <div class="offer">👥 10 Invites — <b>200 Shells</b></div>
+    <a class="checkout" href="https://discord.gg/pzQjEKau2S" target="_blank">
+      Checkout on Discord
+    </a>
+  </section>
+
+  <script>
+    const username = localStorage.getItem("code-mon-username");
+const balanceEl = document.getElementById("balance");
+
+if (!username) {
+  balanceEl.textContent = "Not logged in";
+} else {
+  fetch(`https://code-mon.codemon.workers.dev/api/pay?username=${username}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        balanceEl.textContent = `${data.balance} Shells`;
+      } else {
+        balanceEl.textContent = "Error loading balance";
+      }
+    })
+    .catch(() => {
+      balanceEl.textContent = "Connection error";
+    });
+          }
+  </script>
+</body>
+</html>
