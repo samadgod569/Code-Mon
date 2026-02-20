@@ -1565,18 +1565,32 @@ if (path === "/api/pass-deploy") {
   const pass = url.searchParams.get("pass");
 
   if (!username || !pass)
-    return json({ success: false, error: "Missing username or password" }, 400);
+    return json(
+      { success: false, error: "Missing username or password" },
+      400
+    );
 
-  if (!/^[a-zA-Z0-9]+$/.test(username))
-    return json({ success: false, error: "Invalid username" }, 400);
+  // Allow only lowercase letters and numbers
+  if (!/^[a-z0-9]+$/.test(username))
+    return json(
+      {
+        success: false,
+        error: "Username must contain only lowercase letters and numbers"
+      },
+      400
+    );
 
   const existing = await env.Pass.get(username, { type: "text" });
 
   if (existing)
-    return json({ success: false, error: "Username already exists" }, 409);
+    return json(
+      { success: false, error: "Username already exists" },
+      409
+    );
 
   await env.Pass.put(username, pass);
   await env.PAY.put(username, "30");
+
   return json({ success: true });
 }
     // ---------------------------------------------------
