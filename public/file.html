@@ -2401,7 +2401,7 @@ async function runCode() {
         const cleanFilename = filename.replace(/[^a-zA-Z0-9\-_\.\/]/g, '');
         
         // Create the live preview URL
-        const liveUrl = `https://code-mon-space.codemon.workers.dev/${username}/${cleanFilename}`;
+        const liveUrl = `https://${username}.code-mon-space.shop/${cleanFilename}`;
         
         // Display clickable link in output
         outputContent.innerHTML = `
