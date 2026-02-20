@@ -1178,7 +1178,7 @@ if (path === "/api/code-mon-ai") {
     return json({ error: "Missing question" }, 400);
   }
 
-  const apiKey = await env.FILES.get("CMC", { type: "text" });
+  const apiKey = await env.FILES.get("OP", { type: "text" });
 
   if (!apiKey) {
     return json({ error: "OpenRouter API key not configured" }, 500);
