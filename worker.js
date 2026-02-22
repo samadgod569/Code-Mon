@@ -30,7 +30,132 @@ const corsHeaders = {
 
     
     
+// ---------------------------------------------------------
+// /api/unverify → Register domain (NO verification)
+// ---------------------------------------------------------
+if (path === "/api/unverify") {
 
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== "POST") {
+    return json({ error: "POST only" }, 405);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { domain, cdomain } = body;
+
+  if (!domain || !cdomain) {
+    return json({ error: "domain and cdomain are required" }, 400);
+  }
+
+  // Normalize domain
+  const cleanDomain = domain.toLowerCase().trim();
+
+  // KV key
+  const kvKey = `domain/unv/${cleanDomain}`;
+
+  // Prevent overwrite
+  const existing = await env.STORAGE.get(kvKey);
+  if (existing) {
+    return json({ error: "Domain already registered" }, 409);
+  }
+
+  // Store as unverified
+  const value = {
+    target: cdomain,
+    verify: false
+  };
+
+  await env.STORAGE.put(kvKey, JSON.stringify(value));
+
+  // Return DNS instructions
+  return json({
+    Name: `_codemon.${cleanDomain}`,
+    Target: "verify.code-mon-space.shop"
+  });
+}
+    
+    // VERIFIED
+
+    if (path === "/api/verify") {
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== "POST") {
+    return json({ error: "POST only" }, 405);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { domain } = body;
+
+  if (!domain) {
+    return json({ error: "domain is required" }, 400);
+  }
+
+  const cleanDomain = domain.toLowerCase().trim();
+  const unvKey = `domain/unv/${cleanDomain}`;
+
+  const stored = await env.STORAGE.get(unvKey, { type: "json" });
+  if (!stored) {
+    return json({ error: "Domain not found or already verified" }, 404);
+  }
+
+  const dnsURL =
+    `https://cloudflare-dns.com/dns-query?name=_codemon.${cleanDomain}&type=CNAME`;
+
+  const res = await fetch(dnsURL, {
+    headers: { "Accept": "application/dns-json" }
+  });
+
+  if (!res.ok) {
+    return json({ error: "DNS lookup failed" }, 502);
+  }
+
+  const data = await res.json();
+
+  const verified =
+    data.Answer &&
+    data.Answer.some(
+      a => a.data.replace(/\.$/, "") === "verify.code-mon-space.shop"
+    );
+
+  if (!verified) {
+    return json({ error: "Domain not verified yet" }, 403);
+  }
+
+  const newValue = {
+    target: stored.target,
+    verify: true
+  };
+
+  await env.STORAGE.delete(unvKey);
+  await env.STORAGE.put(
+    `domain/v/${cleanDomain}`,
+    JSON.stringify(newValue)
+  );
+
+  return json({
+    Name: cleanDomain,
+    Target: stored.target
+  });
+  }
+    
 // ---------------------------------------------------------
 // /api/external  → Verify GitHub Pages ownership (Code-Mon)
 // ---------------------------------------------------------
