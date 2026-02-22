@@ -62,11 +62,7 @@ if (path === "/api/unverify") {
   // KV key
   const kvKey = `domain/unv/${cleanDomain}`;
 
-  // Prevent overwrite
-  const existing = await env.STORAGE.get(kvKey);
-  if (existing) {
-    return json({ error: "Domain already registered" }, 409);
-  }
+
 
   // Store as unverified
   const value = {
