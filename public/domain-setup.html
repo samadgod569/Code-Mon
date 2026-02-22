@@ -721,7 +721,7 @@
 
 <script>
   const API = "https://code-mon.codemon.workers.dev";
-  const username = "username";
+  const username = localStorage.getItem("code-mon-username");
 
   let currentDomain = "";
   let dnsRecord = {};
