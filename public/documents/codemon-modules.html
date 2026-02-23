@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CodeMon CLI Documentation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Roboto, Ubuntu, sans-serif;
+      background: #f7f7f9;
+      color: #222;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.2rem;
+    }
+
+    header p {
+      margin: 0.5rem 0 0;
+      color: #555;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1.5rem 3rem;
+    }
+
+    section {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.4rem;
+    }
+
+    p {
+      margin: 0.6rem 0;
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    code {
+      background: #f1f1f1;
+      padding: 0.2rem 0.35rem;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: #f1f1f1;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 0.8rem 0;
+    }
+
+    footer {
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      padding: 1.5rem;
+      border-top: 1px solid #ddd;
+      background: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>CodeMon CLI</h1>
+    <p>Simple deployment CLI — Version 0.1.6</p>
+  </header>
+
+  <main>
+
+    <section>
+      <h2>About</h2>
+      <p>
+        CodeMon module is a lightweight CLI tool that lets you upload and manage
+        frontend build outputs directly from your terminal.
+      </p>
+    </section>
+
+    <section>
+      <h2>Installation</h2>
+      <pre><code>npm install -g code-mon-space</code></pre>
+    </section>
+
+    <section>
+      <h2>Authentication</h2>
+      <p><code>codemon login</code></p>
+      <p>Logs you in and stores credentials locally.</p>
+    </section>
+
+    <section>
+      <h2>User Info</h2>
+      <p><code>codemon whoami</code></p>
+      <p>Shows the currently logged-in username.</p>
+    </section>
+
+    <section>
+      <h2>Project Commands</h2>
+      <ul>
+        <li>
+          <code>codemon setproject &lt;name&gt;</code>  
+          Sets or changes the active project.
+        </li>
+        <li>
+          <code>codemon clone &lt;name&gt;</code>  
+          Downloads all files for a project.
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Build & Deploy</h2>
+      <p><code>codemon build</code></p>
+      <p>
+        Asks for a build directory (dist, build, out, etc) and uploads the
+        entire folder recursively.
+      </p>
+      <ul>
+        <li>Text files are uploaded normally</li>
+        <li>Images, media, and fonts are uploaded as binary</li>
+        <li>Directory structure is preserved</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Supported Assets</h2>
+      <ul>
+        <li>Images: png, jpg, jpeg, gif, webp, svg, ico</li>
+        <li>Media: mp4, mp3, wav, ogg</li>
+        <li>Fonts: woff, woff2, ttf, eot</li>
+        <li>Documents: pdf</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Accessing Your Site</h2>
+      <pre><code>https://&lt;username&gt;.code-mon-space.shop/</code></pre>
+    </section>
+
+  </main>
+
+  <footer>
+    CodeMon CLI · Version 0.1.6
+  </footer>
+
+</body>
+</html>
