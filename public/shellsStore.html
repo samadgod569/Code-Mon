@@ -3,461 +3,286 @@
 <head>
   <meta charset="UTF-8" />
   <title>Shells Shop</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #04060f;
-      --surface: rgba(255,255,255,0.04);
-      --surface-hover: rgba(255,255,255,0.07);
-      --border: rgba(255,255,255,0.08);
-      --border-hover: rgba(99,210,255,0.35);
-      --accent: #63d2ff;
-      --accent2: #a78bfa;
-      --gold: #f5c842;
-      --text: #e2eaf5;
-      --muted: #8396b0;
-      --glow: 0 0 60px rgba(99,210,255,0.12);
-    }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafaf8;
+      --surface: #ffffff;
+      --border: #e8e6e1;
+      --text: #1a1917;
+      --muted: #8c8a85;
+      --accent: #2563eb;
+      --gold: #b45309;
+    }
 
     body {
       background: var(--bg);
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Geist', sans-serif;
       color: var(--text);
       min-height: 100vh;
-      overflow-x: hidden;
     }
 
-    /* ─── Animated starfield background ─── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(99,210,255,0.07) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(167,139,250,0.07) 0%, transparent 60%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Floating orbs */
-    body::after {
-      content: '';
-      position: fixed;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(99,210,255,0.05) 0%, transparent 70%);
-      top: -150px; left: -150px;
-      pointer-events: none;
-      z-index: 0;
-      animation: orb 12s ease-in-out infinite alternate;
-    }
-
-    @keyframes orb {
-      to { transform: translate(80px, 80px); }
-    }
-
-    /* ─── Header ─── */
     header {
-      position: relative;
-      z-index: 10;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 28px 48px;
+      padding: 20px 40px;
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(20px);
-      background: rgba(4,6,15,0.6);
+      background: var(--surface);
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 0 20px rgba(99,210,255,0.4);
-    }
-
-    h1 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.4rem;
-      letter-spacing: -0.02em;
-      background: linear-gradient(90deg, #fff 30%, var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      gap: 8px;
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.2rem;
     }
 
     #balance {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 10px 20px;
-      border-radius: 100px;
+      font-size: 0.82rem;
       font-weight: 500;
-      font-size: 0.9rem;
-      color: var(--accent);
-      backdrop-filter: blur(10px);
-      display: flex; align-items: center; gap: 8px;
-      transition: border-color 0.3s;
+      color: var(--muted);
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
     }
 
-    #balance::before {
-      content: '🐚';
-      font-size: 14px;
+    main {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 48px 32px;
     }
 
-    #balance:hover { border-color: var(--border-hover); }
-
-    /* ─── Section titles ─── */
-    .section-title {
-      font-family: 'Syne', sans-serif;
+    .section-label {
       font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.18em;
+      font-weight: 600;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 28px;
+      margin-bottom: 16px;
     }
 
-    /* ─── Shop grid ─── */
-    .shop {
-      position: relative;
-      z-index: 5;
+    .bundles {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-      padding: 48px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 40px;
     }
 
-    /* ─── Cards ─── */
+    @media (max-width: 580px) {
+      .bundles { grid-template-columns: repeat(2, 1fr); }
+    }
+
     .card {
-      position: relative;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px 20px 24px;
-      text-align: center;
-      cursor: pointer;
-      overflow: hidden;
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(99,210,255,0.06) 0%, transparent 60%);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    /* Shimmer sweep */
-    .card::after {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%;
-      width: 60%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-      transition: left 0.5s ease;
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
 
     .card:hover {
-      transform: translateY(-8px) scale(1.01);
-      border-color: var(--border-hover);
-      box-shadow: var(--glow), 0 24px 48px rgba(0,0,0,0.5);
+      border-color: #c5c2bc;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
 
-    .card:hover::before { opacity: 1; }
-    .card:hover::after { left: 160%; }
-
-    /* Popular badge */
-    .card.popular {
-      border-color: rgba(167,139,250,0.3);
-    }
-
-    .card.popular::before {
-      background: linear-gradient(135deg, rgba(167,139,250,0.08) 0%, transparent 60%);
-      opacity: 1;
-    }
+    .card.popular { border-color: var(--accent); }
 
     .badge {
       position: absolute;
-      top: 14px; right: 14px;
-      background: linear-gradient(90deg, var(--accent2), #c084fc);
+      top: 10px; right: 10px;
       font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: white;
-      padding: 4px 10px;
-      border-radius: 100px;
-    }
-
-    .shell-icon {
-      font-size: 2.6rem;
-      display: block;
-      margin-bottom: 14px;
-      filter: drop-shadow(0 0 12px rgba(99,210,255,0.5));
-      animation: float 3s ease-in-out infinite;
-      animation-delay: var(--delay, 0s);
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-
-    .card h3 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: #fff;
-      margin-bottom: 6px;
-    }
-
-    .card .price {
-      font-size: 1.5rem;
       font-weight: 600;
-      background: linear-gradient(90deg, var(--accent), #a0e9ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: #eff6ff;
+      padding: 2px 7px;
+      border-radius: 4px;
     }
 
-    .card .per-shell {
-      font-size: 0.72rem;
+    .card-icon { font-size: 1.2rem; margin-bottom: 10px; display: block; }
+
+    .card-amount {
+      font-size: 0.85rem;
       color: var(--muted);
-      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+
+    .card-price {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.5rem;
+      color: var(--text);
+      margin-bottom: 1px;
+    }
+
+    .card-per {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 14px;
     }
 
     .buy-btn {
-      display: inline-block;
-      margin-top: 18px;
-      background: linear-gradient(90deg, var(--accent), #3b9eff);
-      color: #020617;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 700;
-      font-size: 0.82rem;
-      padding: 9px 22px;
-      border-radius: 100px;
+      display: block;
+      width: 100%;
+      padding: 8px;
+      background: var(--text);
+      color: #fff;
       border: none;
+      border-radius: 6px;
+      font-family: 'Geist', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: opacity 0.2s, transform 0.15s;
-      letter-spacing: 0.02em;
+      text-align: center;
+      text-decoration: none;
+      transition: opacity 0.15s;
     }
 
-    .buy-btn:hover { opacity: 0.85; transform: scale(0.97); }
+    .buy-btn:hover { opacity: 0.75; }
 
-    /* ─── Offers ─── */
-    .offers-section {
-      position: relative;
-      z-index: 5;
-      padding: 0 48px 64px;
+    .offers {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .offers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-    }
-
-    .offer-card {
+    .offer-row {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 24px 28px;
+      border-radius: 10px;
+      padding: 14px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      transition: border-color 0.25s, transform 0.2s;
+      transition: border-color 0.15s;
     }
 
-    .offer-card:hover {
-      border-color: rgba(245,200,66,0.3);
-      transform: translateX(4px);
+    .offer-row:hover { border-color: #c5c2bc; }
+
+    .offer-left { display: flex; align-items: center; gap: 12px; }
+    .offer-icon { font-size: 1.1rem; }
+    .offer-name { font-weight: 500; font-size: 0.88rem; }
+    .offer-desc { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+
+    .offer-tag {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold);
+      background: #fef3c7;
+      padding: 3px 10px;
+      border-radius: 5px;
+      white-space: nowrap;
     }
 
-    .offer-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
+    .divider { height: 1px; background: var(--border); margin: 40px 0; }
 
-    .offer-emoji {
-      font-size: 2rem;
-      filter: drop-shadow(0 0 8px rgba(245,200,66,0.4));
-    }
-
-    .offer-label {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 0.95rem;
-    }
-
-    .offer-desc {
+    .footer-note {
       font-size: 0.78rem;
       color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .offer-price {
-      background: rgba(245,200,66,0.12);
-      border: 1px solid rgba(245,200,66,0.25);
-      color: var(--gold);
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 0.95rem;
-      padding: 6px 16px;
-      border-radius: 100px;
-    }
-
-    /* ─── Checkout button ─── */
-    .checkout-wrap {
       text-align: center;
-      margin-top: 36px;
-    }
-
-    .checkout {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(90deg, #5865f2, var(--accent2));
-      color: white;
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 1rem;
-      padding: 16px 36px;
-      border-radius: 100px;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-      box-shadow: 0 0 30px rgba(88,101,242,0.4);
-      letter-spacing: 0.01em;
-    }
-
-    .checkout:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 0 50px rgba(88,101,242,0.6);
-      opacity: 0.92;
-    }
-
-    .checkout svg {
-      width: 20px; height: 20px;
-    }
-
-    /* ─── Divider ─── */
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 0 48px 48px;
     }
   </style>
 </head>
 <body>
+
   <header>
-    <div class="logo">
-      <div class="logo-icon">🐚</div>
-      <h1>Shells Shop</h1>
-    </div>
-    <div id="balance">Loading...</div>
+    <div class="logo">🐚 Shells Shop</div>
+    <div id="balance">Loading…</div>
   </header>
 
-  <section class="shop">
-    <div class="section-title" style="grid-column:1/-1">Choose your bundle</div>
+  <main>
 
-    <div class="card" style="--delay:0s">
-      <span class="shell-icon">🐚</span>
-      <h3>200 Shells</h3>
-      <div class="price">$1.00</div>
-      <div class="per-shell">$0.005 / shell</div>
-      <button class="buy-btn">Buy Now</button>
+    <div class="section-label">Shell Bundles</div>
+    <div class="bundles">
+
+      <div class="card">
+        <span class="card-icon">🐚</span>
+        <div class="card-amount">200 Shells</div>
+        <div class="card-price">$1.00</div>
+        <div class="card-per">$0.005 / shell</div>
+        <a class="buy-btn" href="https://discord.gg/pzQjEKau2S" target="_blank">Buy Now</a>
+      </div>
+
+      <div class="card">
+        <span class="card-icon">🐚</span>
+        <div class="card-amount">500 Shells</div>
+        <div class="card-price">$2.50</div>
+        <div class="card-per">$0.005 / shell</div>
+        <a class="buy-btn" href="https://discord.gg/pzQjEKau2S" target="_blank">Buy Now</a>
+      </div>
+
+      <div class="card">
+        <span class="card-icon">🐚</span>
+        <div class="card-amount">800 Shells</div>
+        <div class="card-price">$3.50</div>
+        <div class="card-per">$0.0044 / shell</div>
+        <a class="buy-btn" href="https://discord.gg/pzQjEKau2S" target="_blank">Buy Now</a>
+      </div>
+
+      <div class="card popular">
+        <span class="badge">Popular</span>
+        <span class="card-icon">🐚</span>
+        <div class="card-amount">1500 Shells</div>
+        <div class="card-price">$7.00</div>
+        <div class="card-per">$0.0047 / shell</div>
+        <a class="buy-btn" href="https://discord.gg/pzQjEKau2S" target="_blank">Buy Now</a>
+      </div>
+
+      <div class="card">
+        <span class="card-icon">🐚</span>
+        <div class="card-amount">3000 Shells</div>
+        <div class="card-price">$14.00</div>
+        <div class="card-per">$0.0047 / shell</div>
+        <a class="buy-btn" href="https://discord.gg/pzQjEKau2S" target="_blank">Buy Now</a>
+      </div>
+
+      <div class="card">
+        <span class="card-icon">🐚</span>
+        <div class="card-amount">5000 Shells</div>
+        <div class="card-price">$23.00</div>
+        <div class="card-per">$0.0046 / shell</div>
+        <a class="buy-btn" href="https://discord.gg/pzQjEKau2S" target="_blank">Buy Now</a>
+      </div>
+
     </div>
 
-    <div class="card" style="--delay:0.1s">
-      <span class="shell-icon">🐚</span>
-      <h3>500 Shells</h3>
-      <div class="price">$2.50</div>
-      <div class="per-shell">$0.005 / shell</div>
-      <button class="buy-btn">Buy Now</button>
-    </div>
+    <div class="section-label">Limited-Time Offers</div>
+    <div class="offers">
 
-    <div class="card" style="--delay:0.2s">
-      <span class="shell-icon">🐚</span>
-      <h3>800 Shells</h3>
-      <div class="price">$3.50</div>
-      <div class="per-shell">$0.0044 / shell</div>
-      <button class="buy-btn">Buy Now</button>
-    </div>
-
-    <div class="card popular" style="--delay:0.3s">
-      <span class="badge">Popular</span>
-      <span class="shell-icon">🐚</span>
-      <h3>1500 Shells</h3>
-      <div class="price">$7.00</div>
-      <div class="per-shell">$0.0047 / shell</div>
-      <button class="buy-btn">Buy Now</button>
-    </div>
-
-    <div class="card" style="--delay:0.4s">
-      <span class="shell-icon">🐚</span>
-      <h3>3000 Shells</h3>
-      <div class="price">$14.00</div>
-      <div class="per-shell">$0.0047 / shell</div>
-      <button class="buy-btn">Buy Now</button>
-    </div>
-
-    <div class="card" style="--delay:0.5s">
-      <span class="shell-icon">🐚</span>
-      <h3>5000 Shells</h3>
-      <div class="price">$23.00</div>
-      <div class="per-shell">$0.0046 / shell</div>
-      <button class="buy-btn">Buy Now</button>
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <section class="offers-section">
-    <div class="section-title">⚡ Limited-Time Offers</div>
-    <div class="offers-grid">
-      <div class="offer-card">
+      <div class="offer-row">
         <div class="offer-left">
-          <span class="offer-emoji">🚀</span>
+          <span class="offer-icon">🚀</span>
           <div>
-            <div class="offer-label">1 Boost</div>
+            <div class="offer-name">1 Server Boost</div>
             <div class="offer-desc">Boost your server instantly</div>
           </div>
         </div>
-        <div class="offer-price">900 Shells</div>
+        <div class="offer-tag">900 Shells</div>
       </div>
 
-      <div class="offer-card">
+      <div class="offer-row">
         <div class="offer-left">
-          <span class="offer-emoji">👥</span>
+          <span class="offer-icon">👥</span>
           <div>
-            <div class="offer-label">10 Invites</div>
+            <div class="offer-name">10 Invites</div>
             <div class="offer-desc">Grow your community</div>
           </div>
         </div>
-        <div class="offer-price">200 Shells</div>
+        <div class="offer-tag">200 Shells</div>
       </div>
+
     </div>
 
-    <div class="checkout-wrap">
-      <a class="checkout" href="https://discord.gg/pzQjEKau2S" target="_blank">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.056a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-        Checkout on Discord
-      </a>
-    </div>
-  </section>
+    <div class="divider"></div>
+    <p class="footer-note">All purchases are completed through our Discord server.</p>
+
+  </main>
 
   <script>
     const username = localStorage.getItem("code-mon-username");
@@ -469,16 +294,11 @@
       fetch(`https://code-mon.codemon.workers.dev/api/pay?username=${username}`)
         .then(res => res.json())
         .then(data => {
-          if (data.success) {
-            balanceEl.textContent = `${data.balance} Shells`;
-          } else {
-            balanceEl.textContent = "Error loading balance";
-          }
+          balanceEl.textContent = data.success ? `${data.balance} Shells` : "Error";
         })
-        .catch(() => {
-          balanceEl.textContent = "Connection error";
-        });
+        .catch(() => { balanceEl.textContent = "Connection error"; });
     }
   </script>
+
 </body>
-        </html>
+</html>
