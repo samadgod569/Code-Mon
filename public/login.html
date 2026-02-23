@@ -3,303 +3,274 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeMon · premium access</title>
+<title>CodeMon · Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: #0c0c0c;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  color: #ffffff;
-  background: linear-gradient(145deg, #0b0b0f 0%, #1a1a20 100%);
-  position: relative;
-  overflow-x: hidden;
-}
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --border: #e8e6e1;
+    --text: #1a1917;
+    --muted: #8c8a85;
+    --accent: #2563eb;
+    --error: #dc2626;
+    --success: #16a34a;
+  }
 
-body::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 30% 40%, rgba(100, 120, 255, 0.08) 0%, transparent 50%),
-              radial-gradient(circle at 80% 70%, rgba(180, 140, 255, 0.06) 0%, transparent 50%);
-  pointer-events: none;
-}
+  body {
+    background: var(--bg);
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    color: var(--text);
+  }
 
-.container {
-  width: 440px;
-  max-width: 100%;
-  background: rgba(18, 18, 24, 0.85);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 32px;
-  padding: 2.8rem 2.2rem;
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
-              0 0 0 1px rgba(255, 255, 255, 0.02) inset,
-              0 0 40px rgba(90, 100, 255, 0.15);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 2;
-}
+  .card {
+    width: 380px;
+    max-width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 36px 32px 32px;
+  }
 
-.container:hover {
-  border-color: rgba(140, 140, 255, 0.2);
-  box-shadow: 0 50px 100px -20px #000, 0 0 0 1px rgba(160, 160, 255, 0.15) inset, 0 0 50px rgba(100, 120, 255, 0.25);
-}
+  .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+    gap: 12px;
+  }
 
-h2 {
-  font-size: 2rem;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  background: linear-gradient(120deg, #ffffff, #c0c4ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-bottom: 2rem;
-  text-align: center;
-  font-family: 'Inter', system-ui;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 0.9rem;
-}
+  .brand img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    object-fit: cover;
+  }
 
-.input-group {
-  margin-bottom: 1.8rem;
-}
+  .brand-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
 
-input {
-  width: 100%;
-  background: rgba(10, 10, 15, 0.7);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 1rem 1.4rem;
-  font-size: 1rem;
-  color: #ffffff;
-  outline: none;
-  transition: 0.2s;
-  font-weight: 400;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 22px;
+  }
 
-input:focus {
-  border-color: #8a8aff;
-  background: rgba(20, 20, 30, 0.9);
-  box-shadow: 0 8px 20px -8px #5a5aff, 0 0 0 2px rgba(120, 120, 255, 0.3);
-}
+  .field {
+    margin-bottom: 14px;
+  }
 
-input::placeholder {
-  color: rgba(180, 180, 210, 0.4);
-  font-weight: 300;
-}
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
 
-button {
-  width: 100%;
-  background: linear-gradient(135deg, #2a2a3a, #1a1a28);
-  border: 1px solid rgba(140, 140, 255, 0.3);
-  border-radius: 30px;
-  padding: 1.1rem 1.5rem;
-  font-size: 1.1rem;
-  font-weight: 550;
-  color: #f0f0ff;
-  cursor: pointer;
-  transition: 0.2s;
-  margin: 1.8rem 0 1rem;
-  box-shadow: 0 8px 0 #0a0a12, 0 8px 25px rgba(80, 80, 200, 0.4);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  font-weight: 600;
-}
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-size: 0.9rem;
+    font-family: 'Geist', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
 
-button:hover {
-  background: linear-gradient(135deg, #323246, #222236);
-  border-color: #9f9fff;
-  transform: translateY(-3px);
-  box-shadow: 0 11px 0 #0a0a12, 0 15px 30px rgba(100, 100, 255, 0.5);
-}
+  input:focus {
+    border-color: #a0aec0;
+    background: var(--surface);
+  }
 
-button:active {
-  transform: translateY(4px);
-  box-shadow: 0 4px 0 #0a0a12, 0 10px 25px rgba(100, 100, 255, 0.5);
-}
+  input::placeholder { color: #c4c2be; }
 
-.switch {
-  text-align: center;
-  font-size: 0.95rem;
-  color: rgba(200, 200, 230, 0.5);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 1.5rem;
-  margin-top: 0.5rem;
-}
+  .hint {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
 
-.switch span {
-  color: #b0b0ff;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: 0.2s;
-  margin-left: 8px;
-  border-bottom: 1px solid rgba(160, 160, 255, 0.3);
-  padding-bottom: 2px;
-}
+  .btn {
+    width: 100%;
+    background: var(--text);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 10px;
+    font-size: 0.88rem;
+    font-family: 'Geist', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.15s;
+  }
 
-.switch span:hover {
-  color: #ffffff;
-  border-bottom-color: #ffffff;
-}
+  .btn:hover { opacity: 0.8; }
 
-#msgBox {
-  position: fixed;
-  top: -100px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 1rem 2.2rem;
-  border-radius: 60px;
-  font-weight: 500;
-  font-size: 0.95rem;
-  transition: top 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-  width: auto;
-  min-width: 300px;
-  max-width: 500px;
-  text-align: center;
-  z-index: 1000;
-  box-shadow: 0 20px 40px -10px #000, 0 0 0 1px rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 15, 25, 0.9);
-}
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 22px 0;
+  }
 
-.successBox {
-  background: rgba(25, 35, 45, 0.95);
-  color: #a0ffb0;
-  border-left: 6px solid #5aff7a;
-}
+  .switch {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
 
-.errorBox {
-  background: rgba(35, 20, 25, 0.95);
-  color: #ffb0b0;
-  border-left: 6px solid #ff5a5a;
-}
+  .switch span {
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 500;
+  }
 
-.rule-hint {
-  font-size: 0.75rem;
-  margin-top: -0.5rem;
-  margin-bottom: 0.2rem;
-  color: rgba(170, 170, 230, 0.5);
-  padding-left: 0.8rem;
-  letter-spacing: 0.3px;
-}
+  .switch span:hover { text-decoration: underline; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    font-family: 'Geist', sans-serif;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-left: 3px solid var(--success); color: var(--success); }
+  #toast.error   { border-left: 3px solid var(--error);   color: var(--error); }
 </style>
 </head>
 <body>
 
-<div id="msgBox"></div>
+<div id="toast"></div>
 
-<div class="container" id="loginCard">
-    <h2 id="title">LOGIN</h2>
-    <div class="input-group">
-        <input type="text" id="loginUser" placeholder="username (6‑12 letters/numbers)">
-        <div class="rule-hint">✦ only a–z, A–Z, 0–9 · 6–12 characters</div>
-    </div>
-    <div class="input-group">
-        <input type="password" id="loginPass" placeholder="password">
-    </div>
+<div class="card">
+  <div class="brand">
+    <img src="favicon.png" alt="CodeMon" onerror="this.style.display='none'">
+    <span class="brand-name">CodeMon</span>
+  </div>
 
-    <button onclick="login()" id="mainAction">Log In</button>
+  <h2 id="title">Sign in to your account</h2>
 
-    <div class="switch" id="switchText">
-        no account? <span onclick="switchToSignup()">create one</span>
-    </div>
+  <div class="field">
+    <label for="loginUser">Username</label>
+    <input type="text" id="loginUser" placeholder="6–12 letters or numbers">
+    <div class="hint">Only a–z, A–Z, 0–9 · 6–12 characters</div>
+  </div>
+
+  <div class="field">
+    <label for="loginPass">Password</label>
+    <input type="password" id="loginPass" placeholder="••••••••">
+  </div>
+
+  <button class="btn" id="mainBtn" onclick="login()">Sign in</button>
+
+  <div class="divider"></div>
+
+  <div class="switch" id="switchText">
+    New to CodeMon? <span onclick="switchToSignup()">Create an account</span>
+  </div>
 </div>
 
 <script>
 const API = "https://code-mon.codemon.workers.dev";
+let toastTimer;
 
-function showMsg(msg, success = false) {
-    const box = document.getElementById("msgBox");
-    box.className = success ? "successBox" : "errorBox";
-    box.innerText = msg;
-    box.style.top = "28px";
-    setTimeout(() => { box.style.top = "-100px"; }, 3200);
+function showToast(msg, type = "error") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ""; }, 3000);
 }
 
 function validateUsername(str) {
-    if (str.length < 6 || str.length > 12) return false;
-    return /^[a-zA-Z0-9]+$/.test(str);
+  return str.length >= 6 && str.length <= 12 && /^[a-zA-Z0-9]+$/.test(str);
 }
 
 function switchToSignup() {
-    document.getElementById("title").innerText = "SIGN UP";
-    document.getElementById("mainAction").innerText = "Create Account";
-    document.getElementById("switchText").innerHTML =
-        `already have an account? <span onclick="switchToLogin()">log in</span>`;
-    document.getElementById("mainAction").setAttribute("onclick", "signup()");
-    document.getElementById("msgBox").style.top = "-100px";
+  document.getElementById("title").textContent = "Create your account";
+  document.getElementById("mainBtn").textContent = "Create account";
+  document.getElementById("mainBtn").setAttribute("onclick", "signup()");
+  document.getElementById("switchText").innerHTML =
+    `Already have an account? <span onclick="switchToLogin()">Sign in</span>`;
 }
 
 function switchToLogin() {
-    document.getElementById("title").innerText = "LOGIN";
-    document.getElementById("mainAction").innerText = "Log In";
-    document.getElementById("switchText").innerHTML =
-        `no account? <span onclick="switchToSignup()">create one</span>`;
-    document.getElementById("mainAction").setAttribute("onclick", "login()");
-    document.getElementById("msgBox").style.top = "-100px";
+  document.getElementById("title").textContent = "Sign in to your account";
+  document.getElementById("mainBtn").textContent = "Sign in";
+  document.getElementById("mainBtn").setAttribute("onclick", "login()");
+  document.getElementById("switchText").innerHTML =
+    `New to CodeMon? <span onclick="switchToSignup()">Create an account</span>`;
 }
 
 async function login() {
-    const username = document.getElementById("loginUser").value.trim();
-    const pass = document.getElementById("loginPass").value.trim();
-
-    if (!username || !pass) return showMsg("fill all fields");
-    if (!validateUsername(username)) return showMsg("username: 6‑12 letters/numbers only");
-
-    try {
-        const res = await fetch(`${API}/api/pass?username=${username}&pass=${pass}`);
-        const data = await res.json();
-
-        if (!data.success) return showMsg(data.error || "login failed");
-
-        localStorage.setItem("code-mon-username", username);
-        localStorage.setItem("code-mon-pass", pass);
-        localStorage.setItem("user", username);
-
-        showMsg("access granted", true);
-        setTimeout(() => location.href = "index.html", 800);
-    } catch {
-        showMsg("connection error");
-    }
+  const username = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+  if (!username || !pass) return showToast("Please fill in all fields");
+  if (!validateUsername(username)) return showToast("Username: 6–12 letters/numbers only");
+  try {
+    const res = await fetch(`${API}/api/pass?username=${username}&pass=${pass}`);
+    const data = await res.json();
+    if (!data.success) return showToast(data.error || "Login failed");
+    localStorage.setItem("code-mon-username", username);
+    localStorage.setItem("code-mon-pass", pass);
+    localStorage.setItem("user", username);
+    showToast("Access granted", "success");
+    setTimeout(() => location.href = "index.html", 900);
+  } catch {
+    showToast("Connection error");
+  }
 }
 
 async function signup() {
-    const username = document.getElementById("loginUser").value.trim();
-    const pass = document.getElementById("loginPass").value.trim();
-
-    if (!username || !pass) return showMsg("fill all fields");
-    if (!validateUsername(username)) return showMsg("username: 6‑12 letters/numbers only");
-
-    try {
-        const res = await fetch(`${API}/api/pass-deploy?username=${username}&pass=${pass}`);
-        const data = await res.json();
-
-        if (!data.success) return showMsg(data.error || "signup failed");
-
-        showMsg("account created", true);
-        setTimeout(() => {
-            switchToLogin();
-            document.getElementById("loginUser").value = '';
-            document.getElementById("loginPass").value = '';
-        }, 1300);
-    } catch {
-        showMsg("connection error");
-    }
+  const username = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+  if (!username || !pass) return showToast("Please fill in all fields");
+  if (!validateUsername(username)) return showToast("Username: 6–12 letters/numbers only");
+  try {
+    const res = await fetch(`${API}/api/pass-deploy?username=${username}&pass=${pass}`);
+    const data = await res.json();
+    if (!data.success) return showToast(data.error || "Signup failed");
+    showToast("Account created — sign in now", "success");
+    setTimeout(() => {
+      switchToLogin();
+      document.getElementById("loginUser").value = '';
+      document.getElementById("loginPass").value = '';
+    }, 1400);
+  } catch {
+    showToast("Connection error");
+  }
 }
 </script>
 </body>
