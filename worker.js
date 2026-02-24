@@ -29,6 +29,25 @@ const corsHeaders = {
 
 
 
+if (path === "/api/org/inv") {
+  const username = url.searchParams.get("username");
+
+  if (!username) {
+    return json(
+      { error: "Missing username" },
+      400
+    );
+  }
+
+  const invKey = `org/inv/${username}`;
+  const inv = await env.STORAGE.get(invKey, { type: "json" });
+
+  return json({
+    success: true,
+    orgs: Array.isArray(inv) ? inv : []
+  });
+}
+    
 
 if (path === "/api/org-img") {
 
