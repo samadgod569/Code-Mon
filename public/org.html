@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Organizations</title>
+
+<style>
+:root {
+  --bg:#fff; --text:#111; --card:#f4f4f4; --border:#ddd;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#0f1115; --text:#eaeaea; --card:#1a1d23; --border:#2a2e36;
+  }
+}
+body {
+  margin:0; font-family:system-ui,sans-serif;
+  background:var(--bg); color:var(--text);
+}
+header {
+  display:flex; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid var(--border);
+}
+.add { font-size:22px; cursor:pointer; }
+main { max-width:800px; margin:auto; padding:20px; }
+
+.org {
+  display:flex; align-items:center; gap:12px;
+  background:var(--card); border:1px solid var(--border);
+  padding:12px; border-radius:8px; margin-bottom:10px;
+  cursor:pointer;
+}
+.org img {
+  width:40px; height:40px; border-radius:50%;
+  object-fit:cover;
+}
+
+/* modal */
+.modal {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.5);
+  display:none; align-items:center; justify-content:center;
+}
+.box {
+  background:var(--bg); padding:20px;
+  width:340px; border-radius:8px;
+  border:1px solid var(--border);
+}
+input,select,textarea {
+  width:100%; padding:8px; margin-bottom:10px;
+  background:var(--card); color:var(--text);
+  border:1px solid var(--border); border-radius:4px;
+}
+button { padding:8px 12px; cursor:pointer; }
+.hidden { display:none; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>Your Organizations</h2>
+  <div class="add" onclick="openModal()">＋</div>
+</header>
+
+<main>
+  <div id="orgList"></div>
+</main>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="box">
+
+    <!-- STEP 1 -->
+    <div id="step1">
+      <h3>Create Organization</h3>
+      <input id="orgName" placeholder="Org name (6–12 chars)">
+      <select id="orgType">
+        <option value="public">Public</option>
+        <option value="private">Private</option>
+      </select>
+
+      <label><input type="checkbox" id="cashing"> .cashing</label><br>
+      <label><input type="checkbox" id="readme"> README.md</label><br>
+      <label><input type="checkbox" id="licence"> LICENCE</label><br><br>
+
+      <textarea id="readmeText" placeholder="README content" class="hidden"></textarea>
+
+      <select id="licenceType" class="hidden">
+        <option>MIT</option>
+        <option>Apache</option>
+        <option>GPL</option>
+      </select>
+
+      <button onclick="goNext()">Next</button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="step2" class="hidden">
+      <h3>Upload Org Image</h3>
+      <input type="file" id="orgImg" accept="image/*">
+      <button onclick="createOrg()">Create</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = "https://code-mon.codemon.workers.dev";
+const user = localStorage.getItem("code-mon-username");
+const pass = localStorage.getItem("code-mon-pass");
+
+let pendingOrg = "";
+
+async function loadOrgs() {
+  const res = await fetch(`${API}/api/org/inv?username=${user}`);
+  const data = await res.json();
+  orgList.innerHTML = "";
+
+  data.orgs.forEach(o => {
+    const div = document.createElement("div");
+    div.className = "org";
+    div.innerHTML = `
+      <img src="${API}/api/org-img?orgName=${o}">
+      <span>${o}</span>
+    `;
+    div.onclick = () => location.href = `org-file.html?org=${o}`;
+    orgList.appendChild(div);
+  });
+}
+loadOrgs();
+
+readme.onchange = e => readmeText.classList.toggle("hidden", !e.target.checked);
+licence.onchange = e => licenceType.classList.toggle("hidden", !e.target.checked);
+
+function openModal() {
+  modal.style.display = "flex";
+}
+function closeModal() {
+  modal.style.display = "none";
+  step1.classList.remove("hidden");
+  step2.classList.add("hidden");
+}
+
+function goNext() {
+  pendingOrg = orgName.value;
+  step1.classList.add("hidden");
+  step2.classList.remove("hidden");
+}
+
+async function saveFile(filename, content) {
+  await fetch(`${API}/api/save`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ user, pass, filename, content })
+  });
+}
+
+async function createOrg() {
+  const org = pendingOrg;
+  const type = orgType.value;
+
+  await fetch(`${API}/api/org`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ user, pass, orgName:org, type })
+  });
+
+  if (cashing.checked) await saveFile(`${org}/.cashing`, "");
+  if (readme.checked) await saveFile(`${org}/README.md`, readmeText.value);
+  if (licence.checked) await saveFile(`${org}/LICENCE`, licenceType.value);
+
+  const file = orgImg.files[0];
+  if (file) {
+    await fetch(`${API}/api/org-img`, {
+      method:"POST",
+      headers:{
+        "x-user":user,
+        "x-pass":pass,
+        "x-org":org
+      },
+      body:file
+    });
+  }
+
+  closeModal();
+  loadOrgs();
+}
+</script>
+
+</body>
+</html>
