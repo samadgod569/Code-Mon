@@ -2263,7 +2263,7 @@ async function openUpload() {
     openModal('uploadModal');
 }
 
-async function uploadFile() {
+                        async function uploadFile() {
     const fileInput = document.getElementById('fileInput');
     const uploadPath = document.getElementById('uploadPath').value.trim();
 
@@ -2282,67 +2282,23 @@ async function uploadFile() {
     }
 
     const file = fileInput.files[0];
-    
-    // Check if it's a media file (images, videos, audio, GIFs)
-    const mediaTypes = [
-        'image/',      // png, jpg, jpeg, webp, gif, etc.
-        'video/',      // mp4, webm, mov, avi, mkv, etc.
-        'audio/'       // mp3, wav, ogg, m4a, etc.
-    ];
-    
-    const isMedia = mediaTypes.some(type => file.type.startsWith(type));
-    
-    // Also check common extensions for GIF since it might be image/gif
     const extension = file.name.split('.').pop().toLowerCase();
-    const mediaExtensions = ['gif', 'mp4', 'webm', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'ogg', 'm4a'];
-    const isMediaExtension = mediaExtensions.includes(extension);
     
-    const shouldUseBinaryUpload = isMedia || isMediaExtension;
-
-    if (shouldUseBinaryUpload) {
-        // For all media files: send raw binary to /api/img-save
+    // Define media extensions (should use img-save - 10 shells)
+    const mediaExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 
+                           'mp4', 'webm', 'mov', 'avi', 'mkv', 
+                           'mp3', 'wav', 'ogg', 'm4a'];
+    
+    // Check ONLY by extension, not by MIME type
+    const isMedia = mediaExtensions.includes(extension);
+    
+    // FORCE text/code files (including JSON) to use /api/save (5 shells)
+    if (!isMedia) {
+        // TEXT/CODE FILES (including JSON) - 5 SHELLS
         const reader = new FileReader();
         reader.onload = async function (e) {
             try {
-                const arrayBuffer = e.target.result; // ArrayBuffer (raw binary)
-                
-                const res = await fetch(`${API}/api/img-save`, {
-                    method: "POST",
-                    headers: {
-                        "x-user": currentUser,
-                        "x-pass": currentPass,
-                        "x-filename": uploadPath
-                        // No Content-Type header - browser will set appropriate one
-                    },
-                    body: arrayBuffer // raw binary data
-                });
-
-                const data = await res.json();
-                if (data.error) {
-                    showNotification('Failed to upload media: ' + data.error, 'error');
-                    return;
-                }
-
-                showNotification('Media uploaded successfully', 'success');
-                closeModal('uploadModal');
-                
-                // Optionally reload file list (if you want media to appear in explorer)
-                // Note: loadFiles() currently filters out media files
-                // You may want to remove the filter from loadFiles() if you want to see them
-                // loadFiles();
-                
-            } catch (error) {
-                showNotification('Failed to upload media: ' + error.message, 'error');
-            }
-        };
-        reader.readAsArrayBuffer(file); // Read as ArrayBuffer for binary
-        
-    } else {
-        // For text/code files: keep using the existing JSON /api/save endpoint
-        const reader = new FileReader();
-        reader.onload = async function (e) {
-            try {
-                const content = e.target.result; // string
+                const content = e.target.result;
                 
                 const res = await fetch(`${API}/api/save`, {
                     method: "POST",
@@ -2361,20 +2317,49 @@ async function uploadFile() {
                     return;
                 }
 
-                showNotification('File uploaded successfully', 'success');
+                showNotification('File uploaded successfully (5 shells)', 'success');
                 closeModal('uploadModal');
-                
-                // Reload file list for text files
                 loadFiles();
                 
             } catch (error) {
                 showNotification('Failed to upload file: ' + error.message, 'error');
             }
         };
-        reader.readAsText(file); // Read as text for code files
-    }
-        }
+        reader.readAsText(file);
+        
+    } else {
+        // MEDIA FILES - 10 SHELLS
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            try {
+                const arrayBuffer = e.target.result;
+                
+                const res = await fetch(`${API}/api/img-save`, {
+                    method: "POST",
+                    headers: {
+                        "x-user": currentUser,
+                        "x-pass": currentPass,
+                        "x-filename": uploadPath
+                    },
+                    body: arrayBuffer
+                });
 
+                const data = await res.json();
+                if (data.error) {
+                    showNotification('Failed to upload media: ' + data.error, 'error');
+                    return;
+                }
+
+                showNotification('Media uploaded successfully (10 shells)', 'success');
+                closeModal('uploadModal');
+                
+            } catch (error) {
+                showNotification('Failed to upload media: ' + error.message, 'error');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+                        }
 // Code Execution with Judge0 - UPDATED for HTML files
 async function runCode() {
     if (!currentFile) {
