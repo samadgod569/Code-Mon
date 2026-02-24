@@ -102,9 +102,7 @@ if (path === "/api/org-img") {
   return json({ error: "Method not allowed" }, 405);
 }
     
-// api/org
-    
-    if (path === "/api/org") {
+if (path === "/api/org") {
 
   /* =========================
      CREATE ORG (POST)
@@ -126,6 +124,14 @@ if (path === "/api/org-img") {
       );
     }
 
+    // orgName validation
+    if (!/^[a-zA-Z0-9]{6,12}$/.test(orgName)) {
+      return json(
+        { error: "orgName must be 6-12 chars, letters & numbers only" },
+        400
+      );
+    }
+
     if (type !== "public" && type !== "private") {
       return json(
         { error: "Type must be either public or private" },
@@ -135,32 +141,19 @@ if (path === "/api/org-img") {
 
     const storedPass = await env.Pass.get(user, { type: "text" });
 
-    if (!storedPass) {
-      return json(
-        { success: false, error: "Username not found" },
-        404
-      );
-    }
+    if (!storedPass)
+      return json({ error: "Username not found" }, 404);
 
-    if (storedPass !== pass) {
-      return json(
-        { success: false, error: "Incorrect password" },
-        403
-      );
-    }
+    if (storedPass !== pass)
+      return json({ error: "Incorrect password" }, 403);
 
     const currentBalance = await env.PAY.get(user);
     const balance = parseInt(currentBalance) || 0;
 
-    if (balance < 50) {
-      return json(
-        { success: false, error: "Insufficient balance" },
-        402
-      );
-    }
+    if (balance < 50)
+      return json({ error: "Insufficient balance" }, 402);
 
-    const newBalance = balance - 50;
-    await env.PAY.put(user, newBalance.toString());
+    await env.PAY.put(user, String(balance - 50));
 
     const orgData = {
       name: orgName,
@@ -170,8 +163,41 @@ if (path === "/api/org-img") {
       type: type
     };
 
+    // save org data
     const orgKey = `org/set/${orgName}`;
     await env.STORAGE.put(orgKey, JSON.stringify(orgData));
+
+    /* =========================
+       UPDATE USER ORG INDEX
+    ========================== */
+    const invKey = `org/inv/${user}`;
+    const existingInv = await env.STORAGE.get(invKey, { type: "json" });
+
+    let invArray = [];
+
+    if (Array.isArray(existingInv)) {
+      invArray = existingInv;
+      if (!invArray.includes(orgName)) {
+        invArray.push(orgName);
+      }
+    } else {
+      invArray = [orgName];
+    }
+
+    await env.STORAGE.put(invKey, JSON.stringify(invArray));
+
+    /* =========================
+       CREATE ORG PASSWORD
+    ========================== */
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let orgPass = "";
+    for (let i = 0; i < 20; i++) {
+      orgPass += chars[Math.floor(Math.random() * chars.length)];
+    }
+
+    // store org password in Pass KV
+    await env.Pass.put(orgName, orgPass);
 
     return json({
       success: true,
@@ -186,22 +212,14 @@ if (path === "/api/org-img") {
   if (request.method === "GET") {
     const orgName = url.searchParams.get("orgName");
 
-    if (!orgName) {
-      return json(
-        { error: "Missing orgName" },
-        400
-      );
-    }
+    if (!orgName)
+      return json({ error: "Missing orgName" }, 400);
 
     const orgKey = `org/set/${orgName}`;
     const orgData = await env.STORAGE.get(orgKey, { type: "json" });
 
-    if (!orgData) {
-      return json(
-        { success: false, error: "Organization not found" },
-        404
-      );
-    }
+    if (!orgData)
+      return json({ error: "Organization not found" }, 404);
 
     return json({
       success: true,
@@ -210,7 +228,7 @@ if (path === "/api/org-img") {
   }
 
   return json({ error: "Method not allowed" }, 405);
-    }
+        }
     
 // ---------------------------------------------------------
 // /api/unverify → Register domain (NO verification)
