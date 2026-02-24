@@ -28,7 +28,117 @@ const corsHeaders = {
       });
 
 
+
     
+// api/org
+    
+    if (path === "/api/org") {
+
+  /* =========================
+     CREATE ORG (POST)
+  ========================== */
+  if (request.method === "POST") {
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid JSON" }, 400);
+    }
+
+    const { user, pass, orgName, type } = body;
+
+    if (!user || !pass || !orgName || !type) {
+      return json(
+        { error: "Missing user, pass, orgName or type" },
+        400
+      );
+    }
+
+    if (type !== "public" && type !== "private") {
+      return json(
+        { error: "Type must be either public or private" },
+        400
+      );
+    }
+
+    const storedPass = await env.Pass.get(user, { type: "text" });
+
+    if (!storedPass) {
+      return json(
+        { success: false, error: "Username not found" },
+        404
+      );
+    }
+
+    if (storedPass !== pass) {
+      return json(
+        { success: false, error: "Incorrect password" },
+        403
+      );
+    }
+
+    const currentBalance = await env.PAY.get(user);
+    const balance = parseInt(currentBalance) || 0;
+
+    if (balance < 50) {
+      return json(
+        { success: false, error: "Insufficient balance" },
+        402
+      );
+    }
+
+    const newBalance = balance - 50;
+    await env.PAY.put(user, newBalance.toString());
+
+    const orgData = {
+      name: orgName,
+      members: [],
+      owner: user,
+      blame: [],
+      type: type
+    };
+
+    const orgKey = `org/set/${orgName}`;
+    await env.STORAGE.put(orgKey, JSON.stringify(orgData));
+
+    return json({
+      success: true,
+      message: "Organization created successfully (50 shells charged)",
+      org: orgData
+    });
+  }
+
+  /* =========================
+     GET ORG (GET)
+  ========================== */
+  if (request.method === "GET") {
+    const orgName = url.searchParams.get("orgName");
+
+    if (!orgName) {
+      return json(
+        { error: "Missing orgName" },
+        400
+      );
+    }
+
+    const orgKey = `org/set/${orgName}`;
+    const orgData = await env.STORAGE.get(orgKey, { type: "json" });
+
+    if (!orgData) {
+      return json(
+        { success: false, error: "Organization not found" },
+        404
+      );
+    }
+
+    return json({
+      success: true,
+      org: orgData
+    });
+  }
+
+  return json({ error: "Method not allowed" }, 405);
+    }
     
 // ---------------------------------------------------------
 // /api/unverify → Register domain (NO verification)
