@@ -29,6 +29,78 @@ const corsHeaders = {
 
 
 
+
+if (path === "/api/org-img") {
+
+  /* =========================
+     GET ORG IMAGE
+  ========================== */
+  if (request.method === "GET") {
+    const orgName = url.searchParams.get("orgName");
+
+    if (!orgName)
+      return json({ error: "Missing orgName" }, 400);
+
+    const imgKey = `org/img/${orgName}`;
+    const img = await env.STORAGE.get(imgKey, { type: "arrayBuffer" });
+
+    if (!img)
+      return json({ error: "Image not found" }, 404);
+
+    return new Response(img, {
+      headers: {
+        "Content-Type": "image/*",
+        "Cache-Control": "public, max-age=86400"
+      }
+    });
+  }
+
+  /* =========================
+     UPLOAD ORG IMAGE
+  ========================== */
+  if (request.method === "POST") {
+    const binary = new Uint8Array(await request.arrayBuffer());
+
+    const user = request.headers.get("x-user");
+    const pass = request.headers.get("x-pass");
+    const orgName = request.headers.get("x-org");
+
+    if (!user || !pass || !orgName)
+      return json(
+        { error: "Missing user, pass, or org header" },
+        400
+      );
+
+    const storedPass = await env.Pass.get(user, { type: "text" });
+    if (!storedPass)
+      return json({ error: "User not found" }, 404);
+
+    if (storedPass !== pass)
+      return json({ error: "Incorrect password" }, 403);
+
+    const orgKey = `org/set/${orgName}`;
+    const orgData = await env.STORAGE.get(orgKey, { type: "json" });
+
+    if (!orgData)
+      return json({ error: "Organization not found" }, 404);
+
+    if (orgData.owner !== user)
+      return json(
+        { error: "Only owner can upload org image" },
+        403
+      );
+
+    const imgKey = `org/img/${orgName}`;
+    await env.STORAGE.put(imgKey, binary);
+
+    return json({
+      success: true,
+      message: "Organization image uploaded"
+    });
+  }
+
+  return json({ error: "Method not allowed" }, 405);
+}
     
 // api/org
     
