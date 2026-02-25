@@ -29,6 +29,259 @@ const corsHeaders = {
 
 
 
+
+    if (path === "/api/img-save-org") {
+  const binary = new Uint8Array(await request.arrayBuffer());
+
+  const username = request.headers.get("x-user");
+  const pass = request.headers.get("x-pass");
+  const orgName = request.headers.get("x-org");
+  const filename = request.headers.get("x-filename");
+
+  if (!username || !pass || !orgName || !filename)
+    return json({ error: "Missing headers" }, 400);
+
+  const storedPass = await env.Pass.get(username, { type: "text" });
+
+  if (!storedPass)
+    return json({ error: "User not found" }, 404);
+
+  if (storedPass !== pass)
+    return json({ error: "Incorrect password" }, 403);
+
+  const orgKey = `org/set/${orgName}`;
+  const orgData = await env.STORAGE.get(orgKey, { type: "json" });
+
+  if (!orgData)
+    return json({ error: "Organization not found" }, 404);
+
+  const isOwner = orgData.owner === username;
+  const isMember =
+    Array.isArray(orgData.members) && orgData.members.includes(username);
+
+  if (!isOwner && !isMember)
+    return json({ error: "You are not a member of this organization" }, 403);
+
+  const fileKey = `${orgName}/${filename}`;
+  const existingFile = await env.FILES.get(fileKey);
+
+  if (!existingFile) {
+    const payRaw = await env.PAY.get(username, { type: "text" });
+    const pay = Number(payRaw ?? 0);
+
+    if (pay < 10)
+      return json({ error: "Insufficient balance" }, 402);
+
+    await env.PAY.put(username, String(pay - 10));
+  }
+
+  await env.FILES.put(fileKey, binary);
+
+  if (!Array.isArray(orgData.blame)) orgData.blame = [];
+  if (orgData.blame.length >= 20) orgData.blame.pop();
+
+  orgData.blame.unshift(`${username} uploaded ${filename}`);
+
+  await env.STORAGE.put(orgKey, JSON.stringify(orgData));
+
+  return json({ success: true });
+                       }
+
+    if (path === "/api/delete-org-file") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const { username, pass, orgName, filename } = body;
+
+  if (!username || !pass || !orgName || !filename) {
+    return json({ error: "username, pass, orgName and filename required" }, 400);
+  }
+
+  const storedPass = await env.Pass.get(username, { type: "text" });
+
+  if (!storedPass)
+    return json({ error: "User not found" }, 404);
+
+  if (storedPass !== pass)
+    return json({ error: "Incorrect password" }, 403);
+
+  const orgKey = `org/set/${orgName}`;
+  const orgData = await env.STORAGE.get(orgKey, { type: "json" });
+
+  if (!orgData)
+    return json({ error: "Organization not found" }, 404);
+
+  const isOwner = orgData.owner === username;
+  const isMember =
+    Array.isArray(orgData.members) && orgData.members.includes(username);
+
+  if (!isOwner && !isMember)
+    return json({ error: "You are not a member of this organization" }, 403);
+
+  const fileKey = `${orgName}/${filename}`;
+  await env.FILES.delete(fileKey);
+
+  if (!Array.isArray(orgData.blame)) orgData.blame = [];
+
+  if (orgData.blame.length >= 20) orgData.blame.pop();
+
+  orgData.blame.unshift(`${username} deleted ${filename}`);
+
+  await env.STORAGE.put(orgKey, JSON.stringify(orgData));
+
+  return json({
+    success: true,
+    message: "File deleted successfully",
+    file: fileKey
+  });
+    }
+
+if (path === "/api/list-org") {
+  const user = url.searchParams.get("user");
+  const orgName = url.searchParams.get("orgName");
+
+  if (!user || !orgName)
+    return json({ error: "Missing user or orgName" }, 400);
+
+  const orgKey = `org/set/${orgName}`;
+  const orgData = await env.STORAGE.get(orgKey, { type: "json" });
+
+  if (!orgData)
+    return json({ error: "Organization not found" }, 404);
+
+  if (orgData.type === "private") {
+    const isOwner = orgData.owner === user;
+    const isMember =
+      Array.isArray(orgData.members) && orgData.members.includes(user);
+
+    if (!isOwner && !isMember)
+      return json({ error: "Organization is private" }, 403);
+  }
+
+  const list = await env.FILES.list({ prefix: `${orgName}/` });
+
+  return json({
+    files: list.keys.map(k => k.name.replace(`${orgName}/`, ""))
+  });
+}
+
+if (path === "/api/load-org") {
+  const user = url.searchParams.get("user");
+  const orgName = url.searchParams.get("orgName");
+  const filename = url.searchParams.get("filename");
+
+  if (!user || !orgName || !filename)
+    return json({ error: "Missing params" }, 400);
+
+  const orgKey = `org/set/${orgName}`;
+  const orgData = await env.STORAGE.get(orgKey, { type: "json" });
+
+  if (!orgData)
+    return json({ error: "Organization not found" }, 404);
+
+  if (orgData.type === "private") {
+    const isOwner = orgData.owner === user;
+    const isMember =
+      Array.isArray(orgData.members) && orgData.members.includes(user);
+
+    if (!isOwner && !isMember)
+      return json({ error: "Organization is private" }, 403);
+  }
+
+  const stored = await env.FILES.get(`${orgName}/${filename}`, { type: "text" });
+
+  return new Response(stored || "", {
+    headers: {
+      "Content-Type": "text/plain",
+      ...corsHeaders
+    }
+  });
+        }
+
+    
+if (path === "/api/save-org") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { user, pass, orgName, filename, content } = body;
+
+  if (!user || !pass || !orgName || !filename) {
+    return json(
+      { error: "Missing user, pass, orgName or filename" },
+      400
+    );
+  }
+
+  const storedPass = await env.Pass.get(user, { type: "text" });
+
+  if (!storedPass)
+    return json({ error: "Username not found" }, 404);
+
+  if (storedPass !== pass)
+    return json({ error: "Incorrect password" }, 403);
+
+  const orgKey = `org/set/${orgName}`;
+  const orgData = await env.STORAGE.get(orgKey, { type: "json" });
+
+  if (!orgData)
+    return json({ error: "Organization not found" }, 404);
+
+  const isOwner = orgData.owner === user;
+  const isMember = Array.isArray(orgData.members) && orgData.members.includes(user);
+
+  if (!isOwner && !isMember)
+    return json({ error: "You are not a member of this organization" }, 403);
+
+  const fileKey = `${orgName}/${filename}`;
+  const existingFile = await env.FILES.get(fileKey);
+
+  if (!existingFile) {
+    const current = await env.PAY.get(user);
+    const balance = parseInt(current) || 0;
+
+    if (balance < 5) {
+      return json(
+        { error: "Insufficient balance" },
+        402
+      );
+    }
+
+    await env.PAY.put(user, String(balance - 5));
+  }
+
+  await env.FILES.put(fileKey, content ?? "");
+
+  const text = existingFile
+    ? `${user} updated ${filename}`
+    : `${user} created ${filename}`;
+
+  if (!Array.isArray(orgData.blame))
+    orgData.blame = [];
+
+  if (orgData.blame.length >= 20)
+    orgData.blame.pop();
+
+  orgData.blame.unshift(text);
+
+  await env.STORAGE.put(orgKey, JSON.stringify(orgData));
+
+  return json({
+    success: true,
+    message: existingFile
+      ? "File updated successfully"
+      : "File created successfully (5 credits charged)"
+  });
+}
+
+    
 if (path === "/api/org/inv") {
   const username = url.searchParams.get("username");
 
