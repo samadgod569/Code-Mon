@@ -582,20 +582,12 @@
             const API = "https://code-mon.codemon.workers.dev";
             let currentUser = localStorage.getItem("code-mon-username");
             let currentPass = localStorage.getItem("code-mon-pass");
-            let currentOrg = localStorage.getItem("code-mon-org") || "";
+            const urlParams = new URLSearchParams(window.location.search);
+let currentOrg = urlParams.get('org') || "";
             const orgInput = document.getElementById('orgNameInput');
             if (orgInput) {
                 orgInput.value = currentOrg;
-                orgInput.addEventListener('change', function(e) {
-                    currentOrg = e.target.value.trim();
-                    localStorage.setItem("code-mon-org", currentOrg);
-                    if (currentOrg) {
-                        loadFiles();
-                    } else {
-                        showNotification('Please enter an organization name', 'warning');
-                    }
-                });
-            }
+                
             (async function() {
                 if (!currentUser || !currentPass) {
                     localStorage.clear();
@@ -610,11 +602,7 @@
                         location.href = "login.html";
                         return;
                     }
-                    if (!currentOrg && orgInput) {
-                        currentOrg = currentUser;
-                        orgInput.value = currentOrg;
-                        localStorage.setItem("code-mon-org", currentOrg);
-                    }
+                    
                     loadFiles();
                 } catch (err) {
                     localStorage.clear();
