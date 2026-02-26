@@ -823,7 +823,7 @@ async function loadOrgs() {
         const orgRes = await fetch(`https://code-mon.codemon.workers.dev/api/org?orgName=${o}`);
         const orgData = await orgRes.json();
         if (orgData.blame && orgData.blame.length > 0) {
-          blameLabel = orgData.blame[0].split("-")[0];
+          blameLabel = orgData.blame[0].split("[*]")[0];
         }
       } catch (e) { /* silently ignore */ }
       renderOrgItem(o, blameLabel);
