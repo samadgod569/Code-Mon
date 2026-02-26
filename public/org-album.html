@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Org Album</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" type="image/png" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --border: #d0d7de;
+  --border-muted: #e1e4e8;
+  --text: #1f2328;
+  --text-muted: #636c76;
+  --text-subtle: #9198a1;
+  --accent: #0969da;
+  --accent-hover: #0550ae;
+  --accent-bg: #ddf4ff;
+  --accent-border: #54aeff;
+  --success: #1a7f37;
+  --success-bg: #dafbe1;
+  --shadow-sm: 0 1px 0 rgba(27,31,36,.04);
+  --shadow-md: 0 3px 6px rgba(140,149,159,.15);
+  --shadow-lg: 0 8px 24px rgba(140,149,159,.2);
+  --radius: 6px;
+  --radius-lg: 12px;
+  --transition: 80ms cubic-bezier(.33,1,.68,1);
+}
+
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border: #30363d;
+  --border-muted: #21262d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --text-subtle: #6e7681;
+  --accent: #58a6ff;
+  --accent-hover: #79c0ff;
+  --accent-bg: rgba(56,139,253,.1);
+  --accent-border: rgba(56,139,253,.4);
+  --success: #3fb950;
+  --success-bg: rgba(46,160,67,.1);
+  --shadow-sm: 0 1px 0 rgba(0,0,0,.25);
+  --shadow-md: 0 3px 6px rgba(0,0,0,.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.4);
+}
+
+html { font-family: 'Mona Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hidden { display: none !important; }
+
+.site-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left { display: flex; align-items: center; gap: 16px; }
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logo img { width: 24px; height: 24px; border-radius: 4px; }
+
+.breadcrumb { color: var(--text-muted); font-size: 13px; }
+.breadcrumb span { color: var(--text); font-weight: 500; }
+
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  transition: var(--transition);
+  font-family: inherit;
+}
+.theme-toggle:hover { background: var(--bg-tertiary); color: var(--text); border-color: var(--border); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+  transition: var(--transition);
+  line-height: 20px;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+  color: var(--text);
+}
+.btn-secondary:hover { background: var(--bg-tertiary); }
+
+.page { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-header-left { display: flex; flex-direction: column; gap: 2px; }
+.page-title { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.page-subtitle { color: var(--text-muted); font-size: 13px; }
+
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+
+.filter-tab {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-muted);
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  transition: var(--transition);
+}
+.filter-tab:hover { color: var(--text); }
+.filter-tab.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.media-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.media-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  border-color: var(--accent-border);
+}
+
+.media-card-thumb {
+  width: 100%;
+  height: 160px;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.media-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-card-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-card-thumb.audio-thumb {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audio-icon {
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+.audio-waves {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+}
+
+.audio-wave-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.5;
+  animation: wavePulse 1.2s ease-in-out infinite;
+}
+
+.audio-wave-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+.audio-wave-bar:nth-child(2) { height: 16px; animation-delay: 0.1s; }
+.audio-wave-bar:nth-child(3) { height: 22px; animation-delay: 0.2s; }
+.audio-wave-bar:nth-child(4) { height: 14px; animation-delay: 0.3s; }
+.audio-wave-bar:nth-child(5) { height: 20px; animation-delay: 0.4s; }
+.audio-wave-bar:nth-child(6) { height: 10px; animation-delay: 0.5s; }
+.audio-wave-bar:nth-child(7) { height: 18px; animation-delay: 0.15s; }
+
+@keyframes wavePulse {
+  0%, 100% { transform: scaleY(1); opacity: 0.5; }
+  50% { transform: scaleY(0.4); opacity: 0.9; }
+}
+
+.type-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.media-info {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.media-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-code {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-muted);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+  user-select: all;
+}
+
+.media-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.action-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  transition: var(--transition);
+  font-family: inherit;
+  text-decoration: none;
+}
+.action-btn:hover { background: var(--bg-tertiary); color: var(--text); }
+.action-btn.copy-btn.copied { color: var(--success); border-color: rgba(26,127,55,.3); background: var(--success-bg); }
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn .15s ease;
+}
+.lightbox-overlay.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } }
+
+.lightbox-inner {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.lightbox-inner img,
+.lightbox-inner video {
+  max-width: 100%;
+  max-height: 75vh;
+  border-radius: var(--radius-lg);
+  display: block;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+
+.lightbox-inner audio {
+  width: 340px;
+  max-width: 80vw;
+}
+
+.lightbox-name {
+  color: #fff;
+  font-size: 13px;
+  opacity: .7;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #fff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background .15s;
+  font-family: inherit;
+}
+.lightbox-close:hover { background: rgba(255,255,255,.2); }
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.skeleton-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.skel-thumb {
+  height: 160px;
+  background: var(--bg-tertiary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skel-info { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.skel-line { height: 10px; border-radius: 4px; background: var(--bg-tertiary); animation: pulse 1.5s ease-in-out infinite; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
+.empty-state {
+  text-align: center;
+  padding: 64px 24px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+.empty-icon { margin-bottom: 16px; color: var(--text-subtle); }
+.empty-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.empty-desc { color: var(--text-muted); font-size: 13px; }
+
+.error-state {
+  text-align: center;
+  padding: 64px 24px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+.error-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: #d1242f; }
+.error-desc { color: var(--text-muted); font-size: 13px; }
+
+.count-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-left">
+    <a class="logo" href="index.html">
+      <img src="favicon.png" alt="logo" onerror="this.style.display='none'">
+      CodeMon
+    </a>
+    <div class="breadcrumb">/ <span id="bcOrg">...</span> / <span>Album</span></div>
+  </div>
+  <div class="header-right">
+    <a class="btn btn-secondary" id="backBtn" href="org-portfolio.html">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M7.78 12.53a.75.75 0 0 1-1.06 0L2.47 8.28a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L4.81 7h7.44a.75.75 0 0 1 0 1.5H4.81l2.97 2.97a.75.75 0 0 1 0 1.06Z"/></svg>
+      Back
+    </a>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="themeIcon"></span>
+      <span id="themeLabel"></span>
+    </button>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-muted)"><path d="M2.75 1A1.75 1.75 0 0 0 1 2.75v10.5c0 .966.784 1.75 1.75 1.75h10.5A1.75 1.75 0 0 0 15 13.25V2.75A1.75 1.75 0 0 0 13.25 1ZM2.5 2.75a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 .25.25v7.613l-2.5-2.115a.75.75 0 0 0-1.04.079L7.75 10.8 5.624 8.197a.75.75 0 0 0-1.17.008L2.5 10.608Zm0 8.57 2.194-2.685 2.132 2.62a.75.75 0 0 0 1.166-.003l2.241-2.79 2.767 2.342v.446a.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25ZM6.5 5a1 1 0 1 1 2 0 1 1 0 0 1-2 0Z"/></svg>
+        Album
+      </div>
+      <div class="page-subtitle" id="pageSubtitle">Media files for this organization</div>
+    </div>
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" data-filter="all" onclick="setFilter('all', this)">All</button>
+      <button class="filter-tab" data-filter="image" onclick="setFilter('image', this)">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M2.75 1A1.75 1.75 0 0 0 1 2.75v10.5c0 .966.784 1.75 1.75 1.75h10.5A1.75 1.75 0 0 0 15 13.25V2.75A1.75 1.75 0 0 0 13.25 1ZM2.5 2.75a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 .25.25v7.613l-2.5-2.115a.75.75 0 0 0-1.04.079L7.75 10.8 5.624 8.197a.75.75 0 0 0-1.17.008L2.5 10.608Zm0 8.57 2.194-2.685 2.132 2.62a.75.75 0 0 0 1.166-.003l2.241-2.79 2.767 2.342v.446a.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25Z"/></svg>
+        Images
+      </button>
+      <button class="filter-tab" data-filter="video" onclick="setFilter('video', this)">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M0 3.75C0 2.784.784 2 1.75 2h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14H1.75A1.75 1.75 0 0 1 0 12.25Zm1.75-.25a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25ZM6 5.75a.75.75 0 0 1 .744-.75l4.5.25A.75.75 0 0 1 12 6v4a.75.75 0 0 1-.756.75l-4.5-.25A.75.75 0 0 1 6 9.75Z"/></svg>
+        Videos
+      </button>
+      <button class="filter-tab" data-filter="audio" onclick="setFilter('audio', this)">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"/></svg>
+        Audio
+      </button>
+    </div>
+  </div>
+
+  <div id="skeletonGrid" class="skeleton-grid">
+    <div class="skeleton-card"><div class="skel-thumb"></div><div class="skel-info"><div class="skel-line" style="width:70%"></div><div class="skel-line" style="width:90%"></div></div></div>
+    <div class="skeleton-card"><div class="skel-thumb"></div><div class="skel-info"><div class="skel-line" style="width:55%"></div><div class="skel-line" style="width:80%"></div></div></div>
+    <div class="skeleton-card"><div class="skel-thumb"></div><div class="skel-info"><div class="skel-line" style="width:75%"></div><div class="skel-line" style="width:60%"></div></div></div>
+    <div class="skeleton-card"><div class="skel-thumb"></div><div class="skel-info"><div class="skel-line" style="width:45%"></div><div class="skel-line" style="width:85%"></div></div></div>
+  </div>
+
+  <div id="errorState" class="error-state hidden">
+    <div class="empty-icon">
+      <svg width="40" height="40" viewBox="0 0 16 16" fill="currentColor"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>
+    </div>
+    <div class="error-title" id="errorTitle">Failed to load media</div>
+    <div class="error-desc" id="errorDesc">Could not fetch files for this organization.</div>
+  </div>
+
+  <div id="emptyState" class="empty-state hidden">
+    <div class="empty-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    </div>
+    <div class="empty-title">No media files found</div>
+    <div class="empty-desc">This organization has no images, videos, or audio files yet.</div>
+  </div>
+
+  <div id="mainContent" class="hidden">
+    <div class="count-label" id="countLabel"></div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+</main>
+
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox(event)">
+  <div class="lightbox-inner" id="lightboxInner"></div>
+  <button class="lightbox-close" onclick="closeLightbox()">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+  </button>
+</div>
+
+<script>
+const API = "https://code-mon.codemon.workers.dev";
+const qp = new URLSearchParams(location.search);
+const orgName = qp.get("org") || "";
+const username = localStorage.getItem("code-mon-username");
+const password = localStorage.getItem("code-mon-pass");
+
+const IMAGE_EXTS = ["png","jpg","jpeg","webp","gif"];
+const VIDEO_EXTS = ["mp4","webm","mov","avi","mkv"];
+const AUDIO_EXTS = ["mp3","wav","ogg","m4a"];
+const MEDIA_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS, ...AUDIO_EXTS];
+
+let allCards = [];
+let activeFilter = "all";
+
+document.getElementById("bcOrg").textContent = orgName || "...";
+document.title = (orgName || "Org") + " — Album";
+document.getElementById("backBtn").href = "org-portfolio.html?org=" + orgName;
+
+function initTheme() {
+  const saved = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = saved || (prefersDark ? "dark" : "light");
+  setTheme(theme);
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+  document.getElementById("themeIcon").innerHTML = theme === "dark"
+    ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm5.657-8.157a.75.75 0 0 1 0 1.061l-1.061 1.06a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l1.06-1.06a.75.75 0 0 1 1.06 0Zm-9.193 9.193a.75.75 0 0 1 0 1.06l-1.06 1.061a.75.75 0 1 1-1.061-1.06l1.06-1.061a.75.75 0 0 1 1.061 0ZM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0ZM3 8a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 3 8Zm13 0a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 16 8Zm-8 5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 13Zm4.596-1.596a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 0 1-1.06 1.061l-1.061-1.06a.75.75 0 0 1 0-1.061Zm-9.193-9.193a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 0 1-1.06 1.061L2.403 4.211a.75.75 0 0 1 0-1.06Z"/></svg>'
+    : '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M9.598 1.591a.749.749 0 0 1 .785-.175 7 7 0 1 1-8.967 8.967.75.75 0 0 1 .961-.96 5.5 5.5 0 0 0 7.046-7.046.75.75 0 0 1 .175-.786Zm1.616 1.945a7 7 0 0 1-7.678 7.678 5.499 5.499 0 1 0 7.678-7.678Z"/></svg>';
+  document.getElementById("themeLabel").textContent = theme === "dark" ? "Light" : "Dark";
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+}
+
+initTheme();
+
+function getFileType(ext) {
+  if (IMAGE_EXTS.includes(ext)) return "image";
+  if (VIDEO_EXTS.includes(ext)) return "video";
+  if (AUDIO_EXTS.includes(ext)) return "audio";
+  return "other";
+}
+
+function getMediaUrl(file) {
+  return "https://" + orgName + ".code-mon-space.shop/" + encodeURIComponent(file);
+}
+
+function getCodeSnippet(file, type) {
+  const url = getMediaUrl(file);
+  if (type === "image") return '<img src="' + url + '" />';
+  if (type === "video") return '<video src="' + url + '" controls></video>';
+  if (type === "audio") return '<audio src="' + url + '" controls></audio>';
+  return url;
+}
+
+function buildCard(file) {
+  const ext = file.split(".").pop().toLowerCase();
+  const type = getFileType(ext);
+  const url = getMediaUrl(file);
+
+  const card = document.createElement("div");
+  card.className = "media-card";
+  card.dataset.type = type;
+
+  const thumb = document.createElement("div");
+  thumb.className = "media-card-thumb" + (type === "audio" ? " audio-thumb" : "");
+
+  if (type === "image") {
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = file;
+    img.loading = "lazy";
+    thumb.appendChild(img);
+  } else if (type === "video") {
+    const video = document.createElement("video");
+    video.src = url;
+    video.muted = true;
+    video.preload = "metadata";
+    thumb.appendChild(video);
+  } else if (type === "audio") {
+    const icon = document.createElement("div");
+    icon.className = "audio-icon";
+    icon.innerHTML = '<svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"/></svg>';
+    const waves = document.createElement("div");
+    waves.className = "audio-waves";
+    for (let i = 0; i < 7; i++) {
+      const bar = document.createElement("div");
+      bar.className = "audio-wave-bar";
+      waves.appendChild(bar);
+    }
+    thumb.appendChild(icon);
+    thumb.appendChild(waves);
+  }
+
+  const typeBadge = document.createElement("div");
+  typeBadge.className = "type-badge";
+  typeBadge.textContent = ext;
+  thumb.appendChild(typeBadge);
+
+  thumb.addEventListener("click", function() { openLightbox(file, url, type); });
+
+  const info = document.createElement("div");
+  info.className = "media-info";
+
+  const nameEl = document.createElement("div");
+  nameEl.className = "media-name";
+  nameEl.textContent = file;
+  nameEl.title = file;
+
+  const codeEl = document.createElement("div");
+  codeEl.className = "media-code";
+  codeEl.textContent = getCodeSnippet(file, type);
+  codeEl.title = "Click to select all";
+
+  const actions = document.createElement("div");
+  actions.className = "media-actions";
+
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "action-btn copy-btn";
+  copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg> Copy';
+  copyBtn.onclick = function() {
+    navigator.clipboard.writeText(getCodeSnippet(file, type)).then(function() {
+      copyBtn.textContent = "Copied!";
+      copyBtn.classList.add("copied");
+      setTimeout(function() {
+        copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg> Copy';
+        copyBtn.classList.remove("copied");
+      }, 2000);
+    });
+  };
+
+  const openBtn = document.createElement("a");
+  openBtn.className = "action-btn";
+  openBtn.href = url;
+  openBtn.target = "_blank";
+  openBtn.rel = "noopener";
+  openBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13.03 4.03 9.28 7.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.75-3.75-1.543-1.543A.25.25 0 0 1 10.604 1Z"/></svg> Open';
+
+  actions.appendChild(copyBtn);
+  actions.appendChild(openBtn);
+
+  info.appendChild(nameEl);
+  info.appendChild(codeEl);
+  info.appendChild(actions);
+
+  card.appendChild(thumb);
+  card.appendChild(info);
+
+  return card;
+}
+
+function setFilter(filter, btn) {
+  activeFilter = filter;
+
+  document.querySelectorAll(".filter-tab").forEach(function(t) { t.classList.remove("active"); });
+  btn.classList.add("active");
+
+  let visible = 0;
+  allCards.forEach(function(card) {
+    const matches = filter === "all" || card.dataset.type === filter;
+    card.style.display = matches ? "" : "none";
+    if (matches) visible++;
+  });
+
+  document.getElementById("countLabel").textContent = visible + " file" + (visible !== 1 ? "s" : "");
+}
+
+function openLightbox(file, url, type) {
+  const inner = document.getElementById("lightboxInner");
+  inner.innerHTML = "";
+
+  let el;
+  if (type === "image") {
+    el = document.createElement("img");
+    el.src = url;
+    el.alt = file;
+  } else if (type === "video") {
+    el = document.createElement("video");
+    el.src = url;
+    el.controls = true;
+    el.autoplay = true;
+  } else if (type === "audio") {
+    el = document.createElement("audio");
+    el.src = url;
+    el.controls = true;
+    el.autoplay = true;
+  }
+
+  if (el) inner.appendChild(el);
+
+  const name = document.createElement("div");
+  name.className = "lightbox-name";
+  name.textContent = file;
+  inner.appendChild(name);
+
+  document.getElementById("lightbox").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function closeLightbox(e) {
+  if (e && e.target !== document.getElementById("lightbox") && !e.target.closest(".lightbox-close")) return;
+  const lb = document.getElementById("lightbox");
+  lb.classList.remove("active");
+  lb.querySelectorAll("video, audio").forEach(function(m) { m.pause(); });
+  document.getElementById("lightboxInner").innerHTML = "";
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") closeLightbox({ target: document.getElementById("lightbox") });
+});
+
+async function init() {
+  if (!username || !password) {
+    location.href = "login.html";
+    return;
+  }
+
+  if (!orgName) {
+    document.getElementById("skeletonGrid").classList.add("hidden");
+    document.getElementById("errorState").classList.remove("hidden");
+    document.getElementById("errorTitle").textContent = "No organization specified";
+    document.getElementById("errorDesc").textContent = "Add ?org=orgName to the URL.";
+    return;
+  }
+
+  try {
+    const authRes = await fetch(API + "/api/pass?username=" + username + "&pass=" + password);
+    const authData = await authRes.json();
+    if (!authData.success) {
+      localStorage.clear();
+      location.href = "login.html";
+      return;
+    }
+  } catch (e) {
+    localStorage.clear();
+    location.href = "login.html";
+    return;
+  }
+
+  try {
+    const listRes = await fetch(API + "/api/list-org?user=" + encodeURIComponent(username) + "&orgName=" + encodeURIComponent(orgName));
+
+    if (!listRes.ok) {
+      const err = await listRes.json().catch(function() { return {}; });
+      throw new Error(err.error || "Failed to fetch files");
+    }
+
+    const listData = await listRes.json();
+    const files = Array.isArray(listData.files) ? listData.files : [];
+    const mediaFiles = files.filter(function(f) {
+      const ext = f.split(".").pop().toLowerCase();
+      return MEDIA_EXTS.includes(ext);
+    });
+
+    document.getElementById("skeletonGrid").classList.add("hidden");
+
+    if (mediaFiles.length === 0) {
+      document.getElementById("emptyState").classList.remove("hidden");
+      return;
+    }
+
+    document.getElementById("mainContent").classList.remove("hidden");
+    document.getElementById("pageSubtitle").textContent = orgName + " · media files";
+
+    const gallery = document.getElementById("gallery");
+    gallery.innerHTML = "";
+    allCards = [];
+
+    mediaFiles.forEach(function(file) {
+      const card = buildCard(file);
+      gallery.appendChild(card);
+      allCards.push(card);
+    });
+
+    document.getElementById("countLabel").textContent = mediaFiles.length + " file" + (mediaFiles.length !== 1 ? "s" : "");
+
+  } catch (e) {
+    document.getElementById("skeletonGrid").classList.add("hidden");
+    document.getElementById("errorState").classList.remove("hidden");
+    document.getElementById("errorDesc").textContent = e.message || "Could not fetch files for this organization.";
+  }
+}
+
+init();
+</script>
+</body>
+</html>
