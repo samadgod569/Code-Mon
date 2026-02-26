@@ -276,20 +276,26 @@ if (path === "/api/save-org") {
 
   await env.FILES.put(fileKey, content ?? "");
 
-  const text = existingFile
-    ? `${user} updated ${filename}`
-    : `${user} created ${filename}`;
+  
 
-  if (!Array.isArray(orgData.blame))
-    orgData.blame = [];
+const d = new Date();
+const date =
+  `${d.getDate()}-${d.getMonth() + 1}-${String(d.getFullYear()).slice(2)}`;
 
-  if (orgData.blame.length >= 20)
-    orgData.blame.pop();
+const text = existingFile
+  ? `${user} updated ${filename}[*]${date}`
+  : `${user} created ${filename}[*]${date}`;
 
-  orgData.blame.unshift(text);
+if (!Array.isArray(orgData.blame))
+  orgData.blame = [];
 
-  await env.STORAGE.put(orgKey, JSON.stringify(orgData));
+if (orgData.blame.length >= 20)
+  orgData.blame.pop();
 
+orgData.blame.unshift(text);
+
+await env.STORAGE.put(orgKey, JSON.stringify(orgData));
+  
   return json({
     success: true,
     message: existingFile
