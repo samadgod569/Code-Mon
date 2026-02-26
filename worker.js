@@ -27,10 +27,7 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
-
-
-
-    if (path === "/api/img-save-org") {
+if (path === "/api/img-save-org") {
   const binary = new Uint8Array(await request.arrayBuffer());
 
   const username = request.headers.get("x-user");
@@ -77,17 +74,24 @@ const corsHeaders = {
 
   await env.FILES.put(fileKey, binary);
 
+  
+  const d = new Date();
+  const date =
+    `${d.getDate()}-${d.getMonth() + 1}-${String(d.getFullYear()).slice(2)}`;
+
   if (!Array.isArray(orgData.blame)) orgData.blame = [];
   if (orgData.blame.length >= 20) orgData.blame.pop();
 
-  orgData.blame.unshift(`${username} uploaded ${filename}`);
+  orgData.blame.unshift(
+    `${username} uploaded ${filename}[*]${date}`
+  );
 
   await env.STORAGE.put(orgKey, JSON.stringify(orgData));
 
   return json({ success: true });
-                       }
+}
 
-    if (path === "/api/delete-org-file") {
+if (path === "/api/delete-org-file") {
   let body;
   try {
     body = await request.json();
@@ -98,7 +102,10 @@ const corsHeaders = {
   const { username, pass, orgName, filename } = body;
 
   if (!username || !pass || !orgName || !filename) {
-    return json({ error: "username, pass, orgName and filename required" }, 400);
+    return json(
+      { error: "username, pass, orgName and filename required" },
+      400
+    );
   }
 
   const storedPass = await env.Pass.get(username, { type: "text" });
@@ -120,16 +127,25 @@ const corsHeaders = {
     Array.isArray(orgData.members) && orgData.members.includes(username);
 
   if (!isOwner && !isMember)
-    return json({ error: "You are not a member of this organization" }, 403);
+    return json(
+      { error: "You are not a member of this organization" },
+      403
+    );
 
   const fileKey = `${orgName}/${filename}`;
   await env.FILES.delete(fileKey);
 
-  if (!Array.isArray(orgData.blame)) orgData.blame = [];
+  
+  const d = new Date();
+  const date =
+    `${d.getDate()}-${d.getMonth() + 1}-${String(d.getFullYear()).slice(2)}`;
 
+  if (!Array.isArray(orgData.blame)) orgData.blame = [];
   if (orgData.blame.length >= 20) orgData.blame.pop();
 
-  orgData.blame.unshift(`${username} deleted ${filename}`);
+  orgData.blame.unshift(
+    `${username} deleted ${filename}[*]${date}`
+  );
 
   await env.STORAGE.put(orgKey, JSON.stringify(orgData));
 
@@ -138,7 +154,8 @@ const corsHeaders = {
     message: "File deleted successfully",
     file: fileKey
   });
-    }
+}
+    
 
 if (path === "/api/list-org") {
   const user = url.searchParams.get("user");
