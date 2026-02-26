@@ -745,7 +745,7 @@ async function init() {
 
     document.getElementById("publicContent").classList.remove("hidden");
     const vfBtn = document.getElementById("viewFilesBtn");
-    vfBtn.href = "org-file.html?org=" + orgName;
+    vfBtn.href = "organization.html?org=" + orgName;
     vfBtn.classList.remove("hidden");
 
     const [readmeRes, licenceRes] = await Promise.allSettled([
