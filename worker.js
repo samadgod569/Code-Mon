@@ -27,6 +27,79 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    if (pathname === "/api/agent") {
+      let question = "";
+
+      if (request.method === "GET") {
+        question = url.searchParams.get("question") || "";
+      } else if (request.method === "POST") {
+        try {
+          const body = await request.json();
+          question = body.question || "";
+        } catch {
+          return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+      }
+
+      if (!question) {
+        return new Response(JSON.stringify({ error: "Missing question" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (!env.FILES) {
+        return new Response(JSON.stringify({ error: "FILES binding missing" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      const apiKey = await env.FILES.get("OP", { type: "text" });
+
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "OP key not found" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4.1",
+          messages: [{ role: "user", content: question }]
+        })
+      });
+
+      
+      return new Response(res.body, {
+        status: res.status,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "no-store"
+        }
+      });
+    }
+
+    return new Response("Not Found", { status: 404 });
+  }
+};
+    
 if (path === "/api/img-save-org") {
   const binary = new Uint8Array(await request.arrayBuffer());
 
