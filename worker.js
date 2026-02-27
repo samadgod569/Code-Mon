@@ -28,12 +28,8 @@ const corsHeaders = {
       });
 
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
 
-    if (pathname === "/api/agent") {
+    if (path === "/api/agent") {
       let question = "";
 
       if (request.method === "GET") {
@@ -96,9 +92,6 @@ export default {
       });
     }
 
-    return new Response("Not Found", { status: 404 });
-  }
-};
     
 if (path === "/api/img-save-org") {
   const binary = new Uint8Array(await request.arrayBuffer());
