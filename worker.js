@@ -38,14 +38,14 @@ const corsHeaders = {
     "gpt-oss": { model: "openai/gpt-oss-20b:free", free: true },
     "gemma-27b": { model: "google/gemma-3-27b-it:free", free: true },
 
-    "o3-mini": { model: "openai/o3-mini", free: false, max_tokens: 2702 },
-    "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1486 },
-    "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1189 },
+    "o3-mini": { model: "openai/o3-mini", free: false, max_tokens: 2600 },
+    "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1400 },
+    "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1100 },
 
-    "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 396 },
-    "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2973 },
+    "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 320 },
+    "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2900 },
 
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 5000 }
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 8000 }
   };
 
   if (request.method === "GET") {
