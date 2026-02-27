@@ -77,6 +77,7 @@ const corsHeaders = {
         },
         body: JSON.stringify({
           model: "openai/gpt-4.1",
+          max_tokens: 1024,
           messages: [{ role: "user", content: question }]
         })
       });
