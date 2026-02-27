@@ -36,16 +36,16 @@ const corsHeaders = {
 
   const MODEL_CONFIG = {
     "gpt-oss": { model: "openai/gpt-oss-20b:free", free: true },
-    "gemma-9b": { model: "google/gemma-2-9b-it:free", free: true },
     "gemma-27b": { model: "google/gemma-3-27b-it:free", free: true },
-    "llama-8b": { model: "meta-llama/llama-3.1-8b-instruct:free", free: true },
-    "mistral-7b": { model: "mistralai/mistral-7b-instruct:free", free: true },
-    "gpt-4.1": { model: "openai/gpt-4.1", free: false },
-    "gpt-4o": { model: "openai/gpt-4o", free: false },
-    "o3-mini": { model: "openai/o3-mini", free: false },
-    "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false },
-    "haiku": { model: "anthropic/claude-3.5-haiku", free: false },
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false }
+
+    "o3-mini": { model: "openai/o3-mini", free: false, max_tokens: 2702 },
+    "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1486 },
+    "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1189 },
+
+    "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 396 },
+    "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2973 },
+
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 5000 }
   };
 
   if (request.method === "GET") {
@@ -73,10 +73,10 @@ const corsHeaders = {
 
   const cfg = MODEL_CONFIG[modelKey];
   if (!cfg) {
-    return new Response(JSON.stringify({ error: "Invalid model", allowed: Object.keys(MODEL_CONFIG) }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(
+      JSON.stringify({ error: "Invalid model", allowed: Object.keys(MODEL_CONFIG) }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const apiKey = await env.FILES.get("OP", { type: "text" });
@@ -93,7 +93,7 @@ const corsHeaders = {
   };
 
   if (!cfg.free) {
-    requestBody.max_tokens = 3000;
+    requestBody.max_tokens = cfg.max_tokens;
   }
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -113,7 +113,8 @@ const corsHeaders = {
       "Cache-Control": "no-store"
     }
   });
-        }   
+ }
+
 if (path === "/api/img-save-org") {
   const binary = new Uint8Array(await request.arrayBuffer());
 
