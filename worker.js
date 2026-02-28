@@ -27,26 +27,32 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
-
-
-
- if (path === "/api/agent") {
+if (path === "/api/agent") {
   let question = "";
   let modelKey = "gpt-oss";
 
   const MODEL_CONFIG = {
     "gpt-oss": { model: "openai/gpt-oss-20b:free", free: true },
+    "gpt-oss-120b": { model: "openai/gpt-oss-120b:free", free: true },
+    "gpt-2.1": { model: "openai/gpt-2.1-chat:free", free: true },
     "gemma-27b": { model: "google/gemma-3-27b-it:free", free: true },
+    "qwen-next-80b": { model: "qwen/qwen3-next-80b-a3b-instruct:free", free: true },
+    "qwen-coder": { model: "qwen/qwen3-coder:free", free: true },
+    "glm-4.5-air": { model: "z-ai/glm-4.5-air:free", free: true },
 
+    "qwen-235b": { model: "qwen/qwen3-235b-a22b-thinking-2507", free: false, max_tokens: 4000 },
     "o3-mini": { model: "openai/o3-mini", free: false, max_tokens: 2400 },
     "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1400 },
     "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1100 },
+    "gpt-5.2": { model: "openai/gpt-5.2", free: false, max_tokens: 1200 },
+    "gpt-5.3-codex": { model: "openai/gpt-5.3-codex", free: false, max_tokens: 1000 },
 
     "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 300 },
+    "sonnet-4.6": { model: "anthropic/claude-sonnet-4.6", free: false, max_tokens: 350 },
     "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2000 },
+    "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 300 },
 
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 16000 },
-    "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 300 }
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 16000 }
   };
 
   if (request.method === "GET") {
@@ -74,47 +80,71 @@ const corsHeaders = {
 
   const cfg = MODEL_CONFIG[modelKey];
   if (!cfg) {
-    return new Response(
-      JSON.stringify({ error: "Invalid model", allowed: Object.keys(MODEL_CONFIG) }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({
+      error: "Invalid model",
+      allowed: Object.keys(MODEL_CONFIG)
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 
-  const apiKey = await env.FILES.get("OP", { type: "text" });
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "OP key not found" }), {
+  const keys = await env.FILES.get("OP", { type: "json" });
+  if (!Array.isArray(keys) || keys.length === 0) {
+    return new Response(JSON.stringify({ error: "OP keys missing or invalid" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
 
-  const requestBody = {
-    model: cfg.model,
-    messages: [{ role: "user", content: question }]
-  };
+  let lastError = null;
 
-  if (!cfg.free) {
-    requestBody.max_tokens = cfg.max_tokens;
+  for (const apiKey of keys) {
+    const requestBody = {
+      model: cfg.model,
+      messages: [{ role: "user", content: question }]
+    };
+
+    if (!cfg.free) {
+      requestBody.max_tokens = cfg.max_tokens;
+    }
+
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (res.ok) {
+        return new Response(res.body, {
+          status: res.status,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-store"
+          }
+        });
+      }
+
+      lastError = await res.text();
+    } catch (e) {
+      lastError = e.message;
+    }
   }
 
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(requestBody)
+  return new Response(JSON.stringify({
+    error: "All API keys failed",
+    details: lastError
+  }), {
+    status: 502,
+    headers: { "Content-Type": "application/json" }
   });
+}
 
-  return new Response(res.body, {
-    status: res.status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      "Cache-Control": "no-store"
-    }
-  });
- }
 
 if (path === "/api/img-save-org") {
   const binary = new Uint8Array(await request.arrayBuffer());
