@@ -966,7 +966,7 @@ async function callCode(txt, files, chat, planWrap) {
 
   let plan = "";
   try {
-    plan = await callAI(`${P_PLAN}\n\nUser request: "${txt}"${fctx}\n\nSession files available: ${sessionFiles}`, "gpt-oss");
+    plan = await callAI(`${P_PLAN}\n\nUser request: "${txt}"${fctx}\n\nSession files available: ${sessionFiles}`, "llama-70b");
   } catch(_) {
     plan = txt;
   }
