@@ -89,7 +89,7 @@ if (path === "/api/agent") {
     });
   }
 
-  const keys = await env.FILES.get("OP", { type: "json" });
+  const keys = await env.FILES.get("OPR", { type: "json" });
   if (!Array.isArray(keys) || keys.length === 0) {
     return new Response(JSON.stringify({ error: "OP keys missing or invalid" }), {
       status: 500,
