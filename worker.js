@@ -42,10 +42,11 @@ const corsHeaders = {
     "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1400 },
     "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1100 },
 
-    "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 320 },
-    "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2200 },
+    "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 300 },
+    "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2000 },
 
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 8000 }
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 8000 },
+    "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 200 }
   };
 
   if (request.method === "GET") {
