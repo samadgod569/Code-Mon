@@ -45,8 +45,8 @@ const corsHeaders = {
     "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 300 },
     "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2000 },
 
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 8000 },
-    "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 2000 }
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 16000 },
+    "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 300 }
   };
 
   if (request.method === "GET") {
