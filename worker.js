@@ -52,11 +52,11 @@ if (path === "/api/agent") {
     "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2000 },
     "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 300 },
 
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 32000 },
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 16000 },
     "nano-banana": { model: "google/gemini-3.1-flash-image-preview", free: false, max_tokens: 3000},
     "gemini-3.1-pro": { model: "google/gemini-3.1-pro-preview-customtools", free: false, max_tokens: 1200},
-    "grok-4.1": { model:"x-ai/grok-4.1-fast", free: false, max_tokens: 20000},
-    "grok-4.0": { model: "x-ai/grok-4-fast", free: false, max_tokens: 20000},
+    "grok-4.1": { model:"x-ai/grok-4.1-fast", free: false, max_tokens: 15000},
+    "grok-4.0": { model: "x-ai/grok-4-fast", free: false, max_tokens: 15000},
     "llama-4": { model: "meta-llama/llama-4-maverick", free: false, max_tokens: 20000},
     "llama-4-scout": { model: "meta-llama/llama-4-scout", free: false, max_tokens: 30000}
   };
