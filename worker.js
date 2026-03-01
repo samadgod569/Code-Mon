@@ -57,7 +57,7 @@ if (path === "/api/agent") {
     "gemini-3.1-pro": { model: "google/gemini-3.1-pro-preview-customtools", free: false, max_tokens: 1200},
     "grok-4.1": { model:"x-ai/grok-4.1-fast", free: false, max_tokens: 60000},
     "grok-4.0": { model: "x-ai/grok-4-fast", free: false, max_tokens: 60000},
-    "llama-4": { model: "meta-llama/llama-4-maverick", free: false, max_tokens: 50000},
+    "llama-4": { model: "meta-llama/llama-4-maverick", free: false, max_tokens: 20000},
     "llama-4-scout": { model: "meta-llama/llama-4-scout", free: false, max_tokens: 30000}
   };
 
