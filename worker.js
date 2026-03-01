@@ -44,15 +44,18 @@ if (path === "/api/agent") {
     "o3-mini": { model: "openai/o3-mini", free: false, max_tokens: 2400 },
     "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1400 },
     "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1100 },
-    "gpt-5.2": { model: "openai/gpt-5.2", free: false, max_tokens: 1200 },
-    "gpt-5.3-codex": { model: "openai/gpt-5.3-codex", free: false, max_tokens: 1000 },
+    "gpt-5.2": { model: "openai/gpt-5.2", free: false, max_tokens: 3000 },
+    "gpt-5.3-codex": { model: "openai/gpt-5.3-codex", free: false, max_tokens: 3000 },
 
     "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 300 },
     "sonnet-4.6": { model: "anthropic/claude-sonnet-4.6", free: false, max_tokens: 350 },
     "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2000 },
     "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 300 },
 
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 16000 }
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 32000 },
+    "nano-banana": { model: "google/gemini-3.1-flash-image-preview", free: false, max_tokens: 3000},
+    "gemini-3.1-pro": { model: "google/gemini-3.1-pro-preview-customtools", free: false, max_tokens: 3000},
+    "grok-4.1": { model:"x-ai/grok-4.1-fast", free: false, max_tokens: 3000}
   };
 
   if (request.method === "GET") {
