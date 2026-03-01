@@ -756,7 +756,7 @@ async function send() {
 
 async function handleCodeMode(userMsg, attachments, chat, thinkingEl) {
   const planPrompt = `${P_EXPAND}\n\nRequest: "${userMsg}"${attachments.length ? '\nAttached files:\n'+attachments.map(f=>`[${f.name}]\n${f.content.slice(0,2000)}`).join('\n---\n') : ''}\nHistory: ${getHist(chat)}`;
-  const plan = await callAI('gpt-2.1', planPrompt);
+  const plan = await callAI('gpt-oss', planPrompt);
 
   removeThinking(thinkingEl);
   const planMsgEl = showPlanMessage(plan);
