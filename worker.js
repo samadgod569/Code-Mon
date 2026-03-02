@@ -68,8 +68,8 @@ if (path === "/api/agent") {
     "deepseek-3.2": { model: "deepseek/deepseek-v3.2", free: false, max_tokens: 30000},
     "grok-code": { model: "x-ai/grok-code-fast-1", free: false, max_tokens: 30000},
     "mistral-8b-2512": { model: "mistralai/ministral-8b-2512", free: false, max_tokens: 30000},
-    "mistral-14b-2512": { model: "mistralai/ministral-14b-2512", free: false, max_tokens: 30000}
-    
+    "mistral-14b-2512": { model: "mistralai/ministral-14b-2512", free: false, max_tokens: 30000},
+    "mistral-code": { model: "mistralai/codestral-2508", free: false, max_tokens: 30000}
   };
 
   if (request.method === "GET") {
