@@ -372,13 +372,13 @@ const LS_TH    = "cm-theme";
 const HISTORY_LIMIT = 6;
 
 const MODEL_CONFIG = {
-  "gpt-oss": { name: "GPT-OSS (free)" },
-  "gpt-oss-120b": { name: "GPT-OSS 120B (free)" },
-  "gpt-2.1": { name: "GPT-2.1 (free)" },
-  "gemma-27b": { name: "Gemma 3 27B (free)" },
-  "qwen-next-80b": { name: "Qwen Next 80B (free)" },
-  "qwen-coder": { name: "Qwen Coder (free)" },
-  "glm-4.5-air": { name: "GLM-4.5 Air (free)" },
+  "gpt-oss": { name: "GPT-OSS " },
+  "gpt-oss-120b": { name: "GPT-OSS 120B " },
+  "gpt-2.1": { name: "GPT-2.1" },
+  "gemma-27b": { name: "Gemma 3 27B" },
+  "qwen-next-80b": { name: "Qwen Next 80B" },
+  "qwen-coder": { name: "Qwen Coder" },
+  "glm-4.5-air": { name: "GLM-4.5 Air" },
   "qwen-235b": { name: "Qwen 235B" },
   "o3-mini": { name: "OpenAI o3-mini" },
   "gpt-4.1": { name: "GPT-4.1" },
@@ -395,7 +395,18 @@ const MODEL_CONFIG = {
   "grok-4.1": {name: "Gork 4.1" },
   "grok-4.0": {name: "Grok 4.0" },
   "llama-4": { name: "Llama 4" },
-  "llama-4-scout": { name: "Llama 4 scout"}
+  "llama-4-scout": { name: "Llama 4 scout"},
+  "deepseek-3.1": { name: "DeepSeek 3.1"},
+  "deepseek-3.2-special": { name: "DeepSeek 3.2 Special" },
+  "deepseek-3.2": { name: "DeepSeek 3.2" },
+  "grok-code": { name: "Grok Code" },
+  "mistral-8b-2512": { name: "Mistral 8b" },
+  "mistral-14b-2512": { name: "Mistral 14b" },
+  "mistral-code": { name: "Mistral Code" },
+  "code-mon-special": { name: "Code Mon" },
+  "step-3.5": { name: "Step 3.5" },
+  "trinity": { name: "Trinity" },
+  "nemotron": { name: "Nemotron"}
 };
 
 let mode      = "code";
@@ -803,7 +814,7 @@ async function handleCodeMode(userMsg, attachments, chat, thinkingEl) {
   if (thinkMode) {
     updateThinking(thinkingEl, 'Thinking deeply...');
     const thinkPrompt = `${P_THINK}\n\nUser request: "${userMsg}"${attachCtx}\nHistory: ${getHist(chat)}`;
-    thinkText = await callAI('llama-70b', thinkPrompt);
+    thinkText = await callAI('gpt-oss', thinkPrompt);
   }
 
   updateThinking(thinkingEl, 'Planning...');
