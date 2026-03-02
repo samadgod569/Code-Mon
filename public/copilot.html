@@ -360,6 +360,8 @@ button,input,textarea,select{font-family:inherit}
 <div class="mob-overlay" id="mobOverlay" onclick="closeMobPanels()"></div>
 
 <script>
+  const user = localStorage.getItem("code-mon-username");
+  const pass = localStorage.getItem("code-mon-pass");
 const AI       = "https://code-mon.codemon.workers.dev/api/agent";
 const SAVE     = "https://code-mon.codemon.workers.dev/api/save";
 const SAVEORG  = "https://code-mon.codemon.workers.dev/api/save-org";
@@ -939,7 +941,7 @@ async function callAI(modelKey, prompt) {
   const response = await fetch(AI, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: prompt, model: modelKey })
+    body: JSON.stringify({ question: prompt, model: modelKey, username: user, password: pass })
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const data = await response.json();
