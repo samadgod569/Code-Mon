@@ -39,6 +39,10 @@ if (path === "/api/agent") {
     "qwen-next-80b": { model: "qwen/qwen3-next-80b-a3b-instruct:free", free: true },
     "qwen-coder": { model: "qwen/qwen3-coder:free", free: true },
     "glm-4.5-air": { model: "z-ai/glm-4.5-air:free", free: true },
+    "code-mon-special": { model: "openrouter/free", free: true },
+    "step-3.5": { model: "stepfun/step-3.5-flash:free", free: true},
+    "trinity": { model: "arcee-ai/trinity-large-preview:free", free: true},
+    "nemotron": { model: "nvidia/nemotron-3-nano-30b-a3b:free", free: true},
 
     "qwen-235b": { model: "qwen/qwen3-235b-a22b-thinking-2507", free: false, max_tokens: 15000 },
     "o3-mini": { model: "openai/o3-mini", free: false, max_tokens: 2000 },
@@ -58,7 +62,14 @@ if (path === "/api/agent") {
     "grok-4.1": { model:"x-ai/grok-4.1-fast", free: false, max_tokens: 30000},
     "grok-4.0": { model: "x-ai/grok-4-fast", free: false, max_tokens: 30000},
     "llama-4": { model: "meta-llama/llama-4-maverick", free: false, max_tokens: 15000},
-    "llama-4-scout": { model: "meta-llama/llama-4-scout", free: false, max_tokens: 15000}
+    "llama-4-scout": { model: "meta-llama/llama-4-scout", free: false, max_tokens: 15000},
+    "deepseek-3.1": { model: "nex-agi/deepseek-v3.1-nex-n1", free: false, max_tokens: 30000 },
+    "deepseek-3.2-special": { model: "deepseek/deepseek-v3.2-speciale", free: false, max_tokens: 30000 },
+    "deepseek-3.2": { model: "deepseek/deepseek-v3.2", free: false, max_tokens: 30000},
+    "grok-code": { model: "x-ai/grok-code-fast-1", free: false, max_tokens: 30000},
+    "mistral-8b-2512": { model: "mistralai/ministral-8b-2512", free: false, max_tokens: 30000},
+    "mistral-14b-2512": { model: "mistralai/ministral-14b-2512", free: false, max_tokens: 30000}
+    
   };
 
   if (request.method === "GET") {
