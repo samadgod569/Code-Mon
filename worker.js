@@ -40,12 +40,12 @@ if (path === "/api/agent") {
     "qwen-coder": { model: "qwen/qwen3-coder:free", free: true },
     "glm-4.5-air": { model: "z-ai/glm-4.5-air:free", free: true },
 
-    "qwen-235b": { model: "qwen/qwen3-235b-a22b-thinking-2507", free: false, max_tokens: 10000 },
+    "qwen-235b": { model: "qwen/qwen3-235b-a22b-thinking-2507", free: false, max_tokens: 15000 },
     "o3-mini": { model: "openai/o3-mini", free: false, max_tokens: 2000 },
-    "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1400 },
-    "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1100 },
+    "gpt-4.1": { model: "openai/gpt-4.1", free: false, max_tokens: 1000 },
+    "gpt-4o": { model: "openai/gpt-4o", free: false, max_tokens: 1000 },
     "gpt-5.2": { model: "openai/gpt-5.2", free: false, max_tokens: 600 },
-    "gpt-5.3-codex": { model: "openai/gpt-5.3-codex", free: false, max_tokens: 1400 },
+    "gpt-5.3-codex": { model: "openai/gpt-5.3-codex", free: false, max_tokens: 600 },
 
     "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 300 },
     "sonnet-4.6": { model: "anthropic/claude-sonnet-4.6", free: false, max_tokens: 350 },
