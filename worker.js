@@ -50,7 +50,7 @@ if (path === "/api/agent") {
     "sonnet": { model: "anthropic/claude-3.5-sonnet", free: false, max_tokens: 300 },
     "sonnet-4.6": { model: "anthropic/claude-sonnet-4.6", free: false, max_tokens: 350 },
     "haiku": { model: "anthropic/claude-3.5-haiku", free: false, max_tokens: 2000 },
-    "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 3000 },
+    "opus-4.6": { model: "anthropic/claude-opus-4.6", free: false, max_tokens: 300},
 
     "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct", free: false, max_tokens: 32000 },
     "nano-banana": { model: "google/gemini-3.1-flash-image-preview", free: false, max_tokens: 3000},
