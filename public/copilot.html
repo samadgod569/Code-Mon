@@ -803,7 +803,7 @@ async function handleCodeMode(userMsg, attachments, chat, thinkingEl) {
   if (thinkMode) {
     updateThinking(thinkingEl, 'Thinking deeply...');
     const thinkPrompt = `${P_THINK}\n\nUser request: "${userMsg}"${attachCtx}\nHistory: ${getHist(chat)}`;
-    thinkText = await callAI('gpt-oss', thinkPrompt);
+    thinkText = await callAI('llama-70b', thinkPrompt);
   }
 
   updateThinking(thinkingEl, 'Planning...');
