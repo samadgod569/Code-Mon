@@ -30,7 +30,8 @@ const corsHeaders = {
 if (path === "/api/agent") {
   let question = "";
   let modelKey = "gpt-oss";
-
+let username = "";
+let password = "";
   const MODEL_CONFIG = {
     "gpt-oss": { model: "openai/gpt-oss-20b:free", free: true },
     "gpt-oss-120b": { model: "openai/gpt-oss-120b:free", free: true },
@@ -73,19 +74,23 @@ if (path === "/api/agent") {
   };
 
   if (request.method === "GET") {
-    question = url.searchParams.get("question") || "";
-    modelKey = url.searchParams.get("model") || modelKey;
-  } else if (request.method === "POST") {
-    try {
-      const body = await request.json();
-      question = body.question || "";
-      modelKey = body.model || modelKey;
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
+  question = url.searchParams.get("question") || "";
+  modelKey = url.searchParams.get("model") || modelKey;
+  username = url.searchParams.get("username") || "";
+  password = url.searchParams.get("password") || "";
+  }else if (request.method === "POST") {
+  try {
+    const body = await request.json();
+    question = body.question || "";
+    modelKey = body.model || modelKey;
+    username = body.username || "";
+    password = body.password || "";
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
   }
 
   if (!question) {
@@ -94,6 +99,40 @@ if (path === "/api/agent") {
       headers: { "Content-Type": "application/json" }
     });
   }
+  if (!username || !password) {
+  return new Response(JSON.stringify({ error: "Missing username or password" }), {
+    status: 401,
+    headers: { "Content-Type": "application/json" }
+  });
+  }
+  const storedPassword = await env.Pass.get(username);
+
+if (!storedPassword || storedPassword !== password) {
+  return new Response(JSON.stringify({ error: "Invalid credentials" }), {
+    status: 401,
+    headers: { "Content-Type": "application/json" }
+  });
+}
+  const balanceRaw = await env.PAY.get(username);
+const balance = Number(balanceRaw);
+
+if (!balanceRaw || isNaN(balance)) {
+  return new Response(JSON.stringify({ error: "Balance not found" }), {
+    status: 402,
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+if (balance < 4) {
+  return new Response(JSON.stringify({ error: "Insufficient balance" }), {
+    status: 402,
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+// deduct 4 credits
+const newBalance = balance - 4;
+await env.PAY.put(username, String(newBalance));
 
   const cfg = MODEL_CONFIG[modelKey];
   if (!cfg) {
