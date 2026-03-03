@@ -404,8 +404,45 @@
     </div>
 
     <script>
+        (async function() {
+    const API = "https://code-mon.codemon.workers.dev";
+
+    const username = localStorage.getItem("code-mon-username");
+    const password = localStorage.getItem("code-mon-pass");
+
+    //  No credentials → go to login
+    if (!username || !password) {
+        localStorage.clear();
+        location.href = "login.html";
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/api/pass?username=${username}&pass=${password}`);
+        const data = await res.json();
+
+        //  Wrong password / user not found
+        if (!data.success) {
+            localStorage.removeItem("code-mon-username");
+            localStorage.removeItem("code-mon-pass");
+            localStorage.removeItem("user");
+
+            location.href = "login.html";
+            return;
+        }
+
+        //  Auth success → continue loading file.html normally
+        console.log("User authenticated:", username);
+
+    } catch (err) {
+        // Network failure = prevent access
+        localStorage.clear();
+        location.href = "login.html";
+    }
+})();
+        
         (function() {
-            // ---------- LocalStorage helpers ----------
+
             function setLocal(key, value) {
                 localStorage.setItem(key, JSON.stringify(value));
             }
@@ -414,7 +451,6 @@
                 try { return val ? JSON.parse(val) : null; } catch { return val; }
             }
 
-            // ---------- Games storage ----------
             function getGames() {
                 return getLocal('games') || [];
             }
@@ -429,7 +465,7 @@
                 }
             }
 
-            // ---------- Render cards ----------
+
             function renderCards() {
                 const container = document.getElementById('cardsContainer');
                 const games = getGames();
@@ -453,7 +489,7 @@
                 });
             }
 
-            // ---------- Get username/password from localStorage ----------
+
             function getUsername() {
                 return localStorage.getItem('code-mon-username') || '';
             }
@@ -461,7 +497,7 @@
                 return localStorage.getItem('code-mon-pass') || '';
             }
 
-            // ---------- Fetch organizations for user ----------
+
             async function fetchOrgs() {
                 const username = getUsername();
                 if (!username) {
@@ -482,7 +518,6 @@
                 }
             }
 
-            // ---------- Populate project dropdown ----------
             async function populateProjects() {
                 const projectSelect = document.getElementById('projectSelect');
                 const orgs = await fetchOrgs();
@@ -496,7 +531,6 @@
                 projectSelect.disabled = false;
             }
 
-            // ---------- Handle type change ----------
             document.getElementById('typeSelect').addEventListener('change', async function(e) {
                 const type = e.target.value;
                 const projectGroup = document.getElementById('projectGroup');
@@ -513,7 +547,7 @@
                 }
             });
 
-            // ---------- New Template modal ----------
+
             const newModal = document.getElementById('newModal');
             document.getElementById('newTemplateBtn').addEventListener('click', () => {
                 document.getElementById('typeSelect').value = 'personal';
@@ -572,7 +606,7 @@
                 }
             });
 
-            // ---------- Restore modal ----------
+
             const restoreModal = document.getElementById('restoreModal');
             document.getElementById('restoreTemplateBtn').addEventListener('click', () => {
                 document.getElementById('restoreGameName').value = '';
