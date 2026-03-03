@@ -27,6 +27,79 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+if (path === "/api/game") {
+
+
+  if (request.method === "POST") {
+    let body;
+
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
+    }
+
+    const { username, pass, game, type, project, starting } = body;
+
+    if (!username || !pass || !game || !type || !project || starting === undefined)
+      return json({ error: "Missing required fields" }, 400);
+
+    const storedPass = await env.Pass.get(username, { type: "text" });
+
+    if (!storedPass)
+      return json({ error: "User not found" }, 404);
+
+    if (storedPass !== pass)
+      return json({ error: "Incorrect password" }, 403);
+
+    const gameKey = `game/${username}/${game}`;
+
+    
+    const existingGame = await env.STORAGE.get(gameKey);
+    if (existingGame)
+      return json({ error: "Game already exists" }, 409);
+
+    const payRaw = await env.PAY.get(username, { type: "text" });
+    const balance = Number(payRaw ?? 0);
+
+    if (balance < 50)
+      return json({ error: "Insufficient balance" }, 402);
+
+    await env.PAY.put(username, String(balance - 50));
+
+    const gameData = {
+      type: type,
+      project: project,
+      starting: starting
+    };
+
+    await env.STORAGE.put(gameKey, JSON.stringify(gameData));
+
+    return json({
+      success: true,
+      message: "Game created successfully (50 shells charged)"
+    });
+  }
+
+
+  if (request.method === "GET") {
+    const username = url.searchParams.get("user");
+    const game = url.searchParams.get("game");
+
+    if (!username || !game)
+      return json({ error: "Missing user or game" }, 400);
+
+    const gameKey = `game/${username}/${game}`;
+    const gameData = await env.STORAGE.get(gameKey, { type: "json" });
+
+    if (!gameData)
+      return json({ error: "Game not found" }, 404);
+
+    return json(gameData);
+  }
+}
+
+    
     if (path === "/api/list-dir") {
   const user = url.searchParams.get("user");
   const dir = url.searchParams.get("dir");
