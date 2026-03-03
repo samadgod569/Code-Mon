@@ -27,6 +27,31 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+    if (path === "/api/list-dir") {
+  const user = url.searchParams.get("user");
+  const dir = url.searchParams.get("dir");
+
+  if (!user || dir === null)
+    return json({ error: "Missing user or dir" }, 400);
+
+  let prefix;
+
+  if (dir === "/" || dir === "") {
+    prefix = `${user}/`;
+  } else {
+    const tree = dir.replace(/^\/+|\/+$/g, ""); 
+    prefix = `${user}/${tree}/`;
+  }
+
+  const list = await env.FILES.list({ prefix });
+
+  return json({
+    files: list.keys.map(k =>
+      k.name.replace(`${user}/`, "")
+    )
+  });
+    }
+
 if (path === "/api/agent") {
   let question = "";
   let modelKey = "gpt-oss";
