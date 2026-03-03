@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 <link id="hljs-dark"  rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" disabled>
+  <meta name="description" content="Code Mon Copilot is an powerful ai agent, consisting of alot of powerful ai models. Code Mon Copilot is specially designed for Code Mon platform ans have full access to deploying and reading files via username">
 <style>
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -244,6 +245,270 @@ button,input,textarea,select{font-family:inherit}
   .sbtn{padding:8px 10px;font-size:12px}
   .mode-bar{display:none}
 }
+  @media (max-width: 720px) {
+:root {
+--sw: 0px;
+--fw: 0px;
+}
+.hdr {
+padding: 0 8px;
+}
+.hdr-l .logo span {
+display: none;
+}
+.hdr-r {
+gap: 4px;
+}
+.model-select {
+max-width: 90px;
+font-size: 11px;
+padding: 4px 20px 4px 6px;
+}
+.mode-bar {
+display: none;
+}
+.thbtn span:last-child {
+display: none;
+}
+.ibtn {
+padding: 4px 6px;
+font-size: 10px;
+}
+.cnt-badge {
+min-width: 14px;
+padding: 0 3px;
+font-size: 9px;
+}
+.sbar, .fpanel {
+position: fixed;
+top: 48px;
+height: calc(100dvh - 48px);
+z-index: 40;
+box-shadow: var(--sh3);
+width: 0;
+transition: width 0.18s ease;
+background: var(--bg2);
+}
+.sbar {
+left: 0;
+}
+.fpanel {
+right: 0;
+}
+.sbar.mob, .fpanel.mob {
+width: 260px;
+}
+.fpanel.mob {
+width: 280px;
+}
+.mob-overlay {
+display: none;
+position: fixed;
+inset: 0;
+top: 48px;
+background: rgba(0,0,0,0.4);
+z-index: 39;
+backdrop-filter: blur(1px);
+}
+.mob-overlay.on {
+display: block;
+}
+.cbar-title {
+font-size: 12px;
+}
+.cbar button {
+padding: 4px 6px;
+}
+.msgs {
+padding: 14px 10px;
+}
+.msgs-inner {
+gap: 12px;
+}
+.msg {
+gap: 6px;
+}
+.av {
+width: 24px;
+height: 24px;
+font-size: 10px;
+}
+.bbl {
+padding: 8px 12px;
+font-size: 13px;
+}
+.msg.u .bbl {
+max-width: 85%;
+}
+.mmeta {
+font-size: 9px;
+}
+.plan-header span, .think-header span {
+font-size: 11px;
+}
+.plan-content, .think-content {
+font-size: 11px;
+padding: 8px 12px;
+}
+.cbh .lang {
+font-size: 10px;
+}
+.cbh .cpbtn {
+font-size: 10px;
+padding: 2px 6px;
+}
+.fgc {
+font-size: 11px;
+padding: 6px 10px;
+}
+.wtips {
+grid-template-columns: 1fr;
+}
+.izone {
+padding: 10px 10px 12px;
+}
+.minput {
+font-size: 14px;
+padding: 8px 36px 8px 10px;
+}
+.attrig {
+right: 6px;
+bottom: 6px;
+}
+.sbtn {
+padding: 8px 10px;
+font-size: 12px;
+}
+.sbtn svg {
+width: 12px;
+height: 12px;
+}
+.ifooter {
+font-size: 10px;
+}
+.achip {
+font-size: 10px;
+padding: 2px 6px;
+}
+.atchip {
+font-size: 10px;
+padding: 2px 8px;
+}
+.atchip-n {
+max-width: 100px;
+}
+.modal {
+max-width: 95% !important;
+margin: 0 auto;
+}
+.modal-sm, .modal-md, .modal-lg {
+max-width: 95% !important;
+width: 95% !important;
+}
+.mhd {
+padding: 10px 12px;
+}
+.mtitle {
+font-size: 13px;
+}
+.mbody {
+padding: 12px;
+}
+.mfoot {
+padding: 10px 12px;
+}
+.pvtoolbar {
+padding: 6px 10px;
+gap: 4px;
+flex-wrap: wrap;
+}
+.pvtab {
+padding: 3px 8px;
+font-size: 11px;
+}
+.pvframe {
+height: 60vh;
+}
+.pvcode pre {
+font-size: 11px;
+padding: 10px;
+}
+.flist .fi .facts {
+gap: 4px;
+}
+.fact {
+font-size: 9px;
+padding: 2px 6px;
+}
+.thbbl {
+padding: 7px 12px;
+font-size: 11px;
+}
+.dots .dot {
+width: 4px;
+height: 4px;
+}
+.tstep {
+font-size: 10px;
+}
+}
+
+@media (max-width: 480px) {
+.hdr-r .model-select {
+max-width: 70px;
+font-size: 10px;
+padding: 4px 16px 4px 4px;
+}
+.ibtn {
+padding: 4px;
+}
+.ibtn span:not(.cnt-badge) {
+display: none;
+}
+.cnt-badge {
+margin-left: 0;
+}
+.cbar {
+padding: 6px 10px;
+}
+.cbar-title {
+font-size: 11px;
+}
+.msg.u .bbl {
+max-width: 90%;
+}
+.bbl {
+font-size: 12px;
+padding: 6px 10px;
+}
+.minput {
+font-size: 13px;
+padding: 7px 32px 7px 8px;
+}
+.sbtn {
+padding: 7px 8px;
+font-size: 11px;
+}
+.sbtn svg {
+width: 10px;
+height: 10px;
+}
+.attrig svg {
+width: 12px;
+height: 12px;
+}
+.atchip-n {
+max-width: 80px;
+}
+.sbar.mob {
+width: 220px;
+}
+.fpanel.mob {
+width: 240px;
+}
+}
+
+  
 </style>
 </head>
 <body>
