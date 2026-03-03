@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Templates</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #ffffff;
+            --bg2: #f6f8fa;
+            --bg3: #eaeef2;
+            --bd: #d0d7de;
+            --bdm: #e1e4e8;
+            --tx: #1f2328;
+            --txm: #636c76;
+            --txs: #9198a1;
+            --ac: #0969da;
+            --ach: #0550ae;
+            --acb: #ddf4ff;
+            --ace: #54aeff;
+            --ok: #1a7f37;
+            --okb: #dafbe1;
+            --er: #cf222e;
+            --erb: #ffebe9;
+            --sh1: 0 1px 0 rgba(27,31,36,.04);
+            --sh2: 0 3px 6px rgba(140,149,159,.15);
+            --sh3: 0 8px 24px rgba(140,149,159,.2);
+            --r: 6px;
+            --rl: 12px;
+            --tr: 80ms cubic-bezier(.33,1,.68,1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --bd: #30363d;
+            --bdm: #21262d;
+            --tx: #e6edf3;
+            --txm: #8b949e;
+            --txs: #6e7681;
+            --ac: #58a6ff;
+            --ach: #79c0ff;
+            --acb: rgba(56,139,253,.1);
+            --ace: rgba(56,139,253,.4);
+            --ok: #3fb950;
+            --okb: rgba(46,160,67,.1);
+            --er: #f85149;
+            --erb: rgba(248,81,73,.1);
+            --sh1: 0 1px 0 rgba(0,0,0,.25);
+            --sh2: 0 3px 6px rgba(0,0,0,.3);
+            --sh3: 0 8px 24px rgba(0,0,0,.45);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--tx);
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .theme-toggle {
+            background: var(--bg2);
+            border: 1px solid var(--bd);
+            border-radius: var(--r);
+            color: var(--txm);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: var(--tr);
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg3);
+            color: var(--tx);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--r);
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: var(--tr);
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-primary {
+            background: #1f883d;
+            border-color: rgba(27,31,36,.15);
+            color: #fff;
+        }
+
+        [data-theme="dark"] .btn-primary {
+            background: #238636;
+            border-color: rgba(240,246,252,.1);
+        }
+
+        .btn-primary:hover {
+            background: #1a7f37;
+        }
+
+        .btn-secondary {
+            background: var(--bg2);
+            border-color: var(--bd);
+            color: var(--tx);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg3);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal {
+            background: var(--bg);
+            border: 1px solid var(--bd);
+            border-radius: var(--rl);
+            box-shadow: var(--sh3);
+            width: 100%;
+            max-width: 500px;
+            padding: 1.5rem;
+        }
+
+        .modal h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--txm);
+        }
+
+        .form-control, .custom-select select {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--r);
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            color: var(--tx);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color var(--tr);
+        }
+
+        .form-control:focus, .custom-select select:focus {
+            border-color: var(--ace);
+        }
+
+        .custom-select {
+            position: relative;
+        }
+
+        .custom-select select {
+            appearance: none;
+            padding-right: 2rem;
+        }
+
+        .custom-select::after {
+            content: '▼';
+            font-size: 0.7rem;
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--txm);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 2rem;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            border: 1px solid var(--bd);
+            border-radius: var(--rl);
+            padding: 1.5rem;
+            background: var(--bg2);
+            transition: var(--tr);
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--sh2);
+            border-color: var(--ac);
+        }
+
+        .card h3 {
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card p {
+            margin-bottom: 0.5rem;
+            color: var(--txm);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--acb);
+            color: var(--ac);
+            border: 1px solid var(--ace);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--txm);
+            border: 2px dashed var(--bd);
+            border-radius: var(--rl);
+            grid-column: 1 / -1;
+        }
+
+        .error-message {
+            color: var(--er);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 640px) {
+            body { padding: 1rem; }
+            h1 { font-size: 1.75rem; }
+            .button-group { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            .cards-container { grid-template-columns: 1fr; }
+            .modal { padding: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Game Templates</h1>
+            <button class="theme-toggle" id="themeToggle"></button>
+        </header>
+
+        <div class="button-group">
+            <button class="btn btn-primary" id="newTemplateBtn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>
+                </svg>
+                New Template
+            </button>
+            <button class="btn btn-secondary" id="restoreTemplateBtn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M1.679 7.932c.412-.621 1.242-1.75 2.366-2.717C5.175 4.242 6.527 3.5 8 3.5c3.18 0 5.5 2.5 5.5 4.5 0 2-2.32 4.5-5.5 4.5-1.473 0-2.825-.742-3.955-1.715-1.124-.967-1.954-2.096-2.366-2.717a.75.75 0 0 1 1.242-.864c.343.48 1.05 1.422 2.042 2.244C6.086 11.358 7.113 12 8 12c2.327 0 4-1.884 4-3.5 0-1.616-1.673-3.5-4-3.5-.887 0-1.914.642-2.795 1.494-.992.822-1.699 1.764-2.042 2.244a.75.75 0 0 1-1.242-.864Z"/>
+                </svg>
+                Restore Template
+            </button>
+        </div>
+
+        <!-- Cards container -->
+        <div id="cardsContainer" class="cards-container">
+            <div class="empty-state">No games yet. Create or restore one.</div>
+        </div>
+    </div>
+
+    <!-- New Template Modal -->
+    <div class="modal-overlay" id="newModal">
+        <div class="modal">
+            <h2>Create New Template</h2>
+            <div class="form-group">
+                <label>Type</label>
+                <div class="custom-select">
+                    <select id="typeSelect">
+                        <option value="personal">Personal</option>
+                        <option value="organization">Organization</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Game Name</label>
+                <input type="text" id="gameName" class="form-control" placeholder="e.g., my-rpg">
+            </div>
+            <div class="form-group">
+                <label>Starting Directory</label>
+                <input type="text" id="startingDir" class="form-control" value="/" placeholder="/ or subdir">
+            </div>
+            <div class="form-group" id="projectGroup">
+                <label>Choose Project</label>
+                <div class="custom-select">
+                    <select id="projectSelect" disabled>
+                        <option value="">Select organization</option>
+                    </select>
+                </div>
+                <div id="projectError" class="error-message"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelNew">Cancel</button>
+                <button class="btn btn-primary" id="createBtn">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Modal -->
+    <div class="modal-overlay" id="restoreModal">
+        <div class="modal">
+            <h2>Restore Template</h2>
+            <div class="form-group">
+                <label>Game Name</label>
+                <input type="text" id="restoreGameName" class="form-control" placeholder="Enter game name">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelRestore">Cancel</button>
+                <button class="btn btn-primary" id="restoreBtn">Restore</button>
+            </div>
+            <div id="restoreError" class="error-message"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- LocalStorage helpers ----------
+            function setLocal(key, value) {
+                localStorage.setItem(key, JSON.stringify(value));
+            }
+            function getLocal(key) {
+                const val = localStorage.getItem(key);
+                try { return val ? JSON.parse(val) : null; } catch { return val; }
+            }
+
+            // ---------- Games storage ----------
+            function getGames() {
+                return getLocal('games') || [];
+            }
+            function saveGames(games) {
+                setLocal('games', games);
+            }
+            function addGame(game) {
+                const games = getGames();
+                if (!games.some(g => g.gameName === game.gameName)) {
+                    games.push(game);
+                    saveGames(games);
+                }
+            }
+
+            // ---------- Render cards ----------
+            function renderCards() {
+                const container = document.getElementById('cardsContainer');
+                const games = getGames();
+                if (games.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No games yet. Create or restore one.</div>';
+                    return;
+                }
+                container.innerHTML = games.map(game => `
+                    <div class="card" data-game="${game.gameName}">
+                        <h3>${game.gameName}</h3>
+                        <p><span class="badge">${game.type}</span></p>
+                        <p><strong>Project:</strong> ${game.project}</p>
+                        <p><strong>Starting:</strong> ${game.starting}</p>
+                    </div>
+                `).join('');
+                document.querySelectorAll('.card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const gameName = card.dataset.game;
+                        window.location.href = `game-panel.html?game=${encodeURIComponent(gameName)}`;
+                    });
+                });
+            }
+
+            // ---------- Get username/password from localStorage ----------
+            function getUsername() {
+                return localStorage.getItem('code-mon-username') || '';
+            }
+            function getPassword() {
+                return localStorage.getItem('code-mon-pass') || '';
+            }
+
+            // ---------- Fetch organizations for user ----------
+            async function fetchOrgs() {
+                const username = getUsername();
+                if (!username) {
+                    document.getElementById('projectError').innerText = 'Username not found in localStorage';
+                    return [];
+                }
+                try {
+                    const response = await fetch(`https://code-mon.codemon.workers.dev/api/org/inv?username=${encodeURIComponent(username)}`);
+                    const data = await response.json();
+                    if (data.success && Array.isArray(data.orgs)) {
+                        return data.orgs;
+                    } else {
+                        return [];
+                    }
+                } catch (err) {
+                    document.getElementById('projectError').innerText = 'Failed to fetch organizations';
+                    return [];
+                }
+            }
+
+            // ---------- Populate project dropdown ----------
+            async function populateProjects() {
+                const projectSelect = document.getElementById('projectSelect');
+                const orgs = await fetchOrgs();
+                projectSelect.innerHTML = '<option value="">Select organization</option>';
+                orgs.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org;
+                    option.textContent = org;
+                    projectSelect.appendChild(option);
+                });
+                projectSelect.disabled = false;
+            }
+
+            // ---------- Handle type change ----------
+            document.getElementById('typeSelect').addEventListener('change', async function(e) {
+                const type = e.target.value;
+                const projectGroup = document.getElementById('projectGroup');
+                const projectSelect = document.getElementById('projectSelect');
+                const projectError = document.getElementById('projectError');
+                if (type === 'organization') {
+                    projectGroup.style.display = 'block';
+                    projectError.innerText = '';
+                    await populateProjects();
+                } else {
+                    projectGroup.style.display = 'block';
+                    projectSelect.disabled = true;
+                    projectSelect.innerHTML = '<option value="">N/A (personal)</option>';
+                }
+            });
+
+            // ---------- New Template modal ----------
+            const newModal = document.getElementById('newModal');
+            document.getElementById('newTemplateBtn').addEventListener('click', () => {
+                document.getElementById('typeSelect').value = 'personal';
+                document.getElementById('gameName').value = '';
+                document.getElementById('startingDir').value = '/';
+                document.getElementById('projectSelect').innerHTML = '<option value="">Select organization</option>';
+                document.getElementById('projectSelect').disabled = true;
+                document.getElementById('projectError').innerText = '';
+                document.getElementById('projectGroup').style.display = 'block';
+                newModal.classList.add('active');
+            });
+
+            document.getElementById('cancelNew').addEventListener('click', () => {
+                newModal.classList.remove('active');
+            });
+
+            document.getElementById('createBtn').addEventListener('click', async () => {
+                const type = document.getElementById('typeSelect').value;
+                const game = document.getElementById('gameName').value.trim();
+                const starting = document.getElementById('startingDir').value.trim();
+                let project = document.getElementById('projectSelect').value;
+
+                if (!game) { alert('Game name is required'); return; }
+                if (!starting) { alert('Starting directory is required'); return; }
+                if (type === 'organization' && !project) { alert('Please select a project'); return; }
+
+                const username = getUsername();
+                const pass = getPassword();
+                if (!username || !pass) {
+                    alert('Username or password not set in localStorage (code-mon-username, code-mon-pass)');
+                    return;
+                }
+
+                if (type === 'personal') {
+                    project = username;
+                }
+
+                const body = { username, pass, game, type, project, starting };
+
+                try {
+                    const response = await fetch('https://code-mon.codemon.workers.dev/api/game', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        addGame({ gameName: game, type, project, starting });
+                        renderCards();
+                        newModal.classList.remove('active');
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    alert('Network error: ' + err.message);
+                }
+            });
+
+            // ---------- Restore modal ----------
+            const restoreModal = document.getElementById('restoreModal');
+            document.getElementById('restoreTemplateBtn').addEventListener('click', () => {
+                document.getElementById('restoreGameName').value = '';
+                document.getElementById('restoreError').innerText = '';
+                restoreModal.classList.add('active');
+            });
+
+            document.getElementById('cancelRestore').addEventListener('click', () => {
+                restoreModal.classList.remove('active');
+            });
+
+            document.getElementById('restoreBtn').addEventListener('click', async () => {
+                const gameName = document.getElementById('restoreGameName').value.trim();
+                if (!gameName) {
+                    document.getElementById('restoreError').innerText = 'Game name required';
+                    return;
+                }
+
+                const username = getUsername();
+                if (!username) {
+                    document.getElementById('restoreError').innerText = 'Username not set in localStorage';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`https://code-mon.codemon.workers.dev/api/game?user=${encodeURIComponent(username)}&game=${encodeURIComponent(gameName)}`);
+                    const data = await response.json();
+                    if (response.ok && !data.error) {
+                        const { type, project, starting } = data;
+                        addGame({ gameName, type, project, starting });
+                        renderCards();
+                        restoreModal.classList.remove('active');
+                    } else {
+                        document.getElementById('restoreError').innerText = data.error || 'Game not found';
+                    }
+                } catch (err) {
+                    document.getElementById('restoreError').innerText = 'Network error';
+                }
+            });
+
+            // ---------- Theme toggle with icons ----------
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            const html = document.documentElement;
+
+            function setTheme(theme) {
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                updateToggleIcon(theme);
+            }
+
+            function updateToggleIcon(theme) {
+                if (theme === 'dark') {
+                    themeToggle.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm5.657-8.157a.75.75 0 0 1 0 1.061l-1.061 1.06a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l1.06-1.06a.75.75 0 0 1 1.06 0Zm-9.193 9.193a.75.75 0 0 1 0 1.06l-1.06 1.061a.75.75 0 1 1-1.061-1.06l1.06-1.061a.75.75 0 0 1 1.061 0ZM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0ZM3 8a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 3 8Zm13 0a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 16 8Zm-8 5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 13Zm4.596-1.596a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 0 1-1.06 1.061l-1.061-1.06a.75.75 0 0 1 0-1.061Zm-9.193-9.193a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 0 1-1.06 1.061L2.403 4.211a.75.75 0 0 1 0-1.06Z"/>
+                        </svg>
+                        Light
+                    `;
+                } else {
+                    themeToggle.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M9.598 1.591a.749.749 0 0 1 .785-.175 7 7 0 1 1-8.967 8.967.75.75 0 0 1 .961-.96 5.5 5.5 0 0 0 7.046-7.046.75.75 0 0 1 .175-.786Zm1.616 1.945a7 7 0 0 1-7.678 7.678 5.499 5.499 0 1 0 7.678-7.678Z"/>
+                        </svg>
+                        Dark
+                    `;
+                }
+            }
+
+            // Load saved theme or system preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                setTheme(savedTheme);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                setTheme(prefersDark ? 'dark' : 'light');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                const current = html.getAttribute('data-theme');
+                setTheme(current === 'dark' ? 'light' : 'dark');
+            });
+
+            // ---------- Initial render ----------
+            renderCards();
+        })();
+    </script>
+</body>
+</html>
