@@ -312,13 +312,13 @@
             <button class="btn btn-secondary" id="restoreTemplateBtn">↻ Restore Template</button>
         </div>
 
-        <!-- Cards container -->
+        
         <div id="cardsContainer" class="cards-container">
             <div class="empty-state">No games yet. Create or restore one.</div>
         </div>
     </div>
 
-    <!-- New Template Modal -->
+    
     <div class="modal-overlay" id="newModal">
         <div class="modal">
             <h2>Create New Template</h2>
@@ -355,7 +355,7 @@
         </div>
     </div>
 
-    <!-- Restore Modal -->
+
     <div class="modal-overlay" id="restoreModal">
         <div class="modal">
             <h2>Restore Template</h2>
@@ -373,7 +373,7 @@
 
     <script>
         (function() {
-            // ---------- Cookie helpers ----------
+            
             function setCookie(name, value, days = 365) {
                 const expires = new Date(Date.now() + days * 864e5).toUTCString();
                 document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
@@ -386,7 +386,7 @@
                 }, '');
             }
 
-            // ---------- Games cookie storage ----------
+            
             function getGames() {
                 const gamesCookie = getCookie('games');
                 if (gamesCookie) {
@@ -411,7 +411,7 @@
                 }
             }
 
-            // ---------- Render cards ----------
+            
             function renderCards() {
                 const container = document.getElementById('cardsContainer');
                 const games = getGames();
@@ -435,7 +435,7 @@
                 });
             }
 
-            // ---------- Get username/password from cookies ----------
+    
             function getUsername() {
                 return getCookie('code-mon-username');
             }
@@ -444,7 +444,7 @@
                 return getCookie('code-mon-pass');
             }
 
-            // ---------- Fetch organizations for user ----------
+        
             async function fetchOrgs() {
                 const username = getUsername();
                 if (!username) {
@@ -465,7 +465,7 @@
                 }
             }
 
-            // ---------- Populate project dropdown ----------
+    
             async function populateProjects() {
                 const projectSelect = document.getElementById('projectSelect');
                 const orgs = await fetchOrgs();
@@ -479,7 +479,7 @@
                 projectSelect.disabled = false;
             }
 
-            // ---------- Handle type change ----------
+        
             document.getElementById('typeSelect').addEventListener('change', async function(e) {
                 const type = e.target.value;
                 const projectGroup = document.getElementById('projectGroup');
@@ -490,13 +490,13 @@
                     projectError.innerText = '';
                     await populateProjects();
                 } else {
-                    projectGroup.style.display = 'block'; // keep visible but disabled
+                    projectGroup.style.display = 'block'; 
                     projectSelect.disabled = true;
                     projectSelect.innerHTML = '<option value="">N/A (personal)</option>';
                 }
             });
 
-            // ---------- New Template modal ----------
+            
             const newModal = document.getElementById('newModal');
             document.getElementById('newTemplateBtn').addEventListener('click', () => {
                 // Reset form
@@ -577,7 +577,6 @@
                 }
             });
 
-            // ---------- Restore modal ----------
             const restoreModal = document.getElementById('restoreModal');
             document.getElementById('restoreTemplateBtn').addEventListener('click', () => {
                 document.getElementById('restoreGameName').value = '';
@@ -606,9 +605,9 @@
                     const response = await fetch(`https://code-mon.codemon.workers.dev/api/game?user=${encodeURIComponent(username)}&game=${encodeURIComponent(gameName)}`);
                     const data = await response.json();
                     if (response.ok && !data.error) {
-                        // data should contain { type, project, starting }
+                        
                         const { type, project, starting } = data;
-                        // Add to cookies if not exists
+            
                         addGame({ gameName, type, project, starting });
                         renderCards();
                         restoreModal.classList.remove('active');
@@ -620,7 +619,6 @@
                 }
             });
 
-            // ---------- Theme toggle (GitHub light/dark) ----------
             const themeToggle = document.getElementById('themeToggle');
             const body = document.body;
             if (getCookie('theme') === 'dark') {
@@ -642,11 +640,8 @@
                 }
             });
 
-            // ---------- Initial render ----------
             renderCards();
 
-            // If type is changed to org on modal open, we handle above.
-            // Also pre-fetch if org is selected on modal open? No, user will select.
         })();
     </script>
 </body>
