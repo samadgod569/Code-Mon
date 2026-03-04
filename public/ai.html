@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindLM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--r:14px;--rs:8px;--t:.2s ease}
+[data-theme="dark"]{
+  --bg:#0f1117;--sb:#0b0d12;--sf:#171b24;--sf2:#1d2130;
+  --bd:#262c3a;--bd2:#1a1f2b;--tx:#dde2f0;--tx2:#7a85a0;--tx3:#3d4560;
+  --ac:#6c8eff;--acg:rgba(108,142,255,.13);--acd:rgba(108,142,255,.07);
+  --ub:#192340;--ubd:#243561;--sc:#262c3a;--inp:#13161e;--sh:0 4px 32px rgba(0,0,0,.6)
+}
+[data-theme="light"]{
+  --bg:#f4f5f9;--sb:#eceef4;--sf:#ffffff;--sf2:#f0f1f6;
+  --bd:#dde0ea;--bd2:#e8ebf2;--tx:#141720;--tx2:#5a6275;--tx3:#aab0c0;
+  --ac:#3a5ef0;--acg:rgba(58,94,240,.1);--acd:rgba(58,94,240,.06);
+  --ub:#e8edff;--ubd:#c8d4ff;--sc:#dde0ea;--inp:#ffffff;--sh:0 4px 24px rgba(0,0,0,.07)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Sora',sans-serif;font-size:14px;
+  background:var(--bg);color:var(--tx);transition:background var(--t),color var(--t)}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:240px;flex-shrink:0;background:var(--sb);border-right:1px solid var(--bd);
+  display:flex;flex-direction:column;overflow:hidden;transition:background var(--t)}
+.shead{padding:16px 14px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.logo-box{width:30px;height:30px;border-radius:9px;background:var(--ac);display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.logo-txt{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.logo-txt span{color:var(--ac)}
+.sbody{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px;scrollbar-width:none}
+.sbody::-webkit-scrollbar{display:none}
+.slabel{font-size:9.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--tx3);
+  padding:12px 8px 4px;font-weight:500}
+.nbtn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);
+  font-size:12.5px;color:var(--tx2);cursor:pointer;border:none;background:none;
+  width:100%;text-align:left;font-family:'Sora',sans-serif;transition:all var(--t)}
+.nbtn:hover{background:var(--sf2);color:var(--tx)}
+.nbtn.on{background:var(--acg);color:var(--ac)}
+.nbtn svg{flex-shrink:0;opacity:.75}
+.nbtn.on svg{opacity:1}
+.prm{padding:4px 8px 10px}
+.ptop{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.pname{font-size:11px;color:var(--tx2)}
+.pval{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--ac);font-weight:500}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;border-radius:2px;
+  background:var(--bd);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;
+  border-radius:50%;background:var(--ac);border:2.5px solid var(--sb);cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+.sfoot{padding:10px 8px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:2px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{padding:11px 20px;border-bottom:1px solid var(--bd);background:var(--sf);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;transition:background var(--t)}
+.tb-title{font-size:13px;font-weight:500}
+.tb-sub{font-size:11px;color:var(--tx2);font-family:'JetBrains Mono',monospace;margin-left:2px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.schip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;
+  background:var(--sf2);border:1px solid var(--bd);font-size:10.5px;color:var(--tx2);
+  font-family:'JetBrains Mono',monospace}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--tx3);transition:background .3s;flex-shrink:0}
+.sdot.on{background:#4ade80;box-shadow:0 0 7px rgba(74,222,128,.5)}
+.sdot.busy{background:var(--ac);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ibtn{width:32px;height:32px;border-radius:var(--rs);border:1px solid var(--bd);background:transparent;
+  color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--t)}
+.ibtn:hover{background:var(--sf2);color:var(--ac);border-color:var(--ac)}
+
+/* MESSAGES */
+.msgs{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:20px;
+  scrollbar-width:thin;scrollbar-color:var(--sc) transparent}
+.msgs::-webkit-scrollbar{width:4px}
+.msgs::-webkit-scrollbar-thumb{background:var(--sc);border-radius:2px}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:10px;text-align:center;padding:40px;color:var(--tx2)}
+.wi{width:50px;height:50px;border-radius:14px;background:var(--acg);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.welcome h2{font-size:17px;font-weight:500;color:var(--tx)}
+.welcome p{font-size:12.5px;max-width:320px;line-height:1.65}
+.mr{display:flex;gap:11px;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.mr.user{flex-direction:row-reverse}
+.av{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:600;margin-top:2px;border:1px solid var(--bd)}
+.av.ai{background:var(--acg);color:var(--ac)}
+.av.usr{background:var(--ub);color:var(--tx2)}
+.bub{max-width:600px;padding:11px 15px;border-radius:var(--r);font-size:13.5px;line-height:1.75;
+  border:1px solid var(--bd)}
+.bub.ai{background:var(--sf);color:var(--tx)}
+.bub.usr{background:var(--ub);border-color:var(--ubd);color:var(--tx)}
+.typing{display:flex;gap:5px;padding:12px 14px;align-items:center}
+.td{width:7px;height:7px;border-radius:50%;background:var(--tx3);animation:bounce 1.2s ease-in-out infinite}
+.td:nth-child(2){animation-delay:.16s}.td:nth-child(3){animation-delay:.32s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.psec{margin-top:10px;padding-top:10px;border-top:1px solid var(--bd2)}
+.ptitle{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);
+  margin-bottom:7px;font-family:'JetBrains Mono',monospace}
+.plist{display:flex;flex-direction:column;gap:4px}
+.pi{display:flex;align-items:center;gap:8px}
+.ptok{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);
+  width:96px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbw{flex:1;height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
+.pbf{height:100%;border-radius:2px;background:var(--ac);transition:width .5s ease}
+.ppct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tx2);
+  width:36px;text-align:right;flex-shrink:0}
+
+/* INPUT */
+.iarea{padding:12px 20px 14px;border-top:1px solid var(--bd);background:var(--sf);flex-shrink:0;transition:background var(--t)}
+.irow{display:flex;gap:8px;align-items:flex-end;background:var(--inp);border:1px solid var(--bd);
+  border-radius:var(--r);padding:9px 11px;transition:border-color .2s}
+.irow:focus-within{border-color:var(--ac)}
+textarea#inp{flex:1;background:none;border:none;outline:none;resize:none;
+  font-family:'Sora',sans-serif;font-size:13.5px;color:var(--tx);line-height:1.6;
+  max-height:130px;min-height:22px;overflow-y:auto;scrollbar-width:none}
+textarea#inp::placeholder{color:var(--tx3)}
+textarea#inp::-webkit-scrollbar{display:none}
+.sbtn{width:32px;height:32px;border-radius:var(--rs);background:var(--ac);border:none;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:opacity .2s,transform .15s;color:#fff}
+.sbtn:hover:not(:disabled){opacity:.85;transform:scale(1.06)}
+.sbtn:disabled{opacity:.3;cursor:not-allowed}
+.ifooter{display:flex;align-items:center;gap:10px;margin-top:7px}
+.ihint{font-size:11px;color:var(--tx3)}
+.chips{display:flex;gap:5px;margin-left:auto}
+.chip{padding:3px 9px;border-radius:20px;font-size:10px;font-family:'JetBrains Mono',monospace;
+  border:1px solid var(--bd);color:var(--tx2);background:none;cursor:pointer;transition:all var(--t)}
+.chip:hover,.chip.on{border-color:var(--ac);color:var(--ac);background:var(--acg)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--sc);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="shead">
+    <div class="logo-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 0 1 9 9c0 3.18-1.65 5.97-4.13 7.6L12 22l-4.87-3.4A9 9 0 0 1 12 2z"/><circle cx="12" cy="11" r="3"/></svg>
+    </div>
+    <span class="logo-txt">Mind<span>LM</span></span>
+  </div>
+
+  <div class="sbody">
+    <div class="slabel">Navigation</div>
+    <button class="nbtn on">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
+    </button>
+    <button class="nbtn" onclick="showInfo()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Model Info
+    </button>
+    <button class="nbtn" onclick="clearChat()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>Clear Chat
+    </button>
+
+    <div class="slabel">Sampling Params</div>
+    <div class="prm">
+      <div class="ptop"><span class="pname">Temperature</span><span class="pval" id="vt">0.80</span></div>
+      <input type="range" id="st" min="0.1" max="2.5" step="0.05" value="0.8" oninput="$$('vt').textContent=parseFloat(this.value).toFixed(2)">
+    </div>
+    <div class="prm">
+      <div class="ptop"><span class="pname">Top-P (nucleus)</span><span class="pval" id="vp">0.92</span></div>
+      <input type="range" id="sp" min="0.1" max="1.0" step="0.01" value="0.92" oninput="$$('vp').textContent=parseFloat(this.value).toFixed(2)">
+    </div>
+    <div class="prm">
+      <div class="ptop"><span class="pname">Top-K</span><span class="pval" id="vk">50</span></div>
+      <input type="range" id="sk" min="0" max="150" step="1" value="50" oninput="$$('vk').textContent=this.value==0?'OFF':this.value">
+    </div>
+    <div class="prm">
+      <div class="ptop"><span class="pname">Max Tokens</span><span class="pval" id="vm">100</span></div>
+      <input type="range" id="sm" min="20" max="400" step="10" value="100" oninput="$$('vm').textContent=this.value">
+    </div>
+    <div class="prm">
+      <div class="ptop"><span class="pname">Show Probabilities</span><span class="pval" id="vsp">ON</span></div>
+      <input type="range" id="ssp" min="0" max="1" step="1" value="1" oninput="$$('vsp').textContent=this.value=='1'?'ON':'OFF'">
+    </div>
+  </div>
+
+  <div class="sfoot">
+    <button class="nbtn" onclick="toggleTheme()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>Toggle Theme
+    </button>
+    <button class="nbtn" onclick="retrain()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-5"/></svg>Retrain Model
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-title">MindLM</div>
+    <div class="tb-sub" id="meta">Initializing…</div>
+    <div class="tb-right">
+      <div class="schip"><div class="sdot busy" id="sdot"></div><span id="stxt">Loading…</span></div>
+      <button class="ibtn" title="Toggle theme" onclick="toggleTheme()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="msgs" id="msgs">
+    <div class="welcome" id="wlc">
+      <div class="wi">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 0 1 9 9c0 3.18-1.65 5.97-4.13 7.6L12 22l-4.87-3.4A9 9 0 0 1 12 2z"/><circle cx="12" cy="11" r="3"/></svg>
+      </div>
+      <h2>MindLM is ready</h2>
+      <p>Neural language model trained from scratch on 583 lines of rich text. Type a seed phrase and watch it continue your thought.</p>
+    </div>
+  </div>
+
+  <div class="iarea">
+    <div class="irow">
+      <textarea id="inp" rows="1" placeholder="Type a seed phrase to continue…" onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+      <button class="sbtn" id="sbtn" onclick="send()" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div class="ifooter">
+      <span class="ihint" id="hint">Training model — please wait…</span>
+      <div class="chips">
+        <span class="chip on" id="cc" onclick="switchMode('char')">char-level</span>
+        <span class="chip" id="cw" onclick="switchMode('word')">word-level</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const $$ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ═══════════════════════════════════════════════
+   NEURAL LANGUAGE MODEL — built from scratch
+   Architecture: Embed → FC+ReLU → FC+ReLU → FC+ReLU → Softmax
+   Optimizer: Adam with bias correction
+   Sampling: Temperature + Top-K + Top-P (nucleus)
+═══════════════════════════════════════════════ */
+
+class NanoLM {
+  constructor(V, C, E, H) {
+    this.V=V; this.C=C; this.E=E; this.H=H; this.step=0;
+    const rn=(n,s)=>{ const a=new Float32Array(n); for(let i=0;i<n;i++){const u=Math.random()+1e-9,v=Math.random();a[i]=s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);} return a; };
+    const z=n=>new Float32Array(n);
+    // Weights — 3 hidden layers for more depth
+    this.Wemb=rn(V*E,.4);
+    this.W1=rn(C*E*H,Math.sqrt(2/(C*E))); this.b1=z(H);
+    this.W2=rn(H*H,Math.sqrt(2/H));       this.b2=z(H);
+    this.W3=rn(H*H,Math.sqrt(2/H));       this.b3=z(H);
+    this.W4=rn(H*V,.02);                   this.b4=z(V);
+    // Adam moments
+    this.pn='Wemb,W1,b1,W2,b2,W3,b3,W4,b4'.split(',');
+    this.m={}; this.v={}; this.g={};
+    for(const p of this.pn){ this.m[p]=z(this[p].length); this.v[p]=z(this[p].length); this.g[p]=z(this[p].length); }
+  }
+
+  pc(){ return this.pn.reduce((s,p)=>s+this[p].length,0); }
+  zg(){ for(const p of this.pn) this.g[p].fill(0); }
+
+  fwd(ctx){
+    const {V,C,E,H}=this;
+    // Embedding lookup + flatten
+    const emb=new Float32Array(C*E);
+    for(let i=0;i<C;i++){ const ci=ctx[i]%V; for(let j=0;j<E;j++) emb[i*E+j]=this.Wemb[ci*E+j]; }
+    // Layer 1
+    const p1=new Float32Array(H);
+    for(let j=0;j<H;j++){ let s=this.b1[j]; for(let i=0;i<C*E;i++) s+=emb[i]*this.W1[i*H+j]; p1[j]=s; }
+    const h1=p1.map(x=>x>0?x:x*.05); // leaky relu
+    // Layer 2
+    const p2=new Float32Array(H);
+    for(let j=0;j<H;j++){ let s=this.b2[j]; for(let i=0;i<H;i++) s+=h1[i]*this.W2[i*H+j]; p2[j]=s; }
+    const h2=p2.map(x=>x>0?x:x*.05);
+    // Layer 3
+    const p3=new Float32Array(H);
+    for(let j=0;j<H;j++){ let s=this.b3[j]; for(let i=0;i<H;i++) s+=h2[i]*this.W3[i*H+j]; p3[j]=s; }
+    const h3=p3.map(x=>x>0?x:x*.05);
+    // Output
+    const lo=new Float32Array(V);
+    for(let j=0;j<V;j++){ let s=this.b4[j]; for(let i=0;i<H;i++) s+=h3[i]*this.W4[i*V+j]; lo[j]=s; }
+    return {emb,p1,h1,p2,h2,p3,h3,lo};
+  }
+
+  sm(lo,t=1){ let mx=lo[0]; for(const l of lo) if(l>mx)mx=l; const ex=lo.map(l=>Math.exp((l-mx)/Math.max(t,.01))); const s=ex.reduce((a,b)=>a+b,0); return ex.map(x=>x/s); }
+
+  loss(lo,tgt){ const p=this.sm(lo); return -Math.log(Math.max(p[tgt],1e-9)); }
+
+  bwd(ctx,cache,tgt){
+    const {V,C,E,H}=this; const {emb,p1,h1,p2,h2,p3,h3,lo}=cache; const g=this.g;
+    const pr=this.sm(lo); const dL=new Float32Array(pr); dL[tgt]-=1;
+    for(let i=0;i<H;i++) for(let j=0;j<V;j++) g.W4[i*V+j]+=h3[i]*dL[j];
+    for(let j=0;j<V;j++) g.b4[j]+=dL[j];
+    const dh3=new Float32Array(H); for(let i=0;i<H;i++) for(let j=0;j<V;j++) dh3[i]+=this.W4[i*V+j]*dL[j];
+    const dp3=dh3.map((d,i)=>p3[i]>0?d:d*.05);
+    for(let i=0;i<H;i++) for(let j=0;j<H;j++) g.W3[i*H+j]+=h2[i]*dp3[j];
+    for(let j=0;j<H;j++) g.b3[j]+=dp3[j];
+    const dh2=new Float32Array(H); for(let i=0;i<H;i++) for(let j=0;j<H;j++) dh2[i]+=this.W3[i*H+j]*dp3[j];
+    const dp2=dh2.map((d,i)=>p2[i]>0?d:d*.05);
+    for(let i=0;i<H;i++) for(let j=0;j<H;j++) g.W2[i*H+j]+=h1[i]*dp2[j];
+    for(let j=0;j<H;j++) g.b2[j]+=dp2[j];
+    const dh1=new Float32Array(H); for(let i=0;i<H;i++) for(let j=0;j<H;j++) dh1[i]+=this.W2[i*H+j]*dp2[j];
+    const dp1=dh1.map((d,i)=>p1[i]>0?d:d*.05);
+    for(let i=0;i<C*E;i++) for(let j=0;j<H;j++) g.W1[i*H+j]+=emb[i]*dp1[j];
+    for(let j=0;j<H;j++) g.b1[j]+=dp1[j];
+    const de=new Float32Array(C*E); for(let i=0;i<C*E;i++) for(let j=0;j<H;j++) de[i]+=this.W1[i*H+j]*dp1[j];
+    for(let pp=0;pp<C;pp++){ const ci=ctx[pp]%V; for(let j=0;j<E;j++) g.Wemb[ci*E+j]+=de[pp*E+j]; }
+  }
+
+  adam(lr,b1=.9,b2=.999,eps=1e-8){
+    this.step++; const bc1=1-Math.pow(b1,this.step),bc2=1-Math.pow(b2,this.step);
+    for(const p of this.pn){ const w=this[p],g=this.g[p],m=this.m[p],v=this.v[p]; for(let i=0;i<w.length;i++){ m[i]=b1*m[i]+(1-b1)*g[i]; v[i]=b2*v[i]+(1-b2)*g[i]*g[i]; w[i]-=lr*(m[i]/bc1)/(Math.sqrt(v[i]/bc2)+eps); } }
+  }
+
+  gen(seedIds, maxLen, temp, topK, topP, vocab){
+    const ctx=[...seedIds.slice(-this.C)];
+    while(ctx.length<this.C) ctx.unshift(0);
+    let out=[], lastProbs=null;
+    for(let s=0;s<maxLen;s++){
+      const {lo}=this.fwd(ctx.slice(-this.C));
+      let pr=Array.from(this.sm(lo,temp));
+      if(topK>0&&topK<this.V){ const srt=[...pr.map((p,i)=>[p,i])].sort((a,b)=>b[0]-a[0]); const cut=srt[Math.min(topK,this.V)-1][0]; pr=pr.map(p=>p>=cut?p:0); const ss=pr.reduce((a,b)=>a+b,0); pr=pr.map(p=>p/ss); }
+      if(topP<.999){ const srt=[...pr.map((p,i)=>[p,i])].sort((a,b)=>b[0]-a[0]); let cm=0; const kp=new Set(); for(const [p,i] of srt){kp.add(i);cm+=p;if(cm>=topP)break;} pr=pr.map((p,i)=>kp.has(i)?p:0); const ss=pr.reduce((a,b)=>a+b,0); pr=pr.map(p=>p/ss); }
+      if(s===maxLen-1){ lastProbs=[...pr.map((p,i)=>[p,i])].sort((a,b)=>b[0]-a[0]).slice(0,7).map(([p,i])=>({token:vocab.i2c[i]??'?',prob:p})); }
+      let r=Math.random(),cm=0,idx=pr.length-1; for(let i=0;i<pr.length;i++){cm+=pr[i];if(r<=cm){idx=i;break;}} out.push(idx); ctx.push(idx);
+    }
+    return {ids:out,lastProbs};
+  }
+}
+
+/* ── Tokenizer ── */
+function buildVocab(text,mode){
+  if(mode==='char'){ const cs=[...new Set(text)].sort(),c2i={},i2c={}; cs.forEach((c,i)=>{c2i[c]=i;i2c[i]=c;}); return{vocab:cs,c2i,i2c,size:cs.length}; }
+  const ws=text.toLowerCase().match(/\b\w+\b/g)||[],un=[...new Set(ws)].sort(),c2i={},i2c={}; un.forEach((w,i)=>{c2i[w]=i;i2c[i]=w;}); return{vocab:un,c2i,i2c,size:un.length};
+}
+function tokenize(text,vocab,mode){ if(mode==='char') return text.split('').map(c=>vocab.c2i[c]??0); return(text.toLowerCase().match(/\b\w+\b/g)||[]).map(w=>vocab.c2i[w]??0); }
+function detok(ids,vocab,mode){ if(mode==='char') return ids.map(i=>vocab.i2c[i]??'').join(''); return ids.map(i=>vocab.i2c[i]??'').join(' '); }
+
+/* ── State ── */
+let MODEL=null,VOCAB=null,MODE='char',READY=false,TRAINING=false;
+
+/* ── Set status ── */
+function setStatus(txt,on){
+  $$('stxt').textContent=txt;
+  $$('sdot').className='sdot '+(on?'on':'busy');
+  if(on){ $$('sbtn').disabled=false; $$('hint').textContent='Enter ↵ to send · Shift+Enter for new line'; }
+  else { $$('sbtn').disabled=true; }
+}
+
+/* ── Shuffle ── */
+function shuf(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
+
+/* ── Training ── */
+async function train(mode){
+  READY=false; TRAINING=true; setStatus('Loading…',false);
+  $$('hint').textContent='Fetching training data…';
+  let text;
+  try{ const r=await fetch('training_data.txt'); if(!r.ok)throw 0; text=await r.text(); }
+  catch(e){ text=FALLBACK; }
+  VOCAB=buildVocab(text,mode);
+  const tokens=tokenize(text,VOCAB,mode);
+  const V=VOCAB.size;
+  // ── Model config by mode
+  const C=mode==='char'?8:5, E=mode==='char'?48:64, H=mode==='char'?256:320;
+  const lr=mode==='char'?3e-3:2.5e-3, EPS=mode==='char'?80:60, BS=48;
+  MODEL=new NanoLM(V,C,E,H);
+  const pc=MODEL.pc(), pcStr=pc>999?(pc/1000).toFixed(1)+'K':pc;
+  $$('meta').textContent=`${mode}-level · V=${V} · C=${C} · E=${E} · H=${H}×3 · ${pcStr} params`;
+  // Build samples
+  const xs=[],ys=[];
+  for(let i=0;i<tokens.length-C;i++){xs.push(tokens.slice(i,i+C));ys.push(tokens[i+C]);}
+  $$('hint').textContent=`Training ${mode}-level (${EPS} epochs, ${xs.length} samples)…`;
+  const idx=Array.from({length:xs.length},(_,i)=>i);
+  for(let ep=0;ep<EPS&&TRAINING;ep++){
+    shuf(idx); let epL=0,bt=0;
+    for(let b=0;b<idx.length;b+=BS){
+      MODEL.zg(); let bL=0; const end=Math.min(b+BS,idx.length);
+      for(let s=b;s<end;s++){ const i=idx[s]; const cache=MODEL.fwd(xs[i]); bL+=MODEL.loss(cache.lo,ys[i]); MODEL.bwd(xs[i],cache,ys[i]); }
+      const sz=end-b; MODEL.pn.forEach(p=>{for(let i=0;i<MODEL.g[p].length;i++)MODEL.g[p][i]/=sz;});
+      MODEL.adam(lr); epL+=bL/sz; bt++;
+      if(bt%12===0) await sleep(0);
+    }
+    const loss=(epL/bt).toFixed(3),ppl=Math.exp(epL/bt).toFixed(1);
+    setStatus(`Training ${ep+1}/${EPS} · loss ${loss}`,false);
+    $$('hint').textContent=`Epoch ${ep+1}/${EPS} · loss=${loss} · ppl=${ppl}`;
+    await sleep(0);
+  }
+  READY=true; TRAINING=false;
+  setStatus('Ready',true);
+}
+
+/* ── Send message ── */
+async function send(){
+  if(!READY||TRAINING) return;
+  const ta=$$('inp'); const txt=ta.value.trim(); if(!txt) return;
+  ta.value=''; ta.style.height='auto'; hideWelcome();
+  addUser(txt);
+  const typing=addTyping();
+  await sleep(280+Math.random()*200);
+  const T=parseFloat($$('st').value),P=parseFloat($$('sp').value),K=parseInt($$('sk').value),M=parseInt($$('sm').value),SP=$$('ssp').value==='1';
+  const seeds=tokenize(txt,VOCAB,MODE);
+  const {ids,lastProbs}=MODEL.gen(seeds,M,T,K,P,VOCAB);
+  const response=detok(ids,VOCAB,MODE);
+  typing.remove();
+  addAI(response,SP?lastProbs:null,{T,P,K});
+  scrollDn();
+}
+
+function hideWelcome(){ const w=$$('wlc'); if(w)w.style.display='none'; }
+function scrollDn(){ const m=$$('msgs'); m.scrollTop=m.scrollHeight; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function repr(t){ return t==='\n'?'↵':t===' '?'·':t; }
+
+function addUser(txt){
+  const r=document.createElement('div'); r.className='mr user';
+  r.innerHTML=`<div class="av usr">U</div><div class="bub usr">${esc(txt)}</div>`;
+  $$('msgs').appendChild(r); scrollDn();
+}
+
+function addAI(txt,probs,p){
+  const r=document.createElement('div'); r.className='mr';
+  let ph='';
+  if(probs&&probs.length){ const bars=probs.map(({token,prob})=>`<div class="pi"><div class="ptok">${esc(repr(token))}</div><div class="pbw"><div class="pbf" style="width:${(prob*100).toFixed(1)}%"></div></div><div class="ppct">${(prob*100).toFixed(1)}%</div></div>`).join(''); ph=`<div class="psec"><div class="ptitle">Next-token probs · T=${p.T.toFixed(2)} P=${p.P.toFixed(2)} K=${p.K||'—'}</div><div class="plist">${bars}</div></div>`; }
+  r.innerHTML=`<div class="av ai">M</div><div class="bub ai">${esc(txt)}${ph}</div>`;
+  $$('msgs').appendChild(r);
+}
+
+function addTyping(){
+  const r=document.createElement('div'); r.className='mr';
+  r.innerHTML='<div class="av ai">M</div><div class="bub ai"><div class="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div></div>';
+  $$('msgs').appendChild(r); scrollDn(); return r;
+}
+
+function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,130)+'px'; }
+function toggleTheme(){ const h=document.documentElement; h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark'); }
+function clearChat(){ $$('msgs').innerHTML=`<div class="welcome" id="wlc"><div class="wi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 0 1 9 9c0 3.18-1.65 5.97-4.13 7.6L12 22l-4.87-3.4A9 9 0 0 1 12 2z"/><circle cx="12" cy="11" r="3"/></svg></div><h2>MindLM is ready</h2><p>Neural language model trained from scratch on 583 lines of rich text. Type a seed phrase and watch it continue your thought.</p></div>`; }
+function showInfo(){ if(!MODEL)return alert('Not trained yet.'); const {V,C,E,H}=MODEL; alert(`MindLM — Model Info\n\nMode: ${MODE}\nVocab size: ${V}\nContext length: ${C}\nEmbed dim: ${E}\nHidden dim: ${H} (×3 layers + leaky ReLU)\nTotal parameters: ${MODEL.pc().toLocaleString()}\nOptimizer: Adam (β₁=0.9, β₂=0.999)\nSampling: Temperature + Top-K + Top-P`); }
+async function retrain(){ TRAINING=false; clearChat(); await sleep(100); await train(MODE); }
+async function switchMode(m){ if(m===MODE&&READY)return; MODE=m; $$('cc').classList.toggle('on',m==='char'); $$('cw').classList.toggle('on',m==='word'); clearChat(); await train(m); }
+
+// ── Fallback training data (used when training_data.txt cannot be fetched) ──
+const FALLBACK = `the sun rises every morning painting the sky with gold and amber light
+the moon pulls the tides of every ocean on the surface of the earth
+stars burn for billions of years fusing hydrogen into helium in their cores
+the milky way galaxy contains over two hundred billion individual stars
+black holes are regions of space where gravity is so strong nothing can escape
+light travels at three hundred thousand kilometers per second through a vacuum
+the universe is approximately thirteen point eight billion years old
+dark matter makes up most of the mass of the universe but cannot be seen directly
+galaxies cluster together in massive cosmic webs separated by vast empty voids
+neutron stars are so dense a teaspoon of their material weighs a billion tons
+comets are frozen remnants from the formation of the solar system
+asteroids orbit the sun in a belt between mars and jupiter
+the planet jupiter is so large it could contain all other planets inside it
+saturn has rings made of billions of ice and rock particles orbiting it
+uranus rotates on its side with an axial tilt of ninety eight degrees
+neptune has winds faster than any other planet in the solar system
+mercury has no atmosphere and temperatures swing from extremely hot to freezing cold
+venus has a thick atmosphere of carbon dioxide that traps intense heat near the surface
+mars has the tallest volcano in the solar system called olympus mons
+the earth is the only known planet with liquid water and life on its surface
+the ocean covers seventy one percent of the surface of the earth
+the pacific ocean is larger than all land masses on earth combined
+the deepest point in the ocean is the mariana trench at eleven kilometers down
+coral reefs are among the most biodiverse ecosystems on the entire planet
+the amazon river carries more fresh water than any other river on earth
+the nile river flows northward through eleven countries in northeastern africa
+the sahara desert is the largest hot desert on the surface of the earth
+the antarctic ice sheet contains seventy percent of all fresh water on earth
+mount everest is the highest point above sea level on the surface of earth
+the grand canyon was carved over millions of years by the colorado river
+earthquakes occur when tectonic plates shift suddenly and release stored energy
+volcanoes erupt when magma from the mantle pushes through the earth crust
+tsunamis are giant ocean waves caused by underwater earthquakes or eruptions
+hurricanes form over warm tropical ocean water and can span hundreds of kilometers
+lightning strikes the earth approximately one hundred times every single second
+rainbows form when sunlight refracts and reflects through water droplets in the air
+snow crystals are always six sided but no two snowflakes are exactly alike
+glaciers move slowly downhill under their own enormous accumulated weight
+forests cover about thirty percent of the total land surface of the earth
+the amazon rainforest produces about twenty percent of the earth total oxygen
+trees communicate with each other through underground fungal mycelium networks
+plants grow toward sources of light through a process called phototropism
+flowers evolved bright colors and sweet nectar to attract pollinators like bees
+seeds can remain dormant for thousands of years and still successfully germinate
+mushrooms are the fruiting bodies of vast underground fungal organisms
+bacteria are the most numerous living organisms found on the planet earth
+viruses are not technically alive but can replicate inside living host cells
+the human body contains more bacterial cells than it does human cells
+dna is a double helix molecule that carries all genetic instructions for life
+genes are segments of dna that encode specific proteins and biological traits
+mutations in dna can cause disease or drive the process of evolutionary change
+evolution happens through natural selection acting on variation over many generations
+charles darwin proposed the theory of evolution by natural selection in 1859
+all life on earth shares a common ancestor that lived billions of years ago
+the first life on earth emerged in ancient oceans over three billion years ago
+photosynthesis transformed the early earth atmosphere by releasing oxygen into it
+the cambrian explosion was a rapid diversification of complex life forms
+dinosaurs ruled the earth for over one hundred sixty million years of history
+an asteroid impact sixty six million years ago caused a mass extinction event
+mammals became the dominant large animals after the extinction of the dinosaurs
+primates evolved in tropical forests and developed grasping hands and forward vision
+humans share ninety eight point seven percent of their dna with chimpanzees
+the human brain weighs about one point four kilograms on average
+the brain contains roughly eighty six billion interconnected neurons
+each neuron can connect to thousands of other neurons through specialized synapses
+the brain uses about twenty percent of the body total energy despite its small size
+consciousness remains one of the deepest unsolved mysteries in all of science
+sleep allows the brain to consolidate memories and clear metabolic waste products
+dreams occur mostly during rapid eye movement sleep also called rem sleep
+the human heart beats over one hundred thousand times per single day
+blood travels through sixty thousand miles of blood vessels throughout the body
+the immune system can distinguish between self cells and foreign invaders
+vaccines train the immune system to recognize and destroy specific pathogens
+antibiotics kill bacteria but have absolutely no effect on viral infections
+the liver performs over five hundred different chemical functions in the body
+the kidneys filter about one hundred eighty liters of blood every single day
+bones are living tissue that constantly rebuild and reshape themselves throughout life
+muscles generate mechanical force through the sliding of protein filaments
+the skin is the largest single organ of the entire human body
+nerve signals travel through the body at speeds up to one hundred twenty meters per second
+the eye can distinguish about ten million different colors and shades
+the ear can detect sounds ranging from twenty to twenty thousand hertz frequency
+smell is the most directly connected sense to memory and emotional experience
+taste is a combination of smell texture temperature and chemical detection together
+pain signals protect the body by warning of potential damage or physical threat
+the human genome contains about three billion base pairs of dna
+genetic inheritance follows patterns first mathematically described by gregor mendel
+stem cells can differentiate into virtually any type of cell found in the body
+cancer occurs when cells begin dividing uncontrollably while ignoring normal signals
+the discovery of penicillin by alexander fleming saved countless millions of lives
+surgery has advanced from crude amputation to precise robotic microsurgery
+medical imaging allows doctors to see inside the living body without surgical cutting
+the average human lifespan has more than doubled over the last two centuries
+language emerged in modern humans at least fifty thousand years before the present
+writing was independently invented in several different civilizations around the world
+the sumerian writing system called cuneiform is among the oldest known scripts
+the printing press invented by gutenberg democratized access to written knowledge
+books have preserved human thought and culture across thousands of years of history
+libraries were the internet of the ancient world storing all collective knowledge
+philosophy asks the deepest possible questions about existence knowledge and morality
+socrates taught that the unexamined life is not worth living for any human being
+plato described a world of perfect forms that all physical things imperfectly imitate
+aristotle classified living things and described formal logic as a rigorous system
+confucius taught that virtue and social harmony come f`;
+
+train('char');
+</script>
+</body>
+</html>
