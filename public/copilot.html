@@ -1248,13 +1248,13 @@ async function callAI(modelKey, prompt) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   let data;
 
-const text = await response.text();
+const text = await response.json();
 
-
+data = text?.choices?.[0]?.message?.content;
   
   
 
-  const content = text;
+  const content = data;
   if (!content) throw new Error('Empty AI response');
   return content;
 }
