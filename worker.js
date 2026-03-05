@@ -36,17 +36,17 @@ const corsHeaders = {
   let password = "";
 
   const MODEL_CONFIG = {
-    "gpt-oss": { model: "openai/gpt-oss-20b:free" },
-    "gpt-oss-120b": { model: "openai/gpt-oss-120b:free" },
-    "gpt-2.1": { model: "openai/gpt-2.1-chat:free" },
-    "gemma-27b": { model: "google/gemma-3-27b-it:free" },
-    "qwen-next-80b": { model: "qwen/qwen3-next-80b-a3b-instruct:free" },
-    "qwen-coder": { model: "qwen/qwen3-coder:free" },
-    "glm-4.5-air": { model: "z-ai/glm-4.5-air:free" },
+    "gpt-oss": { model: "openai/gpt-oss-20b" },
+    "gpt-oss-120b": { model: "openai/gpt-oss-120b" },
+    "gpt-2.1": { model: "openai/gpt-2.1-chat" },
+    "gemma-27b": { model: "google/gemma-3-27b-it" },
+    "qwen-next-80b": { model: "qwen/qwen3-next-80b-a3b-instruct" },
+    "qwen-coder": { model: "qwen/qwen3-coder" },
+    "glm-4.5-air": { model: "z-ai/glm-4.5-air" },
     "code-mon-special": { model: "openrouter/free" },
-    "step-3.5": { model: "stepfun/step-3.5-flash:free"},
-    "trinity": { model: "arcee-ai/trinity-large-preview:free"},
-    "nemotron": { model: "nvidia/nemotron-3-nano-30b-a3b:free"},
+    "step-3.5": { model: "stepfun/step-3.5-flash"},
+    "trinity": { model: "arcee-ai/trinity-large-preview"},
+    "nemotron": { model: "nvidia/nemotron-3-nano-30b-a3b"},
 
     "qwen-235b": { model: "qwen/qwen3-235b-a22b-thinking-2507" },
     "o3-mini": { model: "openai/o3-mini" },
