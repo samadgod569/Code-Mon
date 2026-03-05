@@ -1248,7 +1248,7 @@ async function callAI(modelKey, prompt) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   let data;
 
-const text = await res.text();
+const text = await response.text();
 
 try {
   data = JSON.parse(text);
