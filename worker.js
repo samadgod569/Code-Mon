@@ -58,7 +58,7 @@ const corsHeaders = {
     "sonnet": { model: "anthropic/claude-3.5-sonnet" },
     "sonnet-4.6": { model: "anthropic/claude-sonnet-4.6" },
     "haiku": { model: "anthropic/claude-3.5-haiku" },
-    "opus-4.6": { model: "anthropic/claude-opus-4.6" },
+    "opus-4.6": { model: "anthropic/claude-opus-4-6" },
 
     "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct" },
     "nano-banana": { model: "google/gemini-3.1-flash-image-preview"},
