@@ -174,7 +174,7 @@ max_tokens:128000
     const res = await fetch(`https://api.bytez.com/models/v2/${cfg.model}`, {
       method: "POST",
       headers: {
-        "Authorization": apiKey,
+"Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(requestBody)
