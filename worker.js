@@ -56,7 +56,7 @@ const corsHeaders = {
     "gpt-5.3-codex": { model: "openai/gpt-5.3-codex" },
 
     "sonnet": { model: "anthropic/claude-3.5-sonnet" },
-    "sonnet-4.6": { model: "anthropic/claude-sonnet-4.6" },
+    "sonnet-4.6": { model: "anthropic/claude-sonnet-4-6" },
     "haiku": { model: "anthropic/claude-3.5-haiku" },
     "opus-4.6": { model: "anthropic/claude-opus-4-6" },
 
