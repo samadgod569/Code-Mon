@@ -1123,7 +1123,7 @@ async function handleCodeMode(userMsg, attachments, chat, thinkingEl) {
 
   updateThinking(thinkingEl, 'Planning...');
   const planPrompt = `${P_EXPAND}\n\nRequest: "${userMsg}"${attachCtx}\nHistory: ${getHist(chat)}${thinkText ? '\n\nPre-analysis:\n'+thinkText : ''}`;
-  const plan = await callAI('opus-4.6', planPrompt);
+  const plan = await callAI('gpt-oss', planPrompt);
 
   removeThinking(thinkingEl);
   const planMsgEl = showPlanMessage(plan, thinkText);
