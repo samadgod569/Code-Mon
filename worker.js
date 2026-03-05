@@ -164,10 +164,9 @@ const corsHeaders = {
     messages: [
       { role: "user", content: question }
     ],
-    stream:true,
+  "stream": false,
 params:{
-max_tokens:128000,
-temperature:0.5
+max_tokens:128000
 }
   };
 
