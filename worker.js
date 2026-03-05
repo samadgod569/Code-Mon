@@ -27,6 +27,178 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+
+
+    if (path === "/api/agents") {
+  let question = "";
+  let modelKey = "gpt-oss";
+  let username = "";
+  let password = "";
+
+  const MODEL_CONFIG = {
+    "gpt-oss": { model: "openai/gpt-oss-20b:free" },
+    "gpt-oss-120b": { model: "openai/gpt-oss-120b:free" },
+    "gpt-2.1": { model: "openai/gpt-2.1-chat:free" },
+    "gemma-27b": { model: "google/gemma-3-27b-it:free" },
+    "qwen-next-80b": { model: "qwen/qwen3-next-80b-a3b-instruct:free" },
+    "qwen-coder": { model: "qwen/qwen3-coder:free" },
+    "glm-4.5-air": { model: "z-ai/glm-4.5-air:free" },
+    "code-mon-special": { model: "openrouter/free" },
+    "step-3.5": { model: "stepfun/step-3.5-flash:free"},
+    "trinity": { model: "arcee-ai/trinity-large-preview:free"},
+    "nemotron": { model: "nvidia/nemotron-3-nano-30b-a3b:free"},
+
+    "qwen-235b": { model: "qwen/qwen3-235b-a22b-thinking-2507" },
+    "o3-mini": { model: "openai/o3-mini" },
+    "gpt-4.1": { model: "openai/gpt-4.1" },
+    "gpt-4o": { model: "openai/gpt-4o" },
+    "gpt-5.2": { model: "openai/gpt-5.2" },
+    "gpt-5.3-codex": { model: "openai/gpt-5.3-codex" },
+
+    "sonnet": { model: "anthropic/claude-3.5-sonnet" },
+    "sonnet-4.6": { model: "anthropic/claude-sonnet-4.6" },
+    "haiku": { model: "anthropic/claude-3.5-haiku" },
+    "opus-4.6": { model: "anthropic/claude-opus-4.6" },
+
+    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct" },
+    "nano-banana": { model: "google/gemini-3.1-flash-image-preview"},
+    "gemini-3.1-pro": { model: "google/gemini-3.1-pro-preview-customtools"},
+    "grok-4.1": { model:"x-ai/grok-4.1-fast"},
+    "grok-4.0": { model: "x-ai/grok-4-fast"},
+    "llama-4": { model: "meta-llama/llama-4-maverick"},
+    "llama-4-scout": { model: "meta-llama/llama-4-scout"},
+    "deepseek-3.1": { model: "nex-agi/deepseek-v3.1-nex-n1" },
+    "deepseek-3.2-special": { model: "deepseek/deepseek-v3.2-speciale" },
+    "deepseek-3.2": { model: "deepseek/deepseek-v3.2"},
+    "grok-code": { model: "x-ai/grok-code-fast-1"},
+    "mistral-8b-2512": { model: "mistralai/ministral-8b-2512"},
+    "mistral-14b-2512": { model: "mistralai/ministral-14b-2512"},
+    "mistral-code": { model: "mistralai/codestral-2508"}
+  };
+
+  if (request.method === "GET") {
+    question = url.searchParams.get("question") || "";
+    modelKey = url.searchParams.get("model") || modelKey;
+    username = url.searchParams.get("username") || "";
+    password = url.searchParams.get("password") || "";
+  } else if (request.method === "POST") {
+    try {
+      const body = await request.json();
+      question = body.question || "";
+      modelKey = body.model || modelKey;
+      username = body.username || "";
+      password = body.password || "";
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  }
+
+  if (!question) {
+    return new Response(JSON.stringify({ error: "Missing question" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  if (!username || !password) {
+    return new Response(JSON.stringify({ error: "Missing username or password" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const storedPassword = await env.Pass.get(username);
+
+  if (!storedPassword || storedPassword !== password) {
+    return new Response(JSON.stringify({ error: "Invalid credentials" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const balanceRaw = await env.PAY.get(username);
+  const balance = Number(balanceRaw);
+
+  if (!balanceRaw || isNaN(balance)) {
+    return new Response(JSON.stringify({ error: "Balance not found" }), {
+      status: 402,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  if (balance < 4) {
+    return new Response(JSON.stringify({ error: "Insufficient balance" }), {
+      status: 402,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const newBalance = balance - 4;
+  await env.PAY.put(username, String(newBalance));
+
+  const cfg = MODEL_CONFIG[modelKey];
+
+  if (!cfg) {
+    return new Response(JSON.stringify({
+      error: "Invalid model",
+      allowed: Object.keys(MODEL_CONFIG)
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const apiKey = await env.FILES.get("OPRT");
+
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: "Bytez API key missing" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const requestBody = {
+    messages: [
+      { role: "user", content: question }
+    ],
+    params: {
+      max_tokens: 128000
+    }
+  };
+
+  try {
+    const res = await fetch(`https://api.bytez.com/models/v2/${cfg.model}`, {
+      method: "POST",
+      headers: {
+        "Authorization": apiKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    return new Response(res.body, {
+      status: res.status,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-store"
+      }
+    });
+
+  } catch (e) {
+    return new Response(JSON.stringify({
+      error: "Bytez request failed",
+      details: e.message
+    }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+    }
+
 if (path === "/api/game") {
 
 
