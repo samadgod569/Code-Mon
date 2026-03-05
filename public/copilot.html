@@ -1255,7 +1255,7 @@ try {
 } catch {
   data = { error: text };
 }
-  const content = data?.choices?.[0]?.message?.content;
+  const content = data;
   if (!content) throw new Error('Empty AI response');
   return content;
 }
