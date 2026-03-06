@@ -188,7 +188,7 @@ if (path === "/api/agents") {
 
   "llama-3-70b": { "model": "v2ray/Llama-3-70B" },
   "llama-3.1-8b": { "model": "meta-llama/Llama-3.1-8B" }
-  }
+  };
 
   if (request.method === "GET") {
     question = url.searchParams.get("question") || "";
