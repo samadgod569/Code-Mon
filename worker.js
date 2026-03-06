@@ -294,7 +294,9 @@ if (path === "/api/agents") {
     input: question,
     stream: true,
     params: {
-      max_tokens: 128000
+          "min_length": 2000,
+    "max_length": 128000,
+    "temperature": 0.5
     }
   };
 
