@@ -28,6 +28,138 @@ const corsHeaders = {
       });
 
 
+if (path === "/api/credits") {
+
+let username = "";
+let password = "";
+let plan = null;
+
+const PLANS = {
+  1: { shells: 100, credits: 30 },
+  2: { shells: 500, credits: 150 },
+  3: { shells: 1000, credits: 300 },
+  4: { shells: 5000, credits: 1500 },
+  5: { shells: 10000, credits: 3000 }
+};
+
+if (request.method === "GET") {
+
+  username = url.searchParams.get("username") || "";
+
+  if (!username) {
+    return new Response(JSON.stringify({ error: "Missing username" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const shellsRaw = await env.PAY.get(username);
+  const creditsRaw = await env.CREDITS.get(username);
+
+  const shells = Number(shellsRaw) || 0;
+  const credits = Number(creditsRaw) || 0;
+
+  return new Response(JSON.stringify({
+    username,
+    shells,
+    credits
+  }), {
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+if (request.method === "POST") {
+
+  try {
+    const body = await request.json();
+    username = body.username || "";
+    password = body.password || "";
+    plan = Number(body.plan);
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  if (!username || !password || !plan) {
+    return new Response(JSON.stringify({
+      error: "Missing username, password or plan"
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const storedPassword = await env.Pass.get(username);
+
+  if (!storedPassword || storedPassword !== password) {
+    return new Response(JSON.stringify({ error: "Invalid credentials" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const planData = PLANS[plan];
+
+  if (!planData) {
+    return new Response(JSON.stringify({
+      error: "Invalid plan",
+      allowed_plans: Object.keys(PLANS)
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const shellsRaw = await env.PAY.get(username);
+  const shells = Number(shellsRaw);
+
+  if (!shellsRaw || isNaN(shells)) {
+    return new Response(JSON.stringify({ error: "Shell balance not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  if (shells < planData.shells) {
+    return new Response(JSON.stringify({
+      error: "Not enough shells",
+      required: planData.shells,
+      current: shells
+    }), {
+      status: 402,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const newShells = shells - planData.shells;
+
+  const creditsRaw = await env.CREDITS.get(username);
+  const credits = Number(creditsRaw) || 0;
+
+  const newCredits = credits + planData.credits;
+
+  await env.PAY.put(username, String(newShells));
+  await env.CREDITS.put(username, String(newCredits));
+
+  return new Response(JSON.stringify({
+    success: true,
+    plan,
+    shells_spent: planData.shells,
+    credits_added: planData.credits,
+    shells_remaining: newShells,
+    credits_total: newCredits
+  }), {
+    headers: { "Content-Type": "application/json" }
+  });
+
+}
+
+}
+
+    
+
 if (path === "/api/agents") {
   let question = "";
   let modelKey = "gpt-oss";
