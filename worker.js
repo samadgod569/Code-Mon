@@ -167,45 +167,28 @@ if (path === "/api/agents") {
   let password = "";
 
   const MODEL_CONFIG = {
-    "gpt-oss": { model: "openai/gpt-oss-20b" },
-    "gpt-oss-120b": { model: "openai/gpt-oss-120b" },
-    "gpt-2.1": { model: "openai/gpt-2.1-chat" },
-    "gemma-27b": { model: "google/gemma-3-27b-it" },
-    "qwen-next-80b": { model: "qwen/qwen3-next-80b-a3b-instruct" },
-    "qwen-coder": { model: "qwen/qwen3-coder" },
-    "glm-4.5-air": { model: "z-ai/glm-4.5-air" },
-    "code-mon-special": { model: "openrouter/free" },
-    "step-3.5": { model: "stepfun/step-3.5-flash"},
-    "trinity": { model: "arcee-ai/trinity-large-preview"},
-    "nemotron": { model: "nvidia/nemotron-3-nano-30b-a3b"},
+  "gpt-5.2-pro": { "model": "openai/gpt-5.2-pro" },
+  "gpt-5.2": { "model": "openai/gpt-5.2" },
 
-    "qwen-235b": { model: "qwen/qwen3-235b-a22b-thinking-2507" },
-    "o3-mini": { model: "openai/o3-mini" },
-    "gpt-4.1": { model: "openai/gpt-4.1" },
-    "gpt-4o": { model: "openai/gpt-4o" },
-    "gpt-5.2": { model: "openai/gpt-5.2" },
-    "gpt-5.3-codex": { model: "openai/gpt-5.3-codex" },
+  "claude-opus-4.6": { "model": "anthropic/claude-opus-4-6" },
+  "claude-sonnet-4.6": { "model": "anthropic/claude-sonnet-4-6" },
 
-    "sonnet": { model: "anthropic/claude-3.5-sonnet" },
-    "sonnet-4.6": { model: "anthropic/claude-sonnet-4-6" },
-    "haiku": { model: "anthropic/claude-3.5-haiku" },
-    "opus-4.6": { model: "anthropic/claude-opus-4-6" },
+  "claude-opus-4.5": { "model": "anthropic/claude-opus-4-5" },
+  "claude-sonnet-4.5": { "model": "anthropic/claude-sonnet-4-5" },
+  "claude-haiku-4.5": { "model": "anthropic/claude-haiku-4-5-20251001" },
 
-    "llama-70b": { model: "meta-llama/llama-3.1-70b-instruct" },
-    "nano-banana": { model: "google/gemini-3.1-flash-image-preview"},
-    "gemini-3.1-pro": { model: "google/gemini-3.1-pro-preview-customtools"},
-    "grok-4.1": { model:"x-ai/grok-4.1-fast"},
-    "grok-4.0": { model: "x-ai/grok-4-fast"},
-    "llama-4": { model: "meta-llama/llama-4-maverick"},
-    "llama-4-scout": { model: "meta-llama/llama-4-scout"},
-    "deepseek-3.1": { model: "nex-agi/deepseek-v3.1-nex-n1" },
-    "deepseek-3.2-special": { model: "deepseek/deepseek-v3.2-speciale" },
-    "deepseek-3.2": { model: "deepseek/deepseek-v3.2"},
-    "grok-code": { model: "x-ai/grok-code-fast-1"},
-    "mistral-8b-2512": { model: "mistralai/ministral-8b-2512"},
-    "mistral-14b-2512": { model: "mistralai/ministral-14b-2512"},
-    "mistral-code": { model: "mistralai/codestral-2508"}
-  };
+  "gemini-3-pro": { "model": "google/gemini-3-pro-preview" },
+  "gemini-3.1-pro": { "model": "google/gemini-3.1-pro-preview" },
+
+  "qwen3-8b": { "model": "Qwen/Qwen3-8B" },
+  "qwen2-vl": { "model": "Qwen/Qwen2-VL-7B-Instruct" },
+
+  "deepseek-coder-1.3b": { "model": "deepseek-ai/deepseek-coder-1.3b-base" },
+  "deepseek-coder-33b": { "model": "deepseek-ai/deepseek-coder-33b-instruct" },
+
+  "llama-3-70b": { "model": "v2ray/Llama-3-70B" },
+  "llama-3.1-8b": { "model": "meta-llama/Llama-3.1-8B" }
+  }
 
   if (request.method === "GET") {
     question = url.searchParams.get("question") || "";
