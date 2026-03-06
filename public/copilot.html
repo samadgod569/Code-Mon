@@ -792,7 +792,7 @@ async function fetchInfoPrompt() {
 function populateModelSelect() {
   const sel = document.getElementById('modelSelect');
   sel.innerHTML = Object.keys(MODEL_CONFIG).map(key => `<option value="${key}">${MODEL_CONFIG[key].name}</option>`).join('');
-  sel.value = 'gpt-oss';
+  sel.value = 'claude-opus-4.6';
 }
 
 function loadTheme() {
@@ -1109,7 +1109,7 @@ async function handleCodeMode(userMsg, attachments, chat, thinkingEl) {
 
   updateThinking(thinkingEl, 'Planning...');
   const planPrompt = `${P_EXPAND}\n\nRequest: "${userMsg}"${attachCtx}\nHistory: ${getHist(chat)}${thinkText ? '\n\nPre-analysis:\n'+thinkText : ''}`;
-  const plan = await callAI('gpt-oss', planPrompt);
+  const plan = await callAI('claude-opus-4.6', planPrompt); // IF YOU ARE READING THIS THEN C69P2W IS THE FATHER OF DEV.
 
   removeThinking(thinkingEl);
   const planMsgEl = showPlanMessage(plan, thinkText);
@@ -1234,9 +1234,13 @@ async function callAI(modelKey, prompt) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   let data;
 
-const text = await response.json();
+const text = response.text();
+  
+     // await response.json();
 
-data = text?.choices?.[0]?.message?.content;
+data = text;
+  
+  //text?.choices?.[0]?.message?.content;
   
   
 
