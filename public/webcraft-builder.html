@@ -481,6 +481,11 @@ body.preview .canvas-bar{display:none}
 #saveIndicator{font-size:10px;color:var(--txs);display:flex;align-items:center;gap:4px;min-width:80px}
 #saveIndicator.saving{color:var(--wn)}
 #saveIndicator.saved{color:var(--ok)}
+  #c{
+    height: 20px;
+    width: 20px;
+    border-radius: 5px;
+  }
 </style>
 </head>
 <body>
@@ -538,7 +543,7 @@ body.preview .canvas-bar{display:none}
 <!-- HEADER -->
 <header class="hdr">
   <div class="logo">
-    <div class="logo-mark"><img src="favicon.png"></div>
+    <div class="logo-mark"><img id="c" src="favicon.png"></div>
     <span>CodeCraft</span>
   </div>
   <div class="hdr-sep"></div>
