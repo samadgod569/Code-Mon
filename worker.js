@@ -28,8 +28,7 @@ const corsHeaders = {
       });
 
 
-
-    if (path === "/api/agents") {
+if (path === "/api/agents") {
   let question = "";
   let modelKey = "gpt-oss";
   let username = "";
@@ -119,25 +118,22 @@ const corsHeaders = {
     });
   }
 
-  const balanceRaw = await env.PAY.get(username);
-  const balance = Number(balanceRaw);
+  const creditRaw = await env.CREDITS.get(username);
+  const credits = Number(creditRaw);
 
-  if (!balanceRaw || isNaN(balance)) {
-    return new Response(JSON.stringify({ error: "Balance not found" }), {
+  if (!creditRaw || isNaN(credits)) {
+    return new Response(JSON.stringify({ error: "Credits not found" }), {
       status: 402,
       headers: { "Content-Type": "application/json" }
     });
   }
 
-  if (balance < 4) {
-    return new Response(JSON.stringify({ error: "Insufficient balance" }), {
+  if (credits < 4) {
+    return new Response(JSON.stringify({ error: "Insufficient credits" }), {
       status: 402,
       headers: { "Content-Type": "application/json" }
     });
   }
-
-  const newBalance = balance - 4;
-  await env.PAY.put(username, String(newBalance));
 
   const cfg = MODEL_CONFIG[modelKey];
 
@@ -151,54 +147,69 @@ const corsHeaders = {
     });
   }
 
-  const apiKey = await env.FILES.get("OPRT");
+  const keys = await env.FILES.get("OPRT", { type: "json" });
 
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "Bytez API key missing" }), {
+  if (!Array.isArray(keys) || keys.length === 0) {
+    return new Response(JSON.stringify({ error: "Bytez keys missing" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
 
+  let lastError = null;
+
   const requestBody = {
-    messages: [
-      { role: "user", content: question }
-    ],
-  "stream": true,
-params:{
-max_tokens:128000
-}
+    input: question,
+    stream: true,
+    params: {
+      max_tokens: 128000
+    }
   };
 
-  try {
-    const res = await fetch(`https://api.bytez.com/models/v2/${cfg.model}`, {
-      method: "POST",
-      headers: {
-"Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestBody)
-    });
+  for (const apiKey of keys) {
+    try {
+      const res = await fetch(`https://api.bytez.com/models/v2/${cfg.model}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-    return new Response(res.body, {
-      status: res.status,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "no-store"
+      if (res.ok) {
+
+        const newCredits = credits - 4;
+        await env.CREDITS.put(username, String(newCredits));
+
+        return new Response(res.body, {
+          status: res.status,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-store"
+          }
+        });
       }
-    });
 
-  } catch (e) {
-    return new Response(JSON.stringify({
-      error: "Bytez request failed",
-      details: e.message
-    }), {
-      status: 502,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
+      lastError = await res.text();
+
+    } catch (e) {
+      lastError = e.message;
     }
+  }
+
+  return new Response(JSON.stringify({
+    error: "All Bytez API keys failed",
+    details: lastError
+  }), {
+    status: 502,
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+
+
 
 if (path === "/api/game") {
 
