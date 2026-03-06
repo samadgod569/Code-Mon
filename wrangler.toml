@@ -25,3 +25,6 @@ id = "1b4ae5bed65f425cbc3ebe546889d8dc"
 [[kv_namespaces]]
 binding = "STORAGE"
 id = "5163935978d34b47ac564672381a718d"
+[[kv_namespaces]]
+binding = "CREDITS"
+id = "b7fdf62fe23f49ceab70e36119745b76"
