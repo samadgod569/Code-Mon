@@ -676,43 +676,29 @@ const LS_TH    = "cm-theme";
 const HISTORY_LIMIT = 6;
 
 const MODEL_CONFIG = {
-  "gpt-oss": { name: "GPT-OSS " },
-  "gpt-oss-120b": { name: "GPT-OSS 120B " },
-  "gpt-2.1": { name: "GPT-2.1" },
-  "gemma-27b": { name: "Gemma 3 27B" },
-  "qwen-next-80b": { name: "Qwen Next 80B" },
-  "qwen-coder": { name: "Qwen Coder" },
-  "glm-4.5-air": { name: "GLM-4.5 Air" },
-  "qwen-235b": { name: "Qwen 235B" },
-  "o3-mini": { name: "OpenAI o3-mini" },
-  "gpt-4.1": { name: "GPT-4.1" },
-  "gpt-4o": { name: "GPT-4o" },
-  "gpt-5.2": { name: "GPT-5.2" },
-  "gpt-5.3-codex": { name: "GPT-5.3 Codex" },
-  "sonnet": { name: "Claude 3.5 Sonnet" },
-  "sonnet-4.6": { name: "Claude Sonnet 4.6" },
-  "haiku": { name: "Claude 3.5 Haiku" },
-  "opus-4.6": { name: "Claude Opus 4.6" },
-  "llama-70b": { name: "Llama 3.1 70B" },
-  "nano-banana": { name: "Nano Banana" },
-  "gemini-3.1-pro": { name: "Gemini 3.1" },
-  "grok-4.1": {name: "Gork 4.1" },
-  "grok-4.0": {name: "Grok 4.0" },
-  "llama-4": { name: "Llama 4" },
-  "llama-4-scout": { name: "Llama 4 scout"},
-  "deepseek-3.1": { name: "DeepSeek 3.1"},
-  "deepseek-3.2-special": { name: "DeepSeek 3.2 Special" },
-  "deepseek-3.2": { name: "DeepSeek 3.2" },
-  "grok-code": { name: "Grok Code" },
-  "mistral-8b-2512": { name: "Mistral 8b" },
-  "mistral-14b-2512": { name: "Mistral 14b" },
-  "mistral-code": { name: "Mistral Code" },
-  "code-mon-special": { name: "Code Mon" },
-  "step-3.5": { name: "Step 3.5" },
-  "trinity": { name: "Trinity" },
-  "nemotron": { name: "Nemotron"}
-};
+  "gpt-5.2-pro": { "name": "GPT-5.2 Pro" },
+  "gpt-5.2": { "name": "GPT-5.2" },
 
+  "claude-opus-4.6": { "name": "Claude Opus 4.6" },
+  "claude-sonnet-4.6": { "name": "Claude Sonnet 4.6" },
+
+  "claude-opus-4.5": { "name": "Claude Opus 4.5" },
+  "claude-sonnet-4.5": { "name": "Claude Sonnet 4.5" },
+  "claude-haiku-4.5": { "name": "Claude Haiku 4.5" },
+
+  "gemini-3-pro": { "name": "Gemini 3 Pro" },
+  "gemini-3.1-pro": { "name": "Gemini 3.1 Pro" },
+
+  "qwen3-8b": { "name": "Qwen 3 8B" },
+  "qwen2-vl": { "name": "Qwen2 VL 7B" },
+
+  "deepseek-coder-1.3b": { "name": "DeepSeek Coder 1.3B" },
+  "deepseek-coder-33b": { "name": "DeepSeek Coder 33B" },
+
+  "llama-3-70b": { "name": "Llama 3 70B" },
+  "llama-3.1-8b": { "name": "Llama 3.1 8B" }
+};
+  
 let mode      = "code";
 let curId     = null;
 let chats     = {};
