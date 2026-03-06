@@ -160,7 +160,7 @@ if (request.method === "POST") {
 
     
 
-if (path === "/api/agents") {
+if (path === "/api/agent") {
   let question = "";
   let modelKey = "gpt-oss";
   let username = "";
@@ -426,7 +426,7 @@ if (path === "/api/game") {
   });
     }
 
-if (path === "/api/agent") {
+if (path === "/api/agents") {
   let question = "";
   let modelKey = "gpt-oss";
 let username = "";
