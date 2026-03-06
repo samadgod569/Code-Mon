@@ -1,0 +1,2863 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebCraft · Visual Builder</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:ital,wght@0,200..900;1,200..900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--bd:#d0d7de;--bdm:#e1e4e8;
+  --tx:#1f2328;--txm:#636c76;--txs:#9198a1;--ac:#0969da;--ach:#0550ae;
+  --acb:#ddf4ff;--ace:#54aeff;--ok:#1a7f37;--okb:#dafbe1;--oke:rgba(26,127,55,.3);
+  --er:#cf222e;--erb:#ffebe9;--ere:rgba(207,34,46,.3);--wn:#9a6700;--wnb:#fff8c5;--wne:rgba(154,103,0,.3);
+  --sh1:0 1px 0 rgba(27,31,36,.04);--sh2:0 3px 6px rgba(140,149,159,.15);--sh3:0 8px 24px rgba(140,149,159,.2);
+  --r:6px;--rl:12px;--tr:80ms cubic-bezier(.33,1,.68,1);
+  --sw:256px;--pw:272px;
+}
+[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bd:#30363d;--bdm:#21262d;
+  --tx:#e6edf3;--txm:#8b949e;--txs:#6e7681;--ac:#58a6ff;--ach:#79c0ff;
+  --acb:rgba(56,139,253,.1);--ace:rgba(56,139,253,.4);
+  --ok:#3fb950;--okb:rgba(46,160,67,.1);--oke:rgba(63,185,80,.3);
+  --er:#f85149;--erb:rgba(248,81,73,.1);--ere:rgba(248,81,73,.3);
+  --wn:#e3b341;--wnb:rgba(187,128,9,.15);--wne:rgba(227,179,65,.3);
+  --sh1:0 1px 0 rgba(0,0,0,.25);--sh2:0 3px 6px rgba(0,0,0,.3);--sh3:0 8px 24px rgba(0,0,0,.45);
+}
+html{font-family:'Mona Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:var(--bg2);color:var(--tx);height:100dvh;overflow:hidden;font-size:13px;line-height:1.5;display:flex;flex-direction:column}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--txs)}
+
+/* ── HEADER ── */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--bd);height:48px;padding:0 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;box-shadow:var(--sh1);z-index:100}
+.logo{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;color:var(--tx);text-decoration:none;flex-shrink:0}
+.logo-mark{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--ac),#6e40c9);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:14px}
+.hdr-sep{width:1px;height:20px;background:var(--bd);margin:0 2px;flex-shrink:0}
+.ibtn{background:none;border:1px solid var(--bd);border-radius:var(--r);color:var(--txm);cursor:pointer;padding:4px 8px;font-size:11px;display:flex;align-items:center;gap:4px;transition:var(--tr);white-space:nowrap;flex-shrink:0;height:28px}
+.ibtn:hover{background:var(--bg3);color:var(--tx)}
+.ibtn.active{background:var(--acb);border-color:var(--ace);color:var(--ac)}
+.ibtn.danger:hover{background:var(--erb);border-color:var(--ere);color:var(--er)}
+.ibtn-primary{background:var(--ac);border:none;color:#fff}
+.ibtn-primary:hover{background:var(--ach);color:#fff}
+.ibtn svg{width:12px;height:12px;fill:currentColor;flex-shrink:0}
+#compCount{font-size:11px;color:var(--txs);white-space:nowrap}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:6px}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{width:var(--sw);background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.panel-hd{padding:8px 10px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;flex-shrink:0}
+.panel-title{font-size:10px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.6px;flex:1}
+.search-wrap{position:relative;padding:8px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);fill:var(--txs);pointer-events:none}
+#searchBox{width:100%;height:28px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:0 8px 0 28px;font-size:11px;color:var(--tx);outline:none;transition:border-color var(--tr)}
+#searchBox:focus{border-color:var(--ace)}
+#searchBox::placeholder{color:var(--txs)}
+.sb-body{overflow-y:auto;flex:1;padding:4px 6px 8px}
+
+/* Category */
+.cat-wrap{margin-bottom:1px}
+.cat-hdr{display:flex;align-items:center;gap:6px;padding:6px 6px;cursor:pointer;border-radius:var(--r);color:var(--txm);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;user-select:none;transition:var(--tr)}
+.cat-hdr:hover{color:var(--tx);background:var(--bg3)}
+.cat-arrow{margin-left:auto;font-size:9px;transition:transform .2s;display:inline-block;color:var(--txs)}
+.cat-arrow.open{transform:rotate(90deg)}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:2px 0 6px;overflow:hidden;max-height:600px;transition:max-height .25s ease}
+.comp-grid.shut{max-height:0;padding:0}
+
+/* Component tile */
+.ci{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:8px 5px 7px;cursor:grab;display:flex;flex-direction:column;align-items:center;gap:4px;transition:var(--tr);user-select:none}
+.ci:hover{border-color:var(--ace);background:var(--acb);color:var(--ac)}
+.ci:active{cursor:grabbing;opacity:.7;transform:scale(.96)}
+.ci-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg2);border:1px solid var(--bd);border-radius:5px;font-size:13px;font-weight:800;color:var(--txm);font-family:'Fira Code',monospace}
+.ci:hover .ci-icon{background:var(--acb);border-color:var(--ace);color:var(--ac)}
+.ci-lbl{font-size:10px;color:var(--txm);text-align:center;font-weight:500}
+.ci:hover .ci-lbl{color:var(--ac)}
+
+/* ── CANVAS AREA ── */
+.canvas-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--bg3)}
+.canvas-bar{height:36px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0}
+.canvas-bar-info{font-size:11px;color:var(--txs)}
+.canvas-bar-sel{font-size:11px;color:var(--ac);font-weight:600}
+.zoom-ctrl{display:flex;align-items:center;gap:3px;margin-left:auto}
+.zbtn{width:22px;height:22px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--txm);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:var(--tr);line-height:1}
+.zbtn:hover{background:var(--bg3);color:var(--tx)}
+#zmVal{min-width:36px;text-align:center;font-size:10px;color:var(--txm)}
+.canvas-scroll{flex:1;overflow:auto;padding:40px 24px;display:flex;justify-content:center;align-items:flex-start}
+
+/* Canvas */
+#canvas{
+  width:980px;min-height:480px;background:#fff;position:relative;
+  box-shadow:0 0 0 1px rgba(27,31,36,.1),var(--sh3);
+  border-radius:4px;transform-origin:top center;
+  --cb:#ffffff;--ct:#1f2328;--ca:#0969da;--cs:#f6f8fa;--cbr:#d0d7de;
+}
+/* Each CC inherits its own color vars if set */
+.cc{--cb:inherit;--ct:inherit;--ca:inherit}
+[data-theme="dark"] #canvas{box-shadow:0 0 0 1px rgba(0,0,0,.4),0 8px 32px rgba(0,0,0,.5)}
+#canvas.drag-over{outline:2px dashed var(--ac);outline-offset:2px}
+#drop-ph{height:3px;background:var(--ac);border-radius:2px;margin:2px 12px;display:none}
+#drop-ph.show{display:block}
+.canvas-empty{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;padding:32px}
+.canvas-empty-ico{font-size:40px;margin-bottom:12px;opacity:.25}
+.canvas-empty-txt{font-size:13px;color:var(--txm);opacity:.5;line-height:1.7}
+
+/* Canvas component wrapper */
+.cc{position:relative;cursor:default}
+.cc[style*="position: absolute"],.cc[style*="position:absolute"]{z-index:10}
+.cc[style*="position: fixed"],.cc[style*="position:fixed"]{z-index:20}
+.cc:hover .cc-bar{opacity:.7}
+.cc.sel .cc-bar{opacity:1!important;display:flex!important}
+.cc.sel{outline:2px solid var(--ac)!important;outline-offset:0}
+.cc:hover:not(.sel){outline:1px dashed rgba(9,105,218,.35)}
+.cc-bar{position:absolute;top:-34px;left:0;display:none;align-items:center;gap:2px;background:var(--ac);border-radius:5px 5px 0 0;padding:3px 5px;z-index:500;white-space:nowrap}
+.cc-label{font-size:9px;color:rgba(255,255,255,.8);padding:0 4px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.cc-drag-handle{cursor:grab;color:rgba(255,255,255,.7);padding:0 3px;font-size:13px;line-height:1}
+.cc-drag-handle:active{cursor:grabbing}
+.cbtn{width:22px;height:22px;background:rgba(255,255,255,.18);border:none;color:rgba(255,255,255,.9);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;transition:background .1s}
+.cbtn:hover{background:rgba(255,255,255,.35)}
+.cbtn.del:hover{background:var(--er)}
+.cc-inner{position:relative}
+
+/* ── PROPERTIES PANEL ── */
+.props-panel{width:var(--pw);background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.props-body{overflow-y:auto;flex:1;padding:0}
+.p-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--txm);font-size:11px;text-align:center;padding:24px;gap:8px;opacity:.5}
+.p-empty svg{width:28px;height:28px;fill:currentColor;opacity:.4}
+
+/* Property sections */
+.psec{border-bottom:1px solid var(--bd);padding:10px 12px}
+.psec-title{font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--txm);margin-bottom:8px}
+.prow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.prow:last-child{margin-bottom:0}
+.plbl{font-size:10px;color:var(--txs);width:68px;flex-shrink:0;line-height:1.3}
+.pctl{flex:1;min-width:0}
+
+/* Controls */
+.pin{width:100%;height:26px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:0 7px;color:var(--tx);font-size:11px;outline:none;transition:border-color var(--tr)}
+.pin:focus{border-color:var(--ace)}
+.pcolor{width:100%;height:26px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:2px 3px;cursor:pointer;outline:none}
+.psel{width:100%;height:26px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:0 5px;color:var(--tx);font-size:11px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 16 16' fill='%236e7681'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 7H4.604a.25.25 0 0 0-.177.427z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;padding-right:20px}
+.psel:focus{border-color:var(--ace)}
+.slider-row{display:flex;align-items:center;gap:5px}
+.pslider{flex:1;accent-color:var(--ac);height:14px;cursor:pointer}
+.sval{min-width:34px;text-align:right;font-size:10px;color:var(--txs);font-family:'Fira Code',monospace}
+.btn-grp{display:flex;gap:3px}
+.pgbtn{flex:1;height:26px;background:var(--bg);border:1px solid var(--bd);color:var(--txm);border-radius:var(--r);cursor:pointer;font-size:11px;transition:var(--tr)}
+.pgbtn:hover{border-color:var(--ace);color:var(--tx);background:var(--bg3)}
+.pgbtn.on{background:var(--acb);color:var(--ac);border-color:var(--ace)}
+
+/* Animation grid */
+.anim-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
+.abtn{padding:5px 3px;background:var(--bg);border:1px solid var(--bd);color:var(--txm);border-radius:var(--r);cursor:pointer;font-size:9px;text-align:center;transition:var(--tr);line-height:1.4}
+.abtn:hover{border-color:var(--ace);color:var(--tx)}
+.abtn.on{background:var(--acb);color:var(--ac);border-color:var(--ace)}
+
+/* Shadow swatches */
+.shadow-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}
+.shbtn{height:26px;background:var(--bg);border:1px solid var(--bd);color:var(--txm);border-radius:var(--r);cursor:pointer;font-size:10px;transition:var(--tr)}
+.shbtn:hover{border-color:var(--ace);color:var(--tx);background:var(--bg3)}
+
+/* Action buttons */
+.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.actbtn{height:28px;background:var(--bg);border:1px solid var(--bd);color:var(--txm);border-radius:var(--r);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px;transition:var(--tr)}
+.actbtn:hover{background:var(--bg3);color:var(--tx)}
+.actbtn.full{grid-column:1/-1}
+.actbtn.danger{color:var(--er);border-color:var(--ere)}
+.actbtn.danger:hover{background:var(--erb)}
+
+/* ── PREVIEW MODE ── */
+body.preview .sidebar,body.preview .props-panel{display:none}
+body.preview .cc-bar,body.preview .canvas-empty{display:none!important}
+body.preview .cc,.preview .cc:hover,.preview .cc.sel{outline:none!important;cursor:default}
+body.preview #canvas{box-shadow:none;border-radius:0;width:100%;min-height:100%}
+body.preview .canvas-scroll{padding:0}
+body.preview .canvas-bar{display:none}
+
+/* ── CODE MODAL ── */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.ovl.hidden{display:none}
+.modal{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh3);display:flex;flex-direction:column;width:100%;max-width:820px;max-height:86vh;overflow:hidden}
+.mhd{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mtitle{font-size:13px;font-weight:600}
+.mhd-actions{display:flex;gap:6px;align-items:center}
+.mclose{background:none;border:none;color:var(--txm);cursor:pointer;padding:2px 7px;border-radius:var(--r);font-size:15px;line-height:1;transition:var(--tr)}
+.mclose:hover{background:var(--bg3);color:var(--tx)}
+.mbody{flex:1;overflow:auto;position:relative}
+.code-out{padding:14px 16px;font-family:'Fira Code',monospace;font-size:12px;line-height:1.7;color:var(--tx);white-space:pre;background:var(--bg);margin:0;min-height:200px;tab-size:2;word-break:break-all;white-space:pre-wrap}
+.mfoot{padding:10px 14px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px}
+.mfoot-info{font-size:10px;color:var(--txs)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;border:1px solid;transition:var(--tr)}
+.bsec{background:var(--bg2);border-color:var(--bd);color:var(--tx)}.bsec:hover{background:var(--bg3)}
+.bpri{background:var(--ac);border-color:transparent;color:#fff}.bpri:hover{background:var(--ach)}
+.bdan{background:var(--erb);border-color:var(--ere);color:var(--er)}.bdan:hover{background:var(--er);color:#fff}
+
+/* ── TOAST ── */
+.tstack{position:fixed;bottom:20px;right:14px;z-index:999;display:flex;flex-direction:column;gap:5px}
+.toast{padding:7px 12px;border-radius:var(--r);font-size:11px;font-weight:500;border:1px solid;box-shadow:var(--sh2);animation:tin .2s ease;max-width:280px;pointer-events:none}
+.toast.ok{background:var(--okb);border-color:var(--oke);color:var(--ok)}
+.toast.er{background:var(--erb);border-color:var(--ere);color:var(--er)}
+.toast.nfo{background:var(--acb);border-color:var(--ace);color:var(--ac)}
+@keyframes tin{from{transform:translateX(12px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── CANVAS COMPONENT STYLES ── */
+/* These use CSS variables injected into #canvas so themes work */
+.comp-navbar{padding:14px 32px;background:var(--cs);border-bottom:1px solid var(--cbr);display:flex;align-items:center;gap:24px}
+.comp-navbar .nb-brand{font-weight:800;font-size:18px;color:var(--ca)}
+.comp-navbar .nb-links{display:flex;gap:20px;margin-left:24px}
+.comp-navbar .nb-links span{color:var(--ct);font-size:13px;cursor:pointer}
+.comp-navbar .nb-cta{margin-left:auto;padding:7px 16px;background:var(--ca);color:#fff;border-radius:6px;font-weight:600;cursor:pointer;border:none;font-size:12px}
+
+.comp-hero{padding:72px 48px;background:var(--ca);text-align:center}
+.comp-hero h1{font-size:48px;font-weight:900;color:#fff;margin-bottom:12px;line-height:1.1}
+.comp-hero p{font-size:16px;color:rgba(255,255,255,.82);margin-bottom:28px;line-height:1.6}
+.comp-hero .hero-btn{display:inline-block;padding:12px 28px;background:#fff;color:var(--ca);border-radius:7px;font-weight:700;cursor:pointer;border:none;font-size:14px}
+
+.comp-heading{padding:16px 32px 4px}
+.comp-heading h1,.comp-heading h2,.comp-heading h3,.comp-heading h4{color:var(--ct);font-weight:800;line-height:1.2}
+
+.comp-para{padding:6px 32px 16px}
+.comp-para p{color:var(--ct);line-height:1.75;font-size:15px}
+
+.comp-button{padding:14px 32px}
+.comp-button .btn-el{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;background:var(--ca);color:#fff;border-radius:7px;font-weight:600;font-size:13px;cursor:pointer;border:none}
+
+.comp-divider{padding:8px 32px}
+.comp-divider hr{border:none;border-top:1px solid var(--cbr)}
+
+.comp-spacer{height:48px}
+
+.comp-card{padding:16px}
+.comp-card .card-inner{background:var(--cs);border:1px solid var(--cbr);border-radius:10px;padding:20px}
+.comp-card .card-inner h3{color:var(--ct);margin-bottom:7px;font-size:17px;font-weight:700}
+.comp-card .card-inner p{color:var(--ct);opacity:.7;line-height:1.65;font-size:13px}
+
+.comp-cols2{padding:18px 32px}
+.comp-cols2 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.comp-cols2 .col{background:var(--cs);border:1px dashed var(--cbr);border-radius:7px;padding:18px;min-height:80px;color:var(--ct);font-size:13px;line-height:1.6}
+
+.comp-cols3{padding:18px 32px}
+.comp-cols3 .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.comp-cols3 .col{background:var(--cs);border:1px dashed var(--cbr);border-radius:7px;padding:16px;min-height:80px;color:var(--ct);font-size:13px;line-height:1.6}
+
+.comp-img{padding:16px 32px}
+.comp-img .img-ph{width:100%;height:180px;background:var(--cs);border:2px dashed var(--cbr);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--ct);font-size:13px;gap:7px;opacity:.45;cursor:pointer}
+.comp-img img{width:100%;height:180px;object-fit:cover;border-radius:7px;display:block}
+
+.comp-video{padding:16px 32px}
+.comp-video .vid-ph{width:100%;height:220px;background:#0d1117;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer;position:relative;overflow:hidden}
+.comp-video .vid-ph::before{content:'';position:absolute;inset:0;background:var(--ca);opacity:.12}
+.comp-video .vid-ph::after{content:'▶';color:#fff;z-index:1;position:relative;opacity:.85}
+
+.comp-testimonial{padding:32px;background:var(--cs)}
+.comp-testimonial .tq{font-size:40px;color:var(--ca);line-height:.8;margin-bottom:4px}
+.comp-testimonial .ttext{font-size:16px;color:var(--ct);line-height:1.65;margin-bottom:20px;font-style:italic}
+.comp-testimonial .tauthor{display:flex;align-items:center;gap:10px}
+.comp-testimonial .t-avatar{width:40px;height:40px;background:var(--ca);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.comp-testimonial .t-name{font-weight:700;color:var(--ct);font-size:13px}
+.comp-testimonial .t-role{color:var(--ct);opacity:.55;font-size:12px}
+
+.comp-stats{padding:32px}
+.comp-stats .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:center}
+.comp-stats .stat-num{font-size:40px;font-weight:900;color:var(--ca);line-height:1}
+.comp-stats .stat-lbl{color:var(--ct);opacity:.6;font-size:12px;margin-top:4px}
+
+.comp-feature{padding:18px 32px}
+.comp-feature .feat-wrap{display:flex;gap:16px;align-items:flex-start}
+.comp-feature .feat-icon{width:46px;height:46px;background:rgba(9,105,218,.08);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:var(--ca);border:1px solid rgba(9,105,218,.16)}
+.comp-feature .feat-body h3{color:var(--ct);margin-bottom:5px;font-size:17px;font-weight:700}
+.comp-feature .feat-body p{color:var(--ct);opacity:.65;line-height:1.65;font-size:13px}
+
+.comp-alert{padding:12px 32px}
+.comp-alert .al{padding:10px 16px;border-radius:7px;border-left:4px solid;display:flex;align-items:center;gap:8px;font-size:13px}
+.al.info{background:#ddf4ff;border-color:#0969da;color:#0550ae}
+.al.success{background:#dafbe1;border-color:#1a7f37;color:#116329}
+.al.warning{background:#fff8c5;border-color:#9a6700;color:#7d4e00}
+.al.danger{background:#ffebe9;border-color:#cf222e;color:#a40e26}
+
+.comp-progress{padding:16px 32px}
+.comp-progress .prog-row{display:flex;justify-content:space-between;color:var(--ct);font-size:12px;margin-bottom:6px}
+.comp-progress .prog-bar{width:100%;height:8px;background:var(--cbr);border-radius:8px;overflow:hidden}
+.comp-progress .prog-fill{height:100%;background:var(--ca);border-radius:8px}
+
+.comp-list{padding:12px 32px}
+.comp-list ul{list-style:none}
+.comp-list li{padding:8px 0;border-bottom:1px solid var(--cbr);color:var(--ct);display:flex;align-items:center;gap:9px;font-size:13px}
+.comp-list li::before{content:'✓';color:var(--ca);font-weight:700;flex-shrink:0}
+
+.comp-quote{padding:24px 20px 24px 36px;border-left:4px solid var(--ca);margin:0 32px}
+.comp-quote blockquote{font-size:19px;color:var(--ct);font-style:italic;line-height:1.65}
+.comp-quote cite{display:block;margin-top:10px;color:var(--ct);opacity:.5;font-size:12px;font-style:normal}
+
+.comp-badge{padding:8px 32px}
+.comp-badge .badges{display:flex;gap:6px;flex-wrap:wrap}
+.comp-badge .badge{padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;background:rgba(9,105,218,.08);color:var(--ca);border:1px solid rgba(9,105,218,.22)}
+
+.comp-form{padding:24px 32px}
+.comp-form h3{color:var(--ct);margin-bottom:16px;font-weight:700;font-size:18px}
+.comp-form .form-field{margin-bottom:12px}
+.comp-form label{display:block;color:var(--ct);font-size:12px;margin-bottom:4px;font-weight:600}
+.comp-form input,.comp-form textarea,.comp-form select{width:100%;padding:8px 11px;border:1px solid var(--cbr);border-radius:6px;background:var(--cb);color:var(--ct);font-family:inherit;font-size:12px;outline:none}
+.comp-form textarea{height:80px;resize:vertical}
+.comp-form .form-submit{padding:10px 22px;background:var(--ca);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px}
+
+.comp-newsletter{padding:52px 32px;background:var(--ca);text-align:center}
+.comp-newsletter h2{color:#fff;font-size:28px;margin-bottom:7px;font-weight:800}
+.comp-newsletter p{color:rgba(255,255,255,.8);margin-bottom:20px;font-size:14px}
+.comp-newsletter .nl-form{display:flex;gap:7px;max-width:360px;margin:0 auto}
+.comp-newsletter input{flex:1;padding:10px 13px;border:none;border-radius:6px;font-size:12px;outline:none}
+.comp-newsletter button{padding:10px 20px;background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.5);border-radius:6px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:12px}
+.comp-newsletter button:hover{background:rgba(255,255,255,.3)}
+
+.comp-gallery{padding:16px 32px}
+.comp-gallery .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.comp-gallery .gallery-item{aspect-ratio:4/3;background:var(--cs);border:1px solid var(--cbr);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ct);opacity:.35;font-size:20px}
+
+.comp-pricing{padding:32px}
+.comp-pricing .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.comp-pricing .plan{background:var(--cs);border:1px solid var(--cbr);border-radius:10px;padding:22px;text-align:center}
+.comp-pricing .plan.featured{border-color:var(--ca);background:rgba(9,105,218,.03)}
+.comp-pricing .plan-name{font-size:10px;color:var(--ct);opacity:.55;margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:700}
+.comp-pricing .plan-price{font-size:40px;font-weight:900;color:var(--ct)}
+.comp-pricing .plan-price sup{font-size:16px;font-weight:400;vertical-align:top;margin-top:9px;display:inline-block}
+.comp-pricing .plan-price sub{font-size:12px;font-weight:400;opacity:.45}
+.comp-pricing .plan-features{margin:16px 0;text-align:left}
+.comp-pricing .plan-feat{padding:4px 0;color:var(--ct);font-size:12px;display:flex;align-items:center;gap:6px}
+.comp-pricing .plan-feat::before{content:'✓';color:var(--ca);font-weight:700}
+.comp-pricing .plan-btn{width:100%;padding:8px;border:1px solid var(--ca);border-radius:6px;color:var(--ca);background:transparent;font-weight:700;cursor:pointer;font-size:12px}
+.comp-pricing .plan.featured .plan-btn{background:var(--ca);color:#fff}
+
+.comp-footer{padding:32px;background:var(--cs);border-top:1px solid var(--cbr)}
+.comp-footer .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:32px}
+.comp-footer .footer-brand{color:var(--ca);font-weight:900;font-size:16px;margin-bottom:6px}
+.comp-footer .footer-sub{color:var(--ct);opacity:.5;font-size:12px;line-height:1.5}
+.comp-footer h4{color:var(--ct);margin-bottom:10px;font-size:12px;font-weight:700}
+.comp-footer ul{list-style:none}
+.comp-footer ul li{color:var(--ct);opacity:.5;font-size:12px;padding:3px 0;cursor:pointer}
+.comp-footer ul li:hover{opacity:.9;color:var(--ca)}
+.comp-footer .footer-copy{margin-top:24px;padding-top:16px;border-top:1px solid var(--cbr);color:var(--ct);opacity:.3;font-size:11px;text-align:center}
+
+.comp-code{padding:12px 32px}
+.comp-code pre{background:var(--bg3,#f6f8fa);color:var(--tx,#1f2328);border:1px solid var(--cbr);border-radius:7px;padding:16px;font-size:12px;overflow-x:auto;line-height:1.65;font-family:'Fira Code',monospace}
+
+.comp-breadcrumb{padding:8px 32px}
+.comp-breadcrumb .bc{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ct);opacity:.55}
+.comp-breadcrumb .bc-active{opacity:1;color:var(--ca);font-weight:600}
+.comp-breadcrumb .bc-sep{opacity:.35}
+
+.comp-counter{padding:32px;text-align:center}
+.comp-counter .count-num{font-size:60px;font-weight:900;color:var(--ca);line-height:1}
+.comp-counter .count-lbl{color:var(--ct);opacity:.55;font-size:14px;margin-top:5px}
+
+.comp-tags{padding:8px 32px}
+.comp-tags .tags{display:flex;gap:6px;flex-wrap:wrap}
+.comp-tags .tag{padding:5px 10px;background:var(--cs);border:1px solid var(--cbr);border-radius:5px;font-size:11px;color:var(--ct);cursor:default}
+
+.comp-table{padding:12px 32px}
+.comp-table table{width:100%;border-collapse:collapse;font-size:12px}
+.comp-table th{background:var(--cs);border:1px solid var(--cbr);padding:8px 12px;text-align:left;font-weight:700;color:var(--ct)}
+.comp-table td{border:1px solid var(--cbr);padding:8px 12px;color:var(--ct)}
+.comp-table tr:nth-child(even) td{background:rgba(0,0,0,.02)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideInLeft{from{transform:translateX(-60px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInRight{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideInDown{from{transform:translateY(-50px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes zoomIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes bounceIn{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.1)}80%{transform:scale(.95)}100%{transform:scale(1);opacity:1}}
+@keyframes flipInX{from{transform:perspective(400px) rotateX(-90deg);opacity:0}to{transform:perspective(400px) rotateX(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes swing{0%,100%{transform:rotate(0deg)}20%{transform:rotate(12deg)}40%{transform:rotate(-8deg)}60%{transform:rotate(5deg)}80%{transform:rotate(-4deg)}}
+@keyframes rubberBand{0%{transform:scale(1)}30%{transform:scaleX(1.2) scaleY(.75)}40%{transform:scaleX(.75) scaleY(1.2)}50%{transform:scaleX(1.12) scaleY(.88)}65%{transform:scaleX(.97) scaleY(1.03)}75%{transform:scaleX(1.03) scaleY(.97)}100%{transform:scale(1)}}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3) drop-shadow(0 0 12px currentColor)}}
+@keyframes colorCycle{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+@keyframes floatUpDown{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes rotateSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes tada{0%,100%{transform:scale(1) rotate(0deg)}10%,20%{transform:scale(.9) rotate(-3deg)}30%,50%,70%,90%{transform:scale(1.1) rotate(3deg)}40%,60%,80%{transform:scale(1.1) rotate(-3deg)}}
+@keyframes heartBeat{0%{transform:scale(1)}14%{transform:scale(1.15)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}
+@keyframes jello{0%,100%{transform:scale3d(1,1,1)}30%{transform:scale3d(1.2,.75,1)}40%{transform:scale3d(.75,1.2,1)}50%{transform:scale3d(1.15,.85,1)}65%{transform:scale3d(.95,1.05,1)}75%{transform:scale3d(1.05,.95,1)}}
+
+.an-fadeIn .cc-inner{animation:fadeIn .7s ease both}
+.an-slideLeft .cc-inner{animation:slideInLeft .6s ease both}
+.an-slideRight .cc-inner{animation:slideInRight .6s ease both}
+.an-slideUp .cc-inner{animation:slideInUp .6s ease both}
+.an-slideDown .cc-inner{animation:slideInDown .6s ease both}
+.an-zoomIn .cc-inner{animation:zoomIn .6s cubic-bezier(.175,.885,.32,1.275) both}
+.an-bounceIn .cc-inner{animation:bounceIn .8s ease both}
+.an-flipInX .cc-inner{animation:flipInX .7s ease both}
+.an-shake .cc-inner{animation:shake .6s ease both}
+.an-pulse .cc-inner{animation:pulse 1.5s ease infinite}
+.an-swing .cc-inner{animation:swing .8s ease both}
+.an-rubber .cc-inner{animation:rubberBand .8s ease both}
+.an-glow .cc-inner{animation:glow 2s ease infinite}
+.an-colorCycle .cc-inner{animation:colorCycle 3s linear infinite}
+.an-float .cc-inner{animation:floatUpDown 3s ease infinite}
+.an-spin .cc-inner{animation:rotateSpin 2s linear infinite}
+.an-tada .cc-inner{animation:tada .9s ease both}
+.an-heartBeat .cc-inner{animation:heartBeat 1.3s ease infinite}
+.an-jello .cc-inner{animation:jello .9s ease both}
+
+/* ── NESTED COLUMNS ── */
+.nested-cols{display:grid;gap:12px;min-height:120px}
+.cols2-grid{grid-template-columns:1fr 1fr}
+.cols3-grid{grid-template-columns:1fr 1fr 1fr}
+.nested-col{border:1.5px dashed var(--cbr,#d0d7de);border-radius:8px;min-height:100px;position:relative;background:rgba(9,105,218,.02);transition:border-color .15s,background .15s}
+.nested-col.nested-drag-over{border-color:var(--ca,#0969da);background:rgba(9,105,218,.06)}
+.nested-col-label{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cbr,#9198a1);padding:6px 10px 0;user-select:none;pointer-events:none}
+.nested-drop-area{padding:6px 6px 6px;min-height:80px;display:flex;flex-direction:column;gap:6px}
+.nested-ph{font-size:10px;color:var(--cbr,#9198a1);text-align:center;padding:20px 8px;border-radius:6px;border:1px dashed var(--cbr,#d0d7de);pointer-events:none;display:flex;align-items:center;justify-content:center}
+/* Nested component cards inside columns */
+.nested-cc{border:1px solid var(--cbr,#d0d7de);border-radius:6px;background:var(--cb,#fff);position:relative;margin-bottom:4px;overflow:hidden;cursor:pointer;transition:border-color .12s}
+.nested-cc:hover{border-color:var(--ca,#0969da)}
+.nested-cc.sel{border-color:var(--ca,#0969da);box-shadow:0 0 0 2px rgba(9,105,218,.18)}
+.nested-cc-bar{height:22px;background:var(--bg3,#eaeef2);display:flex;align-items:center;gap:4px;padding:0 6px;font-size:9px;color:var(--txm,#636c76)}
+.nested-cc-bar .nc-label{flex:1;font-weight:600;font-size:9px}
+.nested-cc-bar .nc-btn{background:none;border:none;cursor:pointer;color:var(--txm);font-size:10px;padding:0 2px;display:flex;align-items:center;line-height:1}
+.nested-cc-bar .nc-btn:hover{color:var(--er,#cf222e)}
+.nested-cc-inner{padding:4px}
+/* In preview hide labels/ph/bars */
+body.preview .nested-col-label,body.preview .nested-ph,body.preview .nested-cc-bar{display:none}
+body.preview .nested-col{border:none;background:none}
+body.preview .nested-drop-area{padding:0;gap:0}
+body.preview .nested-cc{border:none;border-radius:0}
+#pmScreen{position:fixed;inset:0;background:var(--bg2);z-index:9999;display:flex;flex-direction:column;overflow:auto}
+#pmScreen.hidden{display:none}
+.pm-hdr{background:var(--bg);border-bottom:1px solid var(--bd);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:var(--sh1)}
+.pm-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;color:var(--tx)}
+.pm-logo-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--ac),#6e40c9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 2px 8px rgba(9,105,218,.3)}
+.pm-body{flex:1;padding:40px 32px;max-width:1100px;margin:0 auto;width:100%}
+.pm-section-title{font-size:13px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.7px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.pm-section-title::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* Templates grid */
+.pm-templates{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:40px}
+.pm-tpl{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;cursor:pointer;transition:all .15s;position:relative}
+.pm-tpl:hover{border-color:var(--ace);box-shadow:var(--sh2);transform:translateY(-2px)}
+.pm-tpl-thumb{height:120px;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;overflow:hidden}
+.pm-tpl-thumb-inner{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px}
+.pm-tpl-info{padding:10px 12px}
+.pm-tpl-name{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.pm-tpl-desc{font-size:10px;color:var(--txs);line-height:1.4}
+.pm-tpl-badge{position:absolute;top:8px;right:8px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:100px;background:var(--acb);color:var(--ac);border:1px solid var(--ace)}
+
+/* Projects grid */
+.pm-projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:40px}
+.pm-proj{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;cursor:pointer;transition:all .15s;position:relative}
+.pm-proj:hover{border-color:var(--ace);box-shadow:var(--sh2);transform:translateY(-2px)}
+.pm-proj-thumb{height:110px;background:linear-gradient(135deg,var(--bg3),var(--bg2));display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;position:relative}
+.pm-proj-preview{position:absolute;inset:0;transform:scale(.18);transform-origin:top left;width:556%;height:556%;pointer-events:none;overflow:hidden}
+.pm-proj-info{padding:10px 12px}
+.pm-proj-name{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.pm-proj-meta{font-size:10px;color:var(--txs)}
+.pm-proj-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.pm-proj:hover .pm-proj-actions{opacity:1}
+.pm-proj-btn{width:24px;height:24px;border-radius:5px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:background .1s}
+.pm-proj-btn.del{background:var(--erb);color:var(--er)}
+.pm-proj-btn.del:hover{background:var(--er);color:#fff}
+.pm-proj-btn.dup{background:var(--bg3);color:var(--txm)}
+.pm-proj-btn.dup:hover{background:var(--bd);color:var(--tx)}
+
+/* New project card */
+.pm-new-card{background:var(--bg);border:2px dashed var(--bd);border-radius:var(--rl);height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;gap:8px;color:var(--txm)}
+.pm-new-card:hover{border-color:var(--ace);color:var(--ac);background:var(--acb)}
+.pm-new-card svg{width:28px;height:28px;fill:currentColor;opacity:.5}
+.pm-new-card:hover svg{opacity:1}
+.pm-new-card span{font-size:12px;font-weight:600}
+
+/* New project modal */
+.pm-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.pm-modal-bg.hidden{display:none}
+.pm-modal{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh3);width:420px;overflow:hidden}
+.pm-modal-hd{padding:16px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.pm-modal-title{font-size:14px;font-weight:700}
+.pm-modal-body{padding:18px}
+.pm-modal-footer{padding:12px 18px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end}
+.pm-input{width:100%;height:34px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:0 10px;color:var(--tx);font-size:13px;outline:none;margin-bottom:12px;transition:border-color var(--tr)}
+.pm-input:focus{border-color:var(--ace)}
+.pm-label{font-size:11px;font-weight:600;color:var(--txm);margin-bottom:5px;display:block}
+.pm-btn{height:32px;padding:0 16px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:1px solid;transition:var(--tr)}
+.pm-btn-pri{background:var(--ac);border-color:transparent;color:#fff}
+.pm-btn-pri:hover{background:var(--ach)}
+.pm-btn-sec{background:var(--bg2);border-color:var(--bd);color:var(--tx)}
+.pm-btn-sec:hover{background:var(--bg3)}
+
+/* Project name in header */
+#projNameTag{font-size:11px;color:var(--txm);background:var(--bg3);border:1px solid var(--bd);border-radius:100px;padding:2px 10px;cursor:pointer;transition:var(--tr);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#projNameTag:hover{border-color:var(--ace);color:var(--ac)}
+
+/* Deploy button */
+.ibtn-deploy{background:linear-gradient(135deg,#16a34a,#0d9488);border:none;color:#fff;font-weight:700}
+.ibtn-deploy:hover{background:linear-gradient(135deg,#15803d,#0f766e);color:#fff}
+
+/* Save indicator */
+#saveIndicator{font-size:10px;color:var(--txs);display:flex;align-items:center;gap:4px;min-width:80px}
+#saveIndicator.saving{color:var(--wn)}
+#saveIndicator.saved{color:var(--ok)}
+</style>
+</head>
+<body>
+
+<!-- ════ PROJECT MANAGER SCREEN ════ -->
+<div id="pmScreen">
+  <div class="pm-hdr">
+    <div class="pm-logo">
+      <div class="pm-logo-mark"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.504.43a1.5 1.5 0 0 1 .904 1.853l-1.498 4.676h3.59a1.5 1.5 0 0 1 1.092 2.534l-6 6.5A1.5 1.5 0 0 1 5.09 14.56l1.498-4.676H3a1.5 1.5 0 0 1-1.092-2.534l6-6.5A1.5 1.5 0 0 1 9.504.43Z"/></svg></div>
+      <span>WebCraft</span>
+    </div>
+    <div style="font-size:11px;color:var(--txs)">Visual Website Builder</div>
+  </div>
+  <div class="pm-body">
+
+    <!-- Templates -->
+    <div class="pm-section-title"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;opacity:.6"><path d="M7.934.14a8 8 0 1 0 2.022 15.846 1.5 1.5 0 0 0 1.035-1.44v-.001l-.001-.093.002-.025c.001-.042.003-.129.007-.241.007-.231.018-.551.025-.86.006-.293.006-.573-.006-.792-.011-.181-.031-.295-.067-.358a.75.75 0 0 1 .65-1.122 2.5 2.5 0 0 1 2.026 3.987c-.698.969-1.82 1.607-3.124 1.607C5.852 16 1 11.799 1 7.5c0-3.48 2.822-6.5 6.934-7.36Z"/></svg>Start from a template</div>
+    <div class="pm-templates" id="pmTemplates"></div>
+
+    <!-- My Projects -->
+    <div class="pm-section-title" id="myProjTitle" style="display:none"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;opacity:.6"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"/></svg>My Projects</div>
+    <div class="pm-projects" id="pmProjects"></div>
+
+  </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="pm-modal-bg hidden" id="pmModalBg">
+  <div class="pm-modal">
+    <div class="pm-modal-hd">
+      <span class="pm-modal-title" style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.53 1.282a.5.5 0 0 1 .94 0l1.164 3.44 3.44 1.164a.5.5 0 0 1 0 .94l-3.44 1.164-1.164 3.44a.5.5 0 0 1-.94 0L6.366 7.99 2.926 6.826a.5.5 0 0 1 0-.94l3.44-1.164L7.53 1.282Z"/></svg>New Project</span>
+      <button class="mclose" onclick="closePmModal()"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg></button>
+    </div>
+    <div class="pm-modal-body">
+      <label class="pm-label">Project Name</label>
+      <input class="pm-input" id="pmProjName" placeholder="e.g. My Portfolio Site" maxlength="40">
+      <label class="pm-label">Starting Template</label>
+      <select class="pm-input" id="pmProjTpl" style="height:34px;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 16 16' fill='%236e7681'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 7H4.604a.25.25 0 0 0-.177.427z'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer">
+        <option value="blank">Blank Canvas</option>
+        <option value="landing">Landing Page</option>
+        <option value="portfolio">Portfolio</option>
+        <option value="blog">Blog / Article</option>
+        <option value="saas">SaaS / Product</option>
+        <option value="restaurant">Restaurant</option>
+        <option value="agency">Agency</option>
+      </select>
+    </div>
+    <div class="pm-modal-footer">
+      <button class="pm-btn pm-btn-sec" onclick="closePmModal()">Cancel</button>
+      <button class="pm-btn pm-btn-pri" onclick="createNewProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.504.43a1.5 1.5 0 0 1 .904 1.853l-1.498 4.676h3.59a1.5 1.5 0 0 1 1.092 2.534l-6 6.5A1.5 1.5 0 0 1 5.09 14.56l1.498-4.676H3a1.5 1.5 0 0 1-1.092-2.534l6-6.5A1.5 1.5 0 0 1 9.504.43Z"/></svg></div>
+    <span>WebCraft</span>
+  </div>
+  <div class="hdr-sep"></div>
+  <button class="ibtn" onclick="showPmScreen()" title="Back to projects" style="gap:5px">
+    <svg viewBox="0 0 16 16"><path d="M1.75 1h8.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 10.25 10H7.061l-2.574 2.781A.75.75 0 0 1 3.25 12.25V10h-1.5A1.75 1.75 0 0 1 0 8.25v-5.5C0 1.784.784 1 1.75 1ZM1.5 2.75v5.5c0 .138.112.25.25.25h2.25a.75.75 0 0 1 .75.75v1.64l1.661-1.793a.75.75 0 0 1 .551-.247h3.288a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25Z"/></svg>
+    Projects
+  </button>
+  <div id="projNameTag" onclick="renameCurrent()" title="Click to rename">Untitled</div>
+  <div class="hdr-sep"></div>
+  <button class="ibtn" onclick="undo()" title="Undo (Ctrl+Z)">
+    <svg viewBox="0 0 16 16"><path d="M1.22 6.78a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 1 1 1.06 1.06L3.56 5.5h5.69a3.75 3.75 0 0 1 0 7.5H6.5a.75.75 0 0 1 0-1.5h2.75a2.25 2.25 0 0 0 0-4.5H3.56l1.97 1.97a.75.75 0 1 1-1.06 1.06L1.22 6.78Z"/></svg>
+    Undo
+  </button>
+  <button class="ibtn" onclick="redo()" title="Redo (Ctrl+Y)">
+    <svg viewBox="0 0 16 16"><path d="M14.78 6.78a.75.75 0 0 0 0-1.06l-3.25-3.25a.75.75 0 1 0-1.06 1.06l1.97 1.97H6.75a3.75 3.75 0 0 0 0 7.5H9.5a.75.75 0 0 0 0-1.5H6.75a2.25 2.25 0 0 1 0-4.5h5.69l-1.97 1.97a.75.75 0 1 0 1.06 1.06l3.25-3.25Z"/></svg>
+    Redo
+  </button>
+  <div class="hdr-sep"></div>
+  <select id="themeSelect" class="ibtn" style="padding:0 8px;cursor:pointer;height:28px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);color:var(--txm);font-size:11px;outline:none;appearance:none;padding-right:22px;background-image:url(&quot;data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 16 16' fill='%236e7681'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 7H4.604a.25.25 0 0 0-.177.427z'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 5px center" onchange="applyTheme(this.value)">
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+    <option value="ocean">Ocean</option>
+    <option value="sunset">Sunset</option>
+    <option value="forest">Forest</option>
+    <option value="violet">Violet</option>
+    <option value="midnight">Midnight</option>
+    <option value="rose">Rose</option>
+  </select>
+  <span id="compCount" style="font-size:10px;color:var(--txs)">0 components</span>
+  <div class="hdr-r">
+    <span id="saveIndicator">
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="5"/></svg>
+      Saved
+    </span>
+    <div class="hdr-sep"></div>
+    <button class="ibtn danger" onclick="clearAll()">
+      <svg viewBox="0 0 16 16"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15Z"/></svg>
+      Clear
+    </button>
+    <button class="ibtn" id="prevBtn" onclick="togglePreview()">
+      <svg viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8ZM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8Z"/><circle cx="8" cy="8" r="2"/></svg>
+      Preview
+    </button>
+    <button class="ibtn ibtn-primary" onclick="showCode()">
+      <svg viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25ZM6.02 12.47a.75.75 0 0 0 1.06 1.06l4-4a.75.75 0 0 0 0-1.06l-4-4a.75.75 0 0 0-1.06 1.06L9.44 9l-3.42 3.47Zm-1.54-9a.75.75 0 0 0-.98.04l-4 4a.75.75 0 0 0 0 1.06l4 4a.75.75 0 0 0 1.04-1.08L1.56 8l3.96-3.51a.75.75 0 0 0-.04-1.02Z"/></svg>
+      Export
+    </button>
+    <button class="ibtn ibtn-deploy" onclick="deployProject()">
+      <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM4.5 7.5a.5.5 0 0 0 0 1h4.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L9.293 7.5H4.5Z"/></svg>
+      Deploy
+    </button>
+    <button class="ibtn" onclick="toggleTheme()" title="Toggle light/dark">
+      <svg id="thico" viewBox="0 0 16 16"><path d="M8 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm5.657-8.157a.75.75 0 1 1 1.06 1.061l-1.06 1.06a.75.75 0 0 1-1.062-1.06l1.061-1.061ZM1.355 5.26a.75.75 0 1 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06L1.354 5.26ZM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0Zm0 13a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 13Zm8-5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 16 8ZM2.25 8a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1 0-1.5h.75A.75.75 0 0 1 2.25 8Zm9.094 4.939a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06ZM2.343 4.404a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- APP BODY -->
+<div class="app">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="panel-hd">
+      <span class="panel-title">Components</span>
+    </div>
+    <div class="search-wrap">
+      <svg width="12" height="12" viewBox="0 0 16 16"><path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg>
+      <input type="text" id="searchBox" placeholder="Search components…" oninput="filterComps(this.value)">
+    </div>
+    <div class="sb-body" id="sbBody"></div>
+  </aside>
+
+  <!-- CANVAS AREA -->
+  <div class="canvas-wrap">
+    <div class="canvas-bar">
+      <span class="canvas-bar-info">Canvas · 980px</span>
+      <span class="canvas-bar-sel" id="selName"></span>
+      <div class="zoom-ctrl">
+        <button class="zbtn" onclick="zm(-0.1)" title="Zoom out">−</button>
+        <span id="zmVal">100%</span>
+        <button class="zbtn" onclick="zm(+0.1)" title="Zoom in">+</button>
+        <button class="zbtn" style="width:auto;padding:0 6px;font-size:10px" onclick="zm(0,'reset')">↺</button>
+      </div>
+    </div>
+    <div class="canvas-scroll" id="cScroll">
+      <div id="canvas"
+           ondragover="onDragOver(event)"
+           ondrop="onDrop(event)"
+           ondragleave="onDragLeave(event)"
+           onclick="onCanvasClick(event)">
+        <div id="drop-ph"></div>
+        <div class="canvas-empty" id="cEmpty">
+          <div class="canvas-empty-ico">◻</div>
+          <div class="canvas-empty-txt">Drag components here to build your page<br><small style="font-size:11px">or click any item in the sidebar</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPERTIES PANEL -->
+  <aside class="props-panel">
+    <div class="panel-hd">
+      <span class="panel-title">Properties</span>
+    </div>
+    <div class="props-body" id="propsBody">
+      <div class="p-empty">
+        <svg viewBox="0 0 16 16"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+        <span>Select a component<br>to edit properties</span>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- CODE MODAL -->
+<div class="ovl hidden" id="codeOvl">
+  <div class="modal">
+    <div class="mhd">
+      <span class="mtitle">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25ZM6.02 12.47a.75.75 0 0 0 1.06 1.06l4-4a.75.75 0 0 0 0-1.06l-4-4a.75.75 0 0 0-1.06 1.06L9.44 9l-3.42 3.47Zm-1.54-9a.75.75 0 0 0-.98.04l-4 4a.75.75 0 0 0 0 1.06l4 4a.75.75 0 0 0 1.04-1.08L1.56 8l3.96-3.51a.75.75 0 0 0-.04-1.02Z"/></svg>
+        Generated HTML
+      </span>
+      <div class="mhd-actions">
+        <button class="btn bsec" onclick="copyCode()" id="copyBtn">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+          Copy Code
+        </button>
+        <button class="btn bpri" onclick="downloadCode()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.97a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.779a.749.749 0 1 1 1.06-1.06l1.97 1.97Z"/></svg>
+          Download
+        </button>
+        <button class="mclose" onclick="document.getElementById('codeOvl').classList.add('hidden')"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg></button>
+      </div>
+    </div>
+    <div class="mbody">
+      <pre class="code-out" id="codeOut"></pre>
+    </div>
+    <div class="mfoot">
+      <span class="mfoot-info" id="codeInfo">0 lines</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn bsec" onclick="document.getElementById('codeOvl').classList.add('hidden')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST STACK -->
+<div class="tstack" id="tstack"></div>
+
+<script>
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+const S = {
+  selId: null,
+  hist: [],
+  hIdx: -1,
+  dragSrc: null,  // 'sidebar' | 'canvas'
+  dragType: null,
+  dragId: null,
+  zmLevel: 1,
+  preview: false,
+};
+let UID = 0;
+const genId = () => `cc${++UID}`;
+
+/* ════════════════════════════════════════
+   THEMES
+════════════════════════════════════════ */
+const THEMES = {
+  light:    {bg:'#ffffff',tx:'#1f2328',ac:'#0969da',sf:'#f6f8fa',br:'#d0d7de'},
+  dark:     {bg:'#0d1117',tx:'#e6edf3',ac:'#58a6ff',sf:'#161b22',br:'#30363d'},
+  ocean:    {bg:'#0a192f',tx:'#ccd6f6',ac:'#64ffda',sf:'#112240',br:'#1d3461'},
+  sunset:   {bg:'#fff7f0',tx:'#1c0a00',ac:'#f97316',sf:'#fff0e6',br:'#fed7aa'},
+  forest:   {bg:'#f0fdf4',tx:'#052e16',ac:'#16a34a',sf:'#dcfce7',br:'#86efac'},
+  violet:   {bg:'#faf5ff',tx:'#2d1b69',ac:'#9333ea',sf:'#f3e8ff',br:'#d8b4fe'},
+  midnight: {bg:'#030712',tx:'#f9fafb',ac:'#f59e0b',sf:'#111827',br:'#1f2937'},
+  rose:     {bg:'#fff1f2',tx:'#4c0519',ac:'#f43f5e',sf:'#ffe4e6',br:'#fda4af'},
+};
+
+function applyTheme(name) {
+  const t = THEMES[name]; if (!t) return;
+  const c = document.getElementById('canvas');
+  c.style.setProperty('--cb', t.bg);
+  c.style.setProperty('--ct', t.tx);
+  c.style.setProperty('--ca', t.ac);
+  c.style.setProperty('--cs', t.sf);
+  c.style.setProperty('--cbr', t.br);
+  c.style.background = t.bg;
+  toast('Theme: ' + name, 'nfo');
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('webcraft_ui_theme', next);
+  updateThemeIcon(next);
+  toast('Switched to ' + next + ' mode', 'nfo');
+}
+function updateThemeIcon(theme) {
+  const ico = document.getElementById('thico');
+  if (!ico) return;
+  if (theme === 'dark') {
+    ico.innerHTML = '<path d="M9.598 1.591a.749.749 0 0 1 .785-.175 7 7 0 1 1-8.967 8.967.75.75 0 0 1 .961-.96 5.5 5.5 0 0 0 7.046-7.046.75.75 0 0 1 .175-.786Zm1.616 1.945a7 7 0 0 1-7.678 7.678 5.499 5.499 0 1 0 7.678-7.678Z"/>';
+  } else {
+    ico.innerHTML = '<path d="M8 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm5.657-8.157a.75.75 0 1 1 1.06 1.061l-1.06 1.06a.75.75 0 0 1-1.062-1.06l1.061-1.061ZM1.355 5.26a.75.75 0 1 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06L1.354 5.26ZM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0Zm0 13a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 13Zm8-5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 16 8ZM2.25 8a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1 0-1.5h.75A.75.75 0 0 1 2.25 8Zm9.094 4.939a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06ZM2.343 4.404a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06Z"/>';
+  }
+}
+
+/* ════════════════════════════════════════
+   COMPONENT LIBRARY
+════════════════════════════════════════ */
+const LIB = [
+  { cat:'Layout', em:'layout', items:[
+    {t:'navbar',  lbl:'Navbar',    ic:'≡'},
+    {t:'hero',    lbl:'Hero',      ic:'star'},
+    {t:'footer',  lbl:'Footer',    ic:'▁'},
+    {t:'cols2',   lbl:'2 Columns', ic:'⊟'},
+    {t:'cols3',   lbl:'3 Columns', ic:'⊞'},
+    {t:'divider', lbl:'Divider',   ic:'—'},
+    {t:'spacer',  lbl:'Spacer',    ic:'↕'},
+  ]},
+  { cat:'Typography', em:'type', items:[
+    {t:'h1',         lbl:'Heading 1',  ic:'H1'},
+    {t:'h2',         lbl:'Heading 2',  ic:'H2'},
+    {t:'h3',         lbl:'Heading 3',  ic:'H3'},
+    {t:'para',       lbl:'Paragraph',  ic:'¶'},
+    {t:'quote',      lbl:'Blockquote', ic:'"'},
+    {t:'list',       lbl:'List',       ic:'≡'},
+    {t:'breadcrumb', lbl:'Breadcrumb', ic:'›'},
+  ]},
+  { cat:'UI Elements', em:'puzzle', items:[
+    {t:'button',   lbl:'Button',   ic:'◉'},
+    {t:'card',     lbl:'Card',     ic:'▭'},
+    {t:'badge',    lbl:'Badge',    ic:'●'},
+    {t:'alert',    lbl:'Alert',    ic:'!'},
+    {t:'progress', lbl:'Progress', ic:'▬'},
+    {t:'tags',     lbl:'Tags',     ic:'#'},
+    {t:'code',     lbl:'Code',     ic:'</>'},
+  ]},
+  { cat:'Media', em:'image', items:[
+    {t:'image',   lbl:'Image',   ic:'image'},
+    {t:'video',   lbl:'Video',   ic:'▶'},
+    {t:'gallery', lbl:'Gallery', ic:'⊞'},
+  ]},
+  { cat:'Content', em:'file', items:[
+    {t:'testimonial', lbl:'Testimonial', ic:'comment'},
+    {t:'stats',       lbl:'Stats',       ic:'#'},
+    {t:'feature',     lbl:'Feature',     ic:'lightning'},
+    {t:'pricing',     lbl:'Pricing',     ic:'$'},
+    {t:'counter',     lbl:'Counter',     ic:'0+'},
+    {t:'newsletter',  lbl:'Newsletter',  ic:'@'},
+    {t:'table',       lbl:'Table',       ic:'⊞'},
+  ]},
+  { cat:'Forms', em:'clipboard', items:[
+    {t:'form',  lbl:'Contact Form', ic:'mail'},
+  ]},
+];
+
+/* ════════════════════════════════════════
+   HTML GENERATORS
+════════════════════════════════════════ */
+const GEN = {
+  navbar: () => `<div class="comp-navbar"><span class="nb-brand" contenteditable spellcheck="false">Brand</span><div class="nb-links"><span contenteditable>Home</span><span contenteditable>About</span><span contenteditable>Services</span><span contenteditable>Contact</span></div><button class="nb-cta" contenteditable>Get Started</button></div>`,
+  hero: () => `<div class="comp-hero"><h1 contenteditable spellcheck="false">Build Something Amazing</h1><p contenteditable spellcheck="false">The fastest, most intuitive way to craft stunning web pages. No code required.</p><button class="hero-btn" contenteditable>Get Started Free →</button></div>`,
+  footer: () => `<div class="comp-footer"><div class="footer-grid"><div><div class="footer-brand" contenteditable>Brand</div><div class="footer-sub" contenteditable>Building the web,<br>one component at a time.</div></div><div><h4 contenteditable>Product</h4><ul><li contenteditable>Features</li><li contenteditable>Pricing</li><li contenteditable>Changelog</li><li contenteditable>Roadmap</li></ul></div><div><h4 contenteditable>Company</h4><ul><li contenteditable>About</li><li contenteditable>Blog</li><li contenteditable>Careers</li><li contenteditable>Contact</li></ul></div></div><div class="footer-copy" contenteditable>© 2025 Brand Inc. All rights reserved.</div></div>`,
+  cols2: () => `<div class="comp-cols2"><div class="nested-cols cols2-grid">
+    <div class="nested-col" data-drop-zone="true">
+      <div class="nested-col-label">Column 1</div>
+      <div class="nested-drop-area">
+        <div class="nested-ph">Drop components here</div>
+      </div>
+    </div>
+    <div class="nested-col" data-drop-zone="true">
+      <div class="nested-col-label">Column 2</div>
+      <div class="nested-drop-area">
+        <div class="nested-ph">Drop components here</div>
+      </div>
+    </div>
+  </div></div>`,
+  cols3: () => `<div class="comp-cols3"><div class="nested-cols cols3-grid">
+    <div class="nested-col" data-drop-zone="true">
+      <div class="nested-col-label">Column 1</div>
+      <div class="nested-drop-area">
+        <div class="nested-ph">Drop components here</div>
+      </div>
+    </div>
+    <div class="nested-col" data-drop-zone="true">
+      <div class="nested-col-label">Column 2</div>
+      <div class="nested-drop-area">
+        <div class="nested-ph">Drop components here</div>
+      </div>
+    </div>
+    <div class="nested-col" data-drop-zone="true">
+      <div class="nested-col-label">Column 3</div>
+      <div class="nested-drop-area">
+        <div class="nested-ph">Drop components here</div>
+      </div>
+    </div>
+  </div></div>`,
+  divider: () => `<div class="comp-divider"><hr></div>`,
+  spacer: () => `<div class="comp-spacer"></div>`,
+  h1: () => `<div class="comp-heading"><h1 contenteditable spellcheck="false" style="font-size:48px">Your Main Heading</h1></div>`,
+  h2: () => `<div class="comp-heading"><h2 contenteditable spellcheck="false" style="font-size:34px">Section Heading</h2></div>`,
+  h3: () => `<div class="comp-heading"><h3 contenteditable spellcheck="false" style="font-size:24px">Subsection Title</h3></div>`,
+  para: () => `<div class="comp-para"><p contenteditable spellcheck="false">Click here to edit this paragraph. You can change the text color, font size, weight, and add beautiful animations from the Properties panel on the right side.</p></div>`,
+  quote: () => `<div class="comp-quote"><blockquote contenteditable spellcheck="false">The best way to predict the future is to invent it.</blockquote><cite contenteditable>— Alan Kay</cite></div>`,
+  list: () => `<div class="comp-list"><ul><li contenteditable>First list item — click to edit</li><li contenteditable>Second item — fully customizable</li><li contenteditable>Third item — add more as needed</li><li contenteditable>Fourth item</li></ul></div>`,
+  breadcrumb: () => `<div class="comp-breadcrumb"><div class="bc"><span contenteditable>Home</span><span class="bc-sep">›</span><span contenteditable>Products</span><span class="bc-sep">›</span><span class="bc-active" contenteditable>Current Page</span></div></div>`,
+  button: () => `<div class="comp-button"><button class="btn-el" contenteditable spellcheck="false">Click Me</button></div>`,
+  card: () => `<div class="comp-card"><div class="card-inner"><h3 contenteditable spellcheck="false">Card Title</h3><p contenteditable spellcheck="false">This is the card body. Customize it from the properties panel — change colors, fonts, size, and add animations.</p></div></div>`,
+  badge: () => `<div class="comp-badge"><div class="badges"><span class="badge" contenteditable>New</span><span class="badge" contenteditable>Featured</span><span class="badge" contenteditable>Popular</span><span class="badge" contenteditable>Sale</span></div></div>`,
+  alert: () => `<div class="comp-alert"><div class="al info">ℹ️ <span contenteditable>This is an info alert. Click to edit this message.</span></div></div>`,
+  progress: () => `<div class="comp-progress"><div class="prog-row"><span contenteditable>Skill Progress</span><span contenteditable>75%</span></div><div class="prog-bar"><div class="prog-fill" style="width:75%"></div></div></div>`,
+  tags: () => `<div class="comp-tags"><div class="tags"><span class="tag" contenteditable>Design</span><span class="tag" contenteditable>Development</span><span class="tag" contenteditable>Marketing</span><span class="tag" contenteditable>Strategy</span></div></div>`,
+  code: () => `<div class="comp-code"><pre contenteditable spellcheck="false">// Click to edit this code block
+function greet(name) {
+  return \`Hello, ${name}!\`;
+}
+
+console.log(greet('World'));</pre></div>`,
+  image: () => `<div class="comp-img"><div class="img-ph">Click &rarr; Properties &rarr; Media to upload or add URL</div></div>`,
+  video: () => `<div class="comp-video"><div class="vid-ph" style="position:relative"><span style="position:relative;z-index:1;color:#fff;font-size:13px;text-align:center;padding:8px">▶ Select this component &rarr; Properties &rarr; Media to embed video</span></div></div>`,
+  gallery: () => `<div class="comp-gallery"><div class="gallery-grid"><div class="gallery-item"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="opacity:.35"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg></div><div class="gallery-item"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="opacity:.35"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg></div><div class="gallery-item"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="opacity:.35"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg></div><div class="gallery-item"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="opacity:.35"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg></div><div class="gallery-item"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="opacity:.35"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg></div><div class="gallery-item"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="opacity:.35"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg></div></div></div>`,
+  testimonial: () => `<div class="comp-testimonial"><div class="tq">"</div><p class="ttext" contenteditable spellcheck="false">This product completely changed how our team works. Absolutely brilliant experience from start to finish. Can't recommend it enough.</p><div class="tauthor"><div class="t-avatar">JD</div><div><div class="t-name" contenteditable>Jane Doe</div><div class="t-role" contenteditable>CEO at Startup Inc.</div></div></div></div>`,
+  stats: () => `<div class="comp-stats"><div class="stats-grid"><div><div class="stat-num" contenteditable>10K+</div><div class="stat-lbl" contenteditable>Happy Customers</div></div><div><div class="stat-num" contenteditable>99%</div><div class="stat-lbl" contenteditable>Satisfaction Rate</div></div><div><div class="stat-num" contenteditable>24/7</div><div class="stat-lbl" contenteditable>Support</div></div></div></div>`,
+  feature: () => `<div class="comp-feature"><div class="feat-wrap"><div class="feat-icon"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M9.504.43a1.5 1.5 0 0 1 .904 1.853l-1.498 4.676h3.59a1.5 1.5 0 0 1 1.092 2.534l-6 6.5A1.5 1.5 0 0 1 5.09 14.56l1.498-4.676H3a1.5 1.5 0 0 1-1.092-2.534l6-6.5A1.5 1.5 0 0 1 9.504.43Z"/></svg></div><div class="feat-body"><h3 contenteditable spellcheck="false">Lightning Fast</h3><p contenteditable spellcheck="false">Our platform is optimized for speed, ensuring your users get the best experience possible every single time.</p></div></div></div>`,
+  pricing: () => `<div class="comp-pricing"><div class="price-grid"><div class="plan"><div class="plan-name" contenteditable>Starter</div><div class="plan-price"><sup>$</sup><span contenteditable>9</span><sub>/mo</sub></div><div class="plan-features"><div class="plan-feat" contenteditable>5 Projects</div><div class="plan-feat" contenteditable>Basic Analytics</div><div class="plan-feat" contenteditable>Email Support</div></div><button class="plan-btn">Get Started</button></div><div class="plan featured"><div class="plan-name" contenteditable>Pro</div><div class="plan-price"><sup>$</sup><span contenteditable>29</span><sub>/mo</sub></div><div class="plan-features"><div class="plan-feat" contenteditable>Unlimited Projects</div><div class="plan-feat" contenteditable>Advanced Analytics</div><div class="plan-feat" contenteditable>Priority Support</div></div><button class="plan-btn">Get Pro</button></div><div class="plan"><div class="plan-name" contenteditable>Enterprise</div><div class="plan-price"><sup>$</sup><span contenteditable>99</span><sub>/mo</sub></div><div class="plan-features"><div class="plan-feat" contenteditable>Everything in Pro</div><div class="plan-feat" contenteditable>Custom Integrations</div><div class="plan-feat" contenteditable>Dedicated SLA</div></div><button class="plan-btn">Contact Sales</button></div></div></div>`,
+  counter: () => `<div class="comp-counter"><div class="count-num" contenteditable>9,840</div><div class="count-lbl" contenteditable>Active users worldwide</div></div>`,
+  newsletter: () => `<div class="comp-newsletter"><h2 contenteditable spellcheck="false">Stay in the Loop</h2><p contenteditable spellcheck="false">Subscribe to get the latest updates delivered to your inbox.</p><div class="nl-form"><input type="email" placeholder="Enter your email…"><button contenteditable>Subscribe →</button></div></div>`,
+  table: () => `<div class="comp-table"><table><thead><tr><th contenteditable>Name</th><th contenteditable>Role</th><th contenteditable>Status</th></tr></thead><tbody><tr><td contenteditable>Alice Johnson</td><td contenteditable>Designer</td><td contenteditable>Active</td></tr><tr><td contenteditable>Bob Smith</td><td contenteditable>Developer</td><td contenteditable>Active</td></tr><tr><td contenteditable>Carol White</td><td contenteditable>Manager</td><td contenteditable>Away</td></tr></tbody></table></div>`,
+  form: () => `<div class="comp-form"><h3 contenteditable spellcheck="false">Get In Touch</h3><div class="form-field"><label contenteditable>Full Name</label><input type="text" placeholder="John Doe"></div><div class="form-field"><label contenteditable>Email Address</label><input type="email" placeholder="john@example.com"></div><div class="form-field"><label contenteditable>Message</label><textarea placeholder="Your message…"></textarea></div><button class="form-submit" contenteditable>Send Message</button></div>`,
+};
+
+/* ════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════ */
+const ANIMS = [
+  {id:'none',      lbl:'None',     ic:'○'},
+  {id:'fadeIn',    lbl:'Fade In',  ic:'◐'},
+  {id:'slideLeft', lbl:'◀ Slide',  ic:'◀'},
+  {id:'slideRight',lbl:'Slide ▶',  ic:'▶'},
+  {id:'slideUp',   lbl:'▲ Slide',  ic:'▲'},
+  {id:'slideDown', lbl:'▼ Slide',  ic:'▼'},
+  {id:'zoomIn',    lbl:'Zoom In',  ic:'⊕'},
+  {id:'bounceIn',  lbl:'Bounce',   ic:'↕'},
+  {id:'flipInX',   lbl:'Flip',     ic:'↔'},
+  {id:'shake',     lbl:'Shake',    ic:'〜'},
+  {id:'pulse',     lbl:'Pulse ∞',  ic:'◎'},
+  {id:'swing',     lbl:'Swing',    ic:'↗'},
+  {id:'rubber',    lbl:'Rubber',   ic:'⟳'},
+  {id:'glow',      lbl:'Glow',     ic:'glow'},
+  {id:'colorCycle',lbl:'Colors ∞', ic:'◈'},
+  {id:'float',     lbl:'Float',    ic:'float'},
+  {id:'spin',      lbl:'Spin ∞',   ic:'↻'},
+  {id:'tada',      lbl:'Tada',     ic:'tada'},
+  {id:'heartBeat', lbl:'Beat',     ic:'heart'},
+  {id:'jello',     lbl:'Jello',    ic:'〰'},
+];
+
+
+/* ════════════════════════════════════════
+   ICON SVG MAP
+════════════════════════════════════════ */
+const ICON_SVG = {
+  layout:    '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3ZM9 2.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3ZM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3ZM9 10.5A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5v-3Z"/></svg>',
+  type:      '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-1h-4v8.75a.75.75 0 0 1-1.5 0V4.5h-4v1a.75.75 0 0 1-1.5 0v-2.5Z"/></svg>',
+  puzzle:    '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.019 2.345A3 3 0 0 0 6 4.257V5H4.75A1.75 1.75 0 0 0 3 6.75v1.25H2.74a3 3 0 1 0 0 4H3v1.25c0 .966.784 1.75 1.75 1.75h1.37a3 3 0 1 0 5.76 0H13.25A1.75 1.75 0 0 0 15 13.25V12a3 3 0 1 0 0-5.974V5.25A1.75 1.75 0 0 0 13.25 3.5H12a3 3 0 0 0-2.981-1.155Z"/></svg>',
+  image:     '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg>',
+  file:      '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25V1.75Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 7.75 4.25V1.5H3.75Z"/></svg>',
+  clipboard: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1.75C5.5.784 6.284 0 7.25 0h1.5C9.716 0 10.5.784 10.5 1.75v.25h.75c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 11.25 16h-6.5A1.75 1.75 0 0 1 3 14.25V3.75C3 2.784 3.784 2 4.75 2H5.5v-.25ZM7.25 1.5a.25.25 0 0 0-.25.25v.75h2v-.75a.25.25 0 0 0-.25-.25h-1.5Z"/></svg>',
+  star:      '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>',
+  comment:   '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.781A1.25 1.25 0 0 1 4.25 13.75V12H2.75A1.75 1.75 0 0 1 1 10.25Z"/></svg>',
+  lightning: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.504.43a1.5 1.5 0 0 1 .904 1.853l-1.498 4.676h3.59a1.5 1.5 0 0 1 1.092 2.534l-6 6.5A1.5 1.5 0 0 1 5.09 14.56l1.498-4.676H3a1.5 1.5 0 0 1-1.092-2.534l6-6.5A1.5 1.5 0 0 1 9.504.43Z"/></svg>',
+  mail:      '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 2h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14H1.75A1.75 1.75 0 0 1 0 12.25v-8.5C0 2.784.784 2 1.75 2ZM1.5 12.251c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V5.809L8.38 9.397a.75.75 0 0 1-.76 0L1.5 5.809v6.442Zm13-8.181v-.32a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25v.32L8 7.88l6.5-3.81Z"/></svg>',
+  blank:     '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25V1.75Z"/></svg>',
+  rocket:    '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M14.064 0h.186C15.216 0 16 .784 16 1.75v.186a8.752 8.752 0 0 1-2.564 6.186l-1.201 1.202a.5.5 0 0 1-.019.019l-2.298 2.298a5.508 5.508 0 0 1 .13 1.59.75.75 0 0 1-.217.518L7.827 15.56a1.25 1.25 0 0 1-2.08-.465l-.314-.942-1.838-1.838-.942-.314a1.25 1.25 0 0 1-.465-2.08l2.007-2.007a.75.75 0 0 1 .518-.217 5.51 5.51 0 0 1 1.59.13l2.298-2.298.019-.019 1.202-1.2A8.752 8.752 0 0 1 14.064 0Z"/></svg>',
+  palette:   '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M7.934.14a8 8 0 1 0 2.022 15.846 1.5 1.5 0 0 0 1.035-1.44v-.001l-.001-.093.002-.025c.001-.042.003-.129.007-.241.007-.231.018-.551.025-.86.006-.293.006-.573-.006-.792-.011-.181-.031-.295-.067-.358a.75.75 0 0 1 .65-1.122 2.5 2.5 0 0 1 2.026 3.987c-.698.969-1.82 1.607-3.124 1.607C5.852 16 1 11.799 1 7.5c0-3.48 2.822-6.5 6.934-7.36Z"/></svg>',
+  pen:       '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.757l8.61-8.61Z"/></svg>',
+  briefcase: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75V3h2.25C14.216 3 15 3.784 15 4.75v7.5A1.75 1.75 0 0 1 13.25 14H2.75A1.75 1.75 0 0 1 1 12.25v-7.5C1 3.784 1.784 3 2.75 3ZM6.5 3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>',
+  utensils:  '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1a.75.75 0 0 0-.75.75V7c0 1.036.84 1.875 1.875 1.875h.375v5.375a.75.75 0 0 0 1.5 0V8.875H6.375C7.41 8.875 8.25 8.036 8.25 7V1.75A.75.75 0 0 0 7.5 1h-.75a.75.75 0 0 0-.75.75V5.5h-.5V1.75A.75.75 0 0 0 4.75 1H3Zm9.75 0a.75.75 0 0 0-.75.75v12.625a.75.75 0 0 0 1.5 0v-5h.75A.75.75 0 0 0 15 8.625V4.5c0-1.933-1.206-3.5-2.25-3.5Z"/></svg>',
+  building:  '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 14.25c0 .138.112.25.25.25H5v-1.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 .75.75v1.25h3.25a.25.25 0 0 0 .25-.25V1.75A1.75 1.75 0 0 0 13.25 0H2.75A1.75 1.75 0 0 0 1 1.75v12.5ZM4 3.75A.75.75 0 0 1 4.75 3h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 4 3.75Zm4 0A.75.75 0 0 1 8.75 3h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 3.75Zm-4 3A.75.75 0 0 1 4.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 4 6.75Zm4 0A.75.75 0 0 1 8.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 6.75Zm-4 3A.75.75 0 0 1 4.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 4 9.75Zm4 0A.75.75 0 0 1 8.75 9h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 8 9.75Z"/></svg>',
+  glow:      '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>',
+  float:     '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 4.5a4 4 0 0 1 0 8H4a3 3 0 0 1-.74-5.905 4 4 0 0 1 7.74-2.095A4.002 4.002 0 0 1 11.5 4.5Z"/></svg>',
+  tada:      '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h4.5v4.5H1.5V1Zm0 9H1.5v4.5H6V10H1.5Zm9 0h4.5v4.5H10.5V10Zm0-9h4.5v4.5H10.5V1ZM6 6h4v4H6V6Z"/></svg>',
+  heart:     '<svg viewBox="0 0 16 16" fill="currentColor"><path d="m8 14.25.345.666a.75.75 0 0 1-.69 0l-.008-.004-.018-.01a7.152 7.152 0 0 1-.31-.17 22.055 22.055 0 0 1-3.434-2.414C2.045 10.731 0 8.35 0 5.5 0 2.836 2.086 1 4.25 1 5.797 1 7.153 1.802 8 3.02 8.847 1.802 10.203 1 11.75 1 13.914 1 16 2.836 16 5.5c0 2.85-2.045 5.231-3.885 6.818a22.066 22.066 0 0 1-3.744 2.584l-.018.01-.006.003h-.002Z"/></svg>',
+};
+
+function getIcon(key, size=14) {
+  const svg = ICON_SVG[key];
+  if (!svg) return key; // fallback to text
+  return svg.replace('<svg ', `<svg width="${size}" height="${size}" `);
+}
+
+/* ════════════════════════════════════════
+   SIDEBAR RENDER
+════════════════════════════════════════ */
+function renderSidebar(filter = '') {
+  const body = document.getElementById('sbBody');
+  body.innerHTML = '';
+  LIB.forEach((cat, ci) => {
+    const items = filter
+      ? cat.items.filter(i => i.lbl.toLowerCase().includes(filter.toLowerCase()))
+      : cat.items;
+    if (!items.length) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'cat-wrap';
+    wrap.innerHTML = `
+      <div class="cat-hdr" onclick="toggleCat(${ci})">
+        <span style="width:14px;height:14px;display:flex;align-items:center;opacity:.65">${getIcon(cat.em,14)}</span><span>${cat.cat}</span>
+        <span class="cat-arrow open" id="arr-${ci}">›</span>
+      </div>
+      <div class="comp-grid" id="cg-${ci}">
+        ${items.map(it => `
+          <div class="ci" draggable="true" data-type="${it.t}"
+               ondragstart="onSideDragStart(event,'${it.t}')"
+               onclick="addComp('${it.t}')">
+            <div class="ci-icon">${ICON_SVG[it.ic] ? ICON_SVG[it.ic].replace('<svg ','<svg width="16" height="16" ') : '<span style="font-size:10px;font-weight:800;font-family:monospace">'+it.ic+'</span>'}</div>
+            <div class="ci-lbl">${it.lbl}</div>
+          </div>`).join('')}
+      </div>`;
+    body.appendChild(wrap);
+  });
+}
+
+function toggleCat(ci) {
+  document.getElementById(`cg-${ci}`)?.classList.toggle('shut');
+  document.getElementById(`arr-${ci}`)?.classList.toggle('open');
+}
+
+function filterComps(v) { renderSidebar(v); }
+
+/* ════════════════════════════════════════
+   CREATE COMPONENT ELEMENT
+════════════════════════════════════════ */
+function mkEl(type, id) {
+  if (!GEN[type]) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'cc';
+  wrap.id = id;
+  wrap.setAttribute('data-type', type);
+  wrap.draggable = true;
+
+  // Control bar
+  const bar = document.createElement('div');
+  bar.className = 'cc-bar';
+  bar.innerHTML = `
+    <span class="cc-drag-handle" title="Drag to reorder">⠿</span>
+    <span class="cc-label">${type}</span>
+    <button class="cbtn" onclick="moveComp('${id}',-1)" title="Move Up">↑</button>
+    <button class="cbtn" onclick="moveComp('${id}',1)" title="Move Down">↓</button>
+    <button class="cbtn" onclick="dupComp('${id}')" title="Duplicate">⧉</button>
+    <button class="cbtn del" onclick="delComp('${id}')" title="Delete"><svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg></button>`;
+
+  const inner = document.createElement('div');
+  inner.className = 'cc-inner';
+  inner.innerHTML = GEN[type]();
+
+  wrap.appendChild(bar);
+  wrap.appendChild(inner);
+
+  // Events
+  wrap.addEventListener('click', e => { e.stopPropagation(); selectComp(id); });
+  wrap.addEventListener('dragstart', e => {
+    e.stopPropagation();
+    S.dragSrc = 'canvas'; S.dragId = id;
+    setTimeout(() => wrap.style.opacity = '.4', 0);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  wrap.addEventListener('dragend', () => {
+    wrap.style.opacity = '';
+    S.dragSrc = null; S.dragId = null;
+    clearPh();
+  });
+  return wrap;
+}
+
+/* ════════════════════════════════════════
+   ADD COMPONENT
+════════════════════════════════════════ */
+function addComp(type, beforeEl = null) {
+  if (!GEN[type]) return;
+  const id = genId();
+  const el = mkEl(type, id);
+  if (!el) return;
+  const canvas = document.getElementById('canvas');
+  const ph = document.getElementById('drop-ph');
+  if (beforeEl) {
+    const b = document.getElementById(beforeEl);
+    canvas.insertBefore(el, b);
+  } else {
+    canvas.insertBefore(el, ph);
+  }
+  canvas.appendChild(ph);
+  checkEmpty();
+  updCount();
+  selectComp(id);
+  saveHist();
+  toast('Added · ' + type, 'ok');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // Init nested drop zones for cols
+  if (type === 'cols2' || type === 'cols3') initNestedCols(id);
+}
+
+/* ════════════════════════════════════════
+   DRAG FROM SIDEBAR
+════════════════════════════════════════ */
+function onSideDragStart(e, type) {
+  S.dragSrc = 'sidebar'; S.dragType = type;
+  e.dataTransfer.effectAllowed = 'copy';
+}
+
+function afterElement(y) {
+  const els = [...document.querySelectorAll('#canvas .cc:not([style*="opacity"])')]
+  return els.reduce((cl, ch) => {
+    const box = ch.getBoundingClientRect();
+    const off = y - box.top - box.height / 2;
+    return off < 0 && off > cl.off ? { off, el: ch } : cl;
+  }, { off: Number.NEGATIVE_INFINITY }).el;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = S.dragSrc === 'sidebar' ? 'copy' : 'move';
+  document.getElementById('canvas').classList.add('drag-over');
+  const ph = document.getElementById('drop-ph');
+  const after = afterElement(e.clientY);
+  ph.className = 'show';
+  if (after) after.before(ph);
+  else document.getElementById('canvas').appendChild(ph);
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const canvas = document.getElementById('canvas');
+  canvas.classList.remove('drag-over');
+  const after = afterElement(e.clientY);
+  const ph = document.getElementById('drop-ph');
+  ph.className = '';
+
+  if (S.dragSrc === 'sidebar') {
+    const type = S.dragType; if (!type) return;
+    const id = genId();
+    const el = mkEl(type, id); if (!el) return;
+    if (after) after.before(el); else canvas.appendChild(el);
+    canvas.appendChild(ph);
+    checkEmpty(); updCount(); selectComp(id); saveHist();
+    toast('Added · ' + type, 'ok');
+    if (type === 'cols2' || type === 'cols3') initNestedCols(id);
+  } else if (S.dragSrc === 'canvas' && S.dragId) {
+    const dragEl = document.getElementById(S.dragId); if (!dragEl) return;
+    if (after && after !== dragEl) after.before(dragEl);
+    else if (!after) canvas.appendChild(dragEl);
+    canvas.appendChild(ph);
+    saveHist();
+    toast('Reordered', 'nfo');
+  }
+  S.dragSrc = null; S.dragType = null; S.dragId = null;
+}
+
+function onDragLeave(e) {
+  if (!document.getElementById('canvas').contains(e.relatedTarget)) {
+    document.getElementById('canvas').classList.remove('drag-over');
+    clearPh();
+  }
+}
+
+function clearPh() {
+  const ph = document.getElementById('drop-ph');
+  if (ph) { ph.className = ''; document.getElementById('canvas').appendChild(ph); }
+}
+
+/* ════════════════════════════════════════
+   NESTED COLUMN DROP ZONES
+════════════════════════════════════════ */
+let nestedDragSrc = null; // { colEl, nccEl } when dragging a nested comp
+
+function initNestedCols(parentId) {
+  const parentEl = document.getElementById(parentId);
+  if (!parentEl) return;
+  parentEl.querySelectorAll('.nested-col').forEach(col => {
+    const area = col.querySelector('.nested-drop-area');
+    if (!area) return;
+
+    col.addEventListener('dragover', e => {
+      // Only handle if dragging from sidebar or nested
+      if (S.dragSrc !== 'sidebar' && S.dragSrc !== 'nested') return;
+      e.preventDefault();
+      e.stopPropagation();
+      col.classList.add('nested-drag-over');
+    });
+
+    col.addEventListener('dragleave', e => {
+      if (!col.contains(e.relatedTarget)) col.classList.remove('nested-drag-over');
+    });
+
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      col.classList.remove('nested-drag-over');
+
+      if (S.dragSrc === 'sidebar') {
+        const type = S.dragType; if (!type || !GEN[type]) return;
+        addNestedComp(type, area, parentId);
+      } else if (S.dragSrc === 'nested' && nestedDragSrc) {
+        // Move nested comp to this column
+        const { nccEl } = nestedDragSrc;
+        area.appendChild(nccEl);
+        updateNestedPh(area);
+        updateNestedPh(nestedDragSrc.area);
+        saveHist();
+      }
+      S.dragSrc = null; S.dragType = null;
+      nestedDragSrc = null;
+    });
+  });
+}
+
+function addNestedComp(type, area, parentId) {
+  if (!GEN[type]) return;
+  const nid = `nc_${++UID}`;
+  const ncc = createNestedCC(type, nid, area, parentId);
+  // Remove placeholder if present
+  const ph = area.querySelector('.nested-ph');
+  if (ph) ph.style.display = 'none';
+  area.appendChild(ncc);
+  saveHist();
+  toast('Added · ' + type + ' (nested)', 'ok');
+  selectNestedComp(nid, parentId);
+}
+
+function createNestedCC(type, nid, area, parentId) {
+  const ncc = document.createElement('div');
+  ncc.className = 'nested-cc';
+  ncc.id = nid;
+  ncc.setAttribute('data-type', type);
+  ncc.setAttribute('data-parent', parentId);
+  ncc.draggable = true;
+
+  ncc.innerHTML = `
+    <div class="nested-cc-bar">
+      <span class="nc-label">${type}</span>
+      <button class="nc-btn" title="Move up" onclick="moveNestedComp('${nid}','${parentId}',-1)">↑</button>
+      <button class="nc-btn" title="Move down" onclick="moveNestedComp('${nid}','${parentId}',1)">↓</button>
+      <button class="nc-btn" title="Delete" onclick="delNestedComp('${nid}','${parentId}',event)">
+        <svg width="8" height="8" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+      </button>
+    </div>
+    <div class="nested-cc-inner">${GEN[type]()}</div>`;
+
+  // Make all text inside editable
+  ncc.querySelectorAll('[contenteditable]').forEach(el => el.setAttribute('contenteditable', ''));
+
+  // Click to select
+  ncc.addEventListener('click', e => {
+    e.stopPropagation();
+    selectNestedComp(nid, parentId);
+  });
+
+  // Drag to reorder within columns
+  ncc.addEventListener('dragstart', e => {
+    e.stopPropagation();
+    S.dragSrc = 'nested';
+    nestedDragSrc = { nccEl: ncc, area };
+    setTimeout(() => ncc.style.opacity = '.4', 0);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  ncc.addEventListener('dragend', () => {
+    ncc.style.opacity = '';
+    if (S.dragSrc === 'nested') { S.dragSrc = null; nestedDragSrc = null; }
+  });
+
+  return ncc;
+}
+
+function updateNestedPh(area) {
+  const ph = area.querySelector('.nested-ph');
+  if (!ph) return;
+  const hasComps = area.querySelectorAll('.nested-cc').length > 0;
+  ph.style.display = hasComps ? 'none' : 'flex';
+}
+
+function selectNestedComp(nid, parentId) {
+  // Deselect parent and all others
+  document.querySelectorAll('.cc.sel').forEach(e => e.classList.remove('sel'));
+  document.querySelectorAll('.nested-cc.sel').forEach(e => e.classList.remove('sel'));
+  S.selId = null;
+  const ncc = document.getElementById(nid); if (!ncc) return;
+  ncc.classList.add('sel');
+  // Show nested props in panel
+  renderNestedProps(nid, parentId);
+}
+
+function delNestedComp(nid, parentId, e) {
+  if (e) e.stopPropagation();
+  const ncc = document.getElementById(nid); if (!ncc) return;
+  const area = ncc.closest('.nested-drop-area');
+  ncc.remove();
+  if (area) updateNestedPh(area);
+  saveHist();
+  deselect();
+  toast('Deleted nested component', 'er');
+}
+
+function moveNestedComp(nid, parentId, dir) {
+  const ncc = document.getElementById(nid); if (!ncc) return;
+  const area = ncc.closest('.nested-drop-area'); if (!area) return;
+  const siblings = [...area.querySelectorAll('.nested-cc')];
+  const i = siblings.indexOf(ncc);
+  if (dir === -1 && i > 0) siblings[i-1].before(ncc);
+  else if (dir === 1 && i < siblings.length - 1) siblings[i+1].after(ncc);
+  saveHist();
+}
+
+function renderNestedProps(nid, parentId) {
+  const ncc = document.getElementById(nid); if (!ncc) return;
+  const inner = ncc.querySelector('.nested-cc-inner'); if (!inner) return;
+  const type = ncc.getAttribute('data-type');
+  const pb = document.getElementById('propsBody');
+  pb.innerHTML = `
+    <div class="psec">
+      <div class="psec-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Nested · ${type}</span>
+        <button class="cbtn del" onclick="delNestedComp('${nid}','${parentId}',event)" style="font-size:9px">
+          <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="prow"><span class="plbl">Font Size</span>
+        <div class="pctl slider-row">
+          <input type="range" class="pslider" min="10" max="72" data-nsp="fontSize" data-unit="px" value="${parseInt(inner.style.fontSize)||14}">
+          <span class="sval">${parseInt(inner.style.fontSize)||14}px</span>
+        </div>
+      </div>
+      <div class="prow"><span class="plbl">Text Color</span>
+        <div class="pctl"><input type="color" class="pcolor" data-nsp="color" value="${rgb2hex(inner.style.color)||'#1f2328'}"></div>
+      </div>
+      <div class="prow"><span class="plbl">Background</span>
+        <div class="pctl"><input type="color" class="pcolor" data-nsp="backgroundColor" value="${rgb2hex(inner.style.backgroundColor)||'#ffffff'}"></div>
+      </div>
+      <div class="prow"><span class="plbl">Padding</span>
+        <div class="pctl slider-row">
+          <input type="range" class="pslider" min="0" max="80" data-nsp="padding" data-unit="px" value="${parseInt(inner.style.padding)||8}">
+          <span class="sval">${parseInt(inner.style.padding)||8}px</span>
+        </div>
+      </div>
+      <div class="prow"><span class="plbl">Border R.</span>
+        <div class="pctl slider-row">
+          <input type="range" class="pslider" min="0" max="48" data-nsp="borderRadius" data-unit="px" value="${parseInt(inner.style.borderRadius)||0}">
+          <span class="sval">${parseInt(inner.style.borderRadius)||0}px</span>
+        </div>
+      </div>
+    </div>`;
+
+  // Bind nested props
+  pb.querySelectorAll('[data-nsp]').forEach(inp => {
+    const prop = inp.dataset.nsp;
+    if (inp.type === 'color') {
+      inp.addEventListener('input', () => { inner.style[prop] = inp.value; });
+    } else if (inp.type === 'range') {
+      const unit = inp.dataset.unit || 'px';
+      const sv = inp.nextElementSibling;
+      inp.addEventListener('input', () => {
+        inner.style[prop] = inp.value + unit;
+        if (sv) sv.textContent = inp.value + unit;
+      });
+    }
+  });
+}
+
+/* ════════════════════════════════════════
+   SELECTION
+════════════════════════════════════════ */
+function selectComp(id) {
+  document.querySelectorAll('.cc.sel').forEach(el => el.classList.remove('sel'));
+  S.selId = id;
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.add('sel');
+  document.getElementById('selName').textContent = '· ' + el.getAttribute('data-type');
+  renderProps(id);
+}
+
+function deselect() {
+  document.querySelectorAll('.cc.sel').forEach(el => el.classList.remove('sel'));
+  S.selId = null;
+  document.getElementById('selName').textContent = '';
+  document.getElementById('propsBody').innerHTML = `
+    <div class="p-empty">
+      <svg viewBox="0 0 16 16"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+      <span>Select a component<br>to edit properties</span>
+    </div>`;
+}
+
+function onCanvasClick(e) {
+  if (e.target === document.getElementById('canvas') || e.target === document.getElementById('cScroll')) deselect();
+}
+
+/* ════════════════════════════════════════
+   COMPONENT ACTIONS
+════════════════════════════════════════ */
+function delComp(id) {
+  document.getElementById(id)?.remove();
+  if (S.selId === id) deselect();
+  checkEmpty(); updCount(); saveHist();
+  toast('Deleted', 'er');
+}
+
+function moveComp(id, dir) {
+  const el = document.getElementById(id); if (!el) return;
+  const canvas = document.getElementById('canvas');
+  const all = [...canvas.querySelectorAll('.cc')];
+  const i = all.indexOf(el);
+  if (dir === -1 && i > 0) all[i - 1].before(el);
+  else if (dir === 1 && i < all.length - 1) all[i + 1].after(el);
+  saveHist(); toast(dir === -1 ? 'Moved up' : 'Moved down', 'nfo');
+}
+
+function dupComp(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const type = el.getAttribute('data-type');
+  const nid = genId();
+  const nel = mkEl(type, nid); if (!nel) return;
+  nel.querySelector('.cc-inner').innerHTML = el.querySelector('.cc-inner').innerHTML;
+  nel.querySelector('.cc-inner').style.cssText = el.querySelector('.cc-inner').style.cssText;
+  const anCls = [...el.classList].filter(c => c.startsWith('an-'));
+  anCls.forEach(c => nel.classList.add(c));
+  el.after(nel);
+  updCount(); selectComp(nid); saveHist();
+  toast('Duplicated', 'ok');
+}
+
+function clearAll() {
+  if (!document.querySelectorAll('#canvas .cc').length) return;
+  if (!confirm('Clear all components? This cannot be undone.')) return;
+  document.querySelectorAll('#canvas .cc').forEach(e => e.remove());
+  deselect(); checkEmpty(); updCount(); saveHist();
+  toast('Canvas cleared', 'er');
+}
+
+function checkEmpty() {
+  const e = document.getElementById('cEmpty');
+  if (!e) return;
+  e.style.display = document.querySelectorAll('#canvas .cc').length ? 'none' : '';
+}
+
+function updCount() {
+  const n = document.querySelectorAll('#canvas .cc').length;
+  document.getElementById('compCount').textContent = n + ' component' + (n === 1 ? '' : 's');
+}
+
+/* ════════════════════════════════════════
+   ANIMATION HELPERS
+════════════════════════════════════════ */
+function getAnim(el) {
+  return [...el.classList].find(c => c.startsWith('an-'))?.replace('an-', '') || 'none';
+}
+function setAnim(id, anId) {
+  const el = document.getElementById(id); if (!el) return;
+  [...el.classList].filter(c => c.startsWith('an-')).forEach(c => el.classList.remove(c));
+  if (anId !== 'none') el.classList.add('an-' + anId);
+}
+function replayAnim(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const inner = el.querySelector('.cc-inner');
+  const an = getAnim(el); if (an === 'none') return;
+  // Force reflow to restart animation
+  el.classList.remove('an-' + an);
+  void el.offsetWidth;
+  el.classList.add('an-' + an);
+  toast('▶ Animation played', 'nfo');
+}
+
+/* ════════════════════════════════════════
+   PROPERTIES PANEL
+════════════════════════════════════════ */
+function rgb2hex(rgb) {
+  if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#ffffff';
+  const m = rgb.match(/\d+/g); if (!m) return '#000000';
+  return '#' + m.slice(0, 3).map(n => (+n).toString(16).padStart(2, '0')).join('');
+}
+
+function renderProps(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const inner = el.querySelector('.cc-inner');
+  const type = el.getAttribute('data-type');
+  const cs = window.getComputedStyle(inner);
+  const curAn = getAnim(el);
+  const canvas = document.getElementById('canvas');
+
+  // Helper: get per-component stored color or fall back to canvas var
+  const compColors = el.dataset.compColors ? JSON.parse(el.dataset.compColors) : {};
+  const canvasStyle = getComputedStyle(canvas);
+  const curAccent = compColors.accent || canvasStyle.getPropertyValue('--ca').trim() || '#0969da';
+  const curTextC  = compColors.text   || canvasStyle.getPropertyValue('--ct').trim() || '#1f2328';
+  const curBgC    = compColors.bg     || canvasStyle.getPropertyValue('--cb').trim() || '#ffffff';
+
+  document.getElementById('propsBody').innerHTML = `
+  <div class="psec">
+    <div class="psec-title"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px;opacity:.6"><path d="M9.019 2.345A3 3 0 0 0 6 4.257V5H4.75A1.75 1.75 0 0 0 3 6.75v1.25H2.74a3 3 0 1 0 0 4H3v1.25c0 .966.784 1.75 1.75 1.75h1.37a3 3 0 1 0 5.76 0H13.25A1.75 1.75 0 0 0 15 13.25V12a3 3 0 1 0 0-5.974V5.25A1.75 1.75 0 0 0 13.25 3.5H12a3 3 0 0 0-2.981-1.155Z"/></svg>${type}</div>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title">Colors</div>
+    <div class="prow">
+      <span class="plbl">Text</span>
+      <div class="pctl" style="display:flex;gap:4px;align-items:center">
+        <input type="color" class="pcolor" style="flex:1" data-compcolor="text" data-cssvar="--ct" value="${curTextC}">
+        <button class="pgbtn" style="width:28px;flex-shrink:0;font-size:9px" data-reset-color="text" title="Reset to theme">↺</button>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Background</span>
+      <div class="pctl" style="display:flex;gap:4px;align-items:center">
+        <input type="color" class="pcolor" style="flex:1" data-compcolor="bg" data-cssvar="--cb" value="${curBgC}">
+        <button class="pgbtn" style="width:28px;flex-shrink:0;font-size:9px" data-reset-color="bg" title="Reset to theme">↺</button>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Accent</span>
+      <div class="pctl" style="display:flex;gap:4px;align-items:center">
+        <input type="color" class="pcolor" style="flex:1" data-compcolor="accent" data-cssvar="--ca" value="${curAccent}">
+        <button class="pgbtn" style="width:28px;flex-shrink:0;font-size:9px" data-reset-color="accent" title="Reset to theme">↺</button>
+      </div>
+    </div>
+    <div class="prow" style="margin-top:2px">
+      <span class="plbl" style="font-size:9px;opacity:.6">ℹ affects this component only</span>
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title">Typography</div>
+    <div class="prow">
+      <span class="plbl">Font Size</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="10" max="80" data-sp="fontSize" data-unit="px" value="${parseInt(cs.fontSize) || 16}">
+        <span class="sval">${parseInt(cs.fontSize) || 16}px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Weight</span>
+      <div class="pctl">
+        <select class="psel" data-sp="fontWeight">
+          <option value="300">Light 300</option>
+          <option value="400">Regular 400</option>
+          <option value="500">Medium 500</option>
+          <option value="600">SemiBold 600</option>
+          <option value="700">Bold 700</option>
+          <option value="800">ExtraBold 800</option>
+          <option value="900">Black 900</option>
+        </select>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Align</span>
+      <div class="pctl">
+        <div class="btn-grp">
+          <button class="pgbtn" data-ta="left">⬅</button>
+          <button class="pgbtn" data-ta="center">⬛</button>
+          <button class="pgbtn" data-ta="right"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5ZM4.75 7.25h9.5a.75.75 0 0 1 0 1.5h-9.5a.75.75 0 0 1 0-1.5ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg></button>
+          <button class="pgbtn" data-ta="justify"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5ZM1.75 7.25h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Family</span>
+      <div class="pctl">
+        <select class="psel" data-sp="fontFamily">
+          <option value="">Default (Mona Sans)</option>
+          <option value="Georgia,serif">Georgia (Serif)</option>
+          <option value="'Times New Roman',serif">Times New Roman</option>
+          <option value="'Fira Code',monospace">Fira Code (Mono)</option>
+          <option value="'Courier New',monospace">Courier New</option>
+          <option value="Impact,sans-serif">Impact</option>
+          <option value="Verdana,sans-serif">Verdana</option>
+          <option value="'Arial Black',sans-serif">Arial Black</option>
+        </select>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Line Height</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="10" max="30" data-sp="lineHeight" data-unit="" data-mult="0.1" value="${Math.round((parseFloat(cs.lineHeight) / parseFloat(cs.fontSize) || 1.5) * 10)}">
+        <span class="sval" id="lhVal">${(parseFloat(cs.lineHeight) / parseFloat(cs.fontSize) || 1.5).toFixed(1)}</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Letter Sp.</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="-20" max="100" data-sp="letterSpacing" data-unit="px" data-mult="0.1" value="${Math.round((parseFloat(cs.letterSpacing) || 0) * 10)}">
+        <span class="sval">${(parseFloat(cs.letterSpacing) || 0).toFixed(1)}px</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title">Spacing &amp; Size</div>
+    <div class="prow">
+      <span class="plbl">Padding</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="0" max="100" data-sp="padding" data-unit="px" value="${parseInt(inner.style.padding) || 0}">
+        <span class="sval">${parseInt(inner.style.padding) || 0}px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Margin</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="0" max="80" data-sp="marginTop" data-unit="px" value="${parseInt(inner.style.marginTop) || 0}">
+        <span class="sval">${parseInt(inner.style.marginTop) || 0}px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Border R.</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="0" max="48" data-sp="borderRadius" data-unit="px" value="${parseInt(inner.style.borderRadius) || 0}">
+        <span class="sval">${parseInt(inner.style.borderRadius) || 0}px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Opacity</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="10" max="100" data-sp="opacity" data-div="100" value="${Math.round((parseFloat(inner.style.opacity) || 1) * 100)}">
+        <span class="sval">${Math.round((parseFloat(inner.style.opacity) || 1) * 100)}%</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Width</span>
+      <div class="pctl">
+        <input type="text" class="pin" data-sp="width" placeholder="e.g. 100%, 600px, auto" value="${el.style.width || inner.style.width || ''}">
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Height</span>
+      <div class="pctl">
+        <input type="text" class="pin" data-sp="height" placeholder="e.g. 400px, auto" value="${el.style.height || inner.style.height || ''}">
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Min H</span>
+      <div class="pctl">
+        <input type="text" class="pin" data-sp="minHeight" placeholder="e.g. 200px" value="${el.style.minHeight || inner.style.minHeight || ''}">
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Max W</span>
+      <div class="pctl">
+        <input type="text" class="pin" data-sp="maxWidth" placeholder="e.g. 960px, 100%" value="${el.style.maxWidth || inner.style.maxWidth || ''}">
+      </div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title">Border</div>
+    <div class="prow">
+      <span class="plbl">Width</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="0" max="8" data-border="width" value="${parseInt(inner.style.borderWidth) || 0}">
+        <span class="sval">${parseInt(inner.style.borderWidth) || 0}px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Color</span>
+      <div class="pctl"><input type="color" class="pcolor" data-border="color" value="${rgb2hex(inner.style.borderColor) || '#d0d7de'}"></div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Style</span>
+      <div class="pctl">
+        <select class="psel" data-border="style">
+          <option value="solid">Solid</option>
+          <option value="dashed">Dashed</option>
+          <option value="dotted">Dotted</option>
+          <option value="double">Double</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title">Shadow Presets</div>
+    <div class="shadow-grid">
+      ${[
+        ['None',    'none'],
+        ['Small',   '0 1px 3px rgba(27,31,36,.12)'],
+        ['Medium',  '0 3px 12px rgba(27,31,36,.15)'],
+        ['Large',   '0 8px 32px rgba(27,31,36,.25)'],
+        ['Colored', '0 4px 20px rgba(9,105,218,.35)'],
+        ['Retro',   '4px 4px 0 #000'],
+        ['Inner',   'inset 0 2px 5px rgba(0,0,0,.1)'],
+        ['Layered', '0 2px 4px rgba(0,0,0,.08),0 12px 32px rgba(0,0,0,.16)'],
+      ].map(([l, v]) => `<button class="shbtn" data-sh="${v}">${l}</button>`).join('')}
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px;opacity:.6"><path d="M7.53 1.282a.5.5 0 0 1 .94 0l1.164 3.44 3.44 1.164a.5.5 0 0 1 0 .94l-3.44 1.164-1.164 3.44a.5.5 0 0 1-.94 0L6.366 7.99 2.926 6.826a.5.5 0 0 1 0-.94l3.44-1.164L7.53 1.282Z"/></svg>Animations</div>
+    <div class="anim-grid">
+      ${ANIMS.map(a => `<button class="abtn${curAn === a.id ? ' on' : ''}" data-an="${a.id}">
+        <div>${a.ic}</div>
+        <div style="margin-top:2px;font-size:9px">${a.lbl}</div>
+      </button>`).join('')}
+    </div>
+    <div class="prow" style="margin-top:6px">
+      <span class="plbl">Duration</span>
+      <div class="pctl">
+        <select class="psel" id="durSel">
+          <option value="0.3s">0.3s — Fast</option>
+          <option value="0.6s">0.6s — Quick</option>
+          <option value="0.8s" selected>0.8s — Normal</option>
+          <option value="1.2s">1.2s — Slow</option>
+          <option value="2s">2s — Very Slow</option>
+          <option value="3s">3s — Crawl</option>
+        </select>
+      </div>
+    </div>
+    <button class="actbtn full" style="margin-top:6px" id="replayBtn">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 9.5a.75.75 0 0 1-.75-.75V3a.75.75 0 0 1 .75-.75h5.75a.75.75 0 0 1 0 1.5H3.06l2.19 2.19A6.5 6.5 0 1 1 2.463 13a.75.75 0 0 1 1.05-1.074A5 5 0 1 0 6.5 4.56L8.75 6.81A.75.75 0 0 1 8 8H2.25a.75.75 0 0 1-.75-.75Z"/></svg>
+      Replay Animation
+    </button>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title">Transform</div>
+    <div class="prow">
+      <span class="plbl">Scale</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="50" max="200" data-transform="scale" value="100">
+        <span class="sval">1×</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Rotate</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="-180" max="180" data-transform="rotate" value="0">
+        <span class="sval">0°</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Skew X</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="-45" max="45" data-transform="skewX" value="0">
+        <span class="sval">0°</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="psec-title"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px;opacity:.6"><path d="M8 0a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 4.095 0 5.555 0 7.318 0 9.366 1.708 11 3.781 11H7.5V8.543L6.22 9.845a.75.75 0 0 1-1.06-1.06l2.5-2.5a.75.75 0 0 1 1.06 0l2.5 2.5a.75.75 0 0 1-1.06 1.06L8.5 8.543V11h3.938C14.502 11 16 9.57 16 7.773c0-1.636-1.242-2.969-2.834-3.194C12.923 1.999 10.692 0 8 0Z"/></svg>Position &amp; Layout</div>
+    <div class="prow">
+      <span class="plbl">Mode</span>
+      <div class="pctl">
+        <select class="psel" id="posMode">
+          <option value="relative">Relative (default)</option>
+          <option value="absolute">Absolute (free place)</option>
+          <option value="fixed">Fixed (sticky)</option>
+        </select>
+      </div>
+    </div>
+    <div class="prow" id="xyRow" style="display:none">
+      <span class="plbl">X (left)</span>
+      <div class="pctl slider-row">
+        <input type="number" class="pin" id="posX" placeholder="0" style="width:60px" min="-2000" max="2000">
+        <span class="sval" style="font-size:9px">px</span>
+      </div>
+    </div>
+    <div class="prow" id="xyRow2" style="display:none">
+      <span class="plbl">Y (top)</span>
+      <div class="pctl slider-row">
+        <input type="number" class="pin" id="posY" placeholder="0" style="width:60px" min="-2000" max="2000">
+        <span class="sval" style="font-size:9px">px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Z-Index</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" id="zIndex" min="0" max="100" value="${parseInt(el.style.zIndex)||0}">
+        <span class="sval" id="zIndexVal">${parseInt(el.style.zIndex)||0}</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Gap (children)</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" id="gapCtrl" min="0" max="80" value="${parseInt(inner.style.gap)||0}">
+        <span class="sval" id="gapVal">${parseInt(inner.style.gap)||0}px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Padding T/B</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="0" max="120" id="paddingTB" value="${parseInt(inner.style.paddingTop)||parseInt(inner.style.padding)||0}">
+        <span class="sval" id="paddingTBVal">${parseInt(inner.style.paddingTop)||parseInt(inner.style.padding)||0}px</span>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Padding L/R</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" min="0" max="120" id="paddingLR" value="${parseInt(inner.style.paddingLeft)||parseInt(inner.style.padding)||0}">
+        <span class="sval" id="paddingLRVal">${parseInt(inner.style.paddingLeft)||parseInt(inner.style.padding)||0}px</span>
+      </div>
+    </div>
+  </div>
+
+  ${(type === 'image' || type === 'video' || type === 'gallery') ? `
+  <div class="psec">
+    <div class="psec-title"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px;opacity:.6"><path d="M16 13.25A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75ZM1.75 2.5a.25.25 0 0 0-.25.25V9l4.5-4.5 4.25 4.25 1.5-1.5 3 3v-8a.25.25 0 0 0-.25-.25ZM1.5 13.25c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-.75l-3.75-3.75-1.5 1.5L5 6.25l-3.5 3.5Z"/></svg>Media</div>
+    ${type === 'image' ? `
+    <div class="prow" style="flex-direction:column;align-items:stretch;gap:6px">
+      <label class="actbtn full" style="cursor:pointer;text-align:center">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 1.75a.75.75 0 0 0-1.5 0v5.19L5.03 4.72a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 6.94V1.75ZM2 9.75a.75.75 0 0 0-1.5 0v3.5c0 .966.784 1.75 1.75 1.75h11.5c.966 0 1.75-.784 1.75-1.75v-3.5a.75.75 0 0 0-1.5 0v3.5a.25.25 0 0 1-.25.25H2.25a.25.25 0 0 1-.25-.25v-3.5Z"/></svg> Upload Image
+        <input type="file" accept="image/*" id="imgUpload" style="display:none">
+      </label>
+      <input type="text" class="pin" id="imgUrl" placeholder="…or paste image URL" value="">
+      <button class="actbtn full" id="imgUrlBtn">Apply URL</button>
+    </div>
+    <div class="prow">
+      <span class="plbl">Fit</span>
+      <div class="pctl">
+        <select class="psel" id="imgFit">
+          <option value="cover">Cover (fill)</option>
+          <option value="contain">Contain (fit)</option>
+          <option value="fill">Stretch</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Height</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" id="imgHeight" min="80" max="800" value="180">
+        <span class="sval" id="imgHeightVal">180px</span>
+      </div>
+    </div>` : ''}
+    ${type === 'video' ? `
+    <div class="prow" style="flex-direction:column;align-items:stretch;gap:6px">
+      <label class="actbtn full" style="cursor:pointer;text-align:center">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 1.75a.75.75 0 0 0-1.5 0v5.19L5.03 4.72a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 6.94V1.75ZM2 9.75a.75.75 0 0 0-1.5 0v3.5c0 .966.784 1.75 1.75 1.75h11.5c.966 0 1.75-.784 1.75-1.75v-3.5a.75.75 0 0 0-1.5 0v3.5a.25.25 0 0 1-.25.25H2.25a.25.25 0 0 1-.25-.25v-3.5Z"/></svg> Upload Video
+        <input type="file" accept="video/*" id="vidUpload" style="display:none">
+      </label>
+      <input type="text" class="pin" id="vidUrl" placeholder="YouTube/Vimeo URL or video URL" value="">
+      <button class="actbtn full" id="vidUrlBtn">Embed URL</button>
+    </div>
+    <div class="prow">
+      <span class="plbl">Height</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" id="vidHeight" min="120" max="720" value="220">
+        <span class="sval" id="vidHeightVal">220px</span>
+      </div>
+    </div>` : ''}
+    ${type === 'gallery' ? `
+    <div class="prow" style="flex-direction:column;align-items:stretch;gap:6px">
+      <label class="actbtn full" style="cursor:pointer;text-align:center">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 1.75a.75.75 0 0 0-1.5 0v5.19L5.03 4.72a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 6.94V1.75ZM2 9.75a.75.75 0 0 0-1.5 0v3.5c0 .966.784 1.75 1.75 1.75h11.5c.966 0 1.75-.784 1.75-1.75v-3.5a.75.75 0 0 0-1.5 0v3.5a.25.25 0 0 1-.25.25H2.25a.25.25 0 0 1-.25-.25v-3.5Z"/></svg> Upload Images
+        <input type="file" accept="image/*" multiple id="galleryUpload" style="display:none">
+      </label>
+    </div>
+    <div class="prow">
+      <span class="plbl">Columns</span>
+      <div class="pctl">
+        <div class="btn-grp">
+          <button class="pgbtn" data-galcols="2">2</button>
+          <button class="pgbtn on" data-galcols="3">3</button>
+          <button class="pgbtn" data-galcols="4">4</button>
+        </div>
+      </div>
+    </div>
+    <div class="prow">
+      <span class="plbl">Gap</span>
+      <div class="pctl slider-row">
+        <input type="range" class="pslider" id="galGap" min="0" max="32" value="8">
+        <span class="sval" id="galGapVal">8px</span>
+      </div>
+    </div>` : ''}
+  </div>` : ''}
+
+  <div class="psec">
+    <div class="psec-title">Quick Actions</div>
+    <div class="act-grid">
+      <button class="actbtn" onclick="moveComp('${id}',-1)">↑ Move Up</button>
+      <button class="actbtn" onclick="moveComp('${id}',1)">↓ Move Down</button>
+      <button class="actbtn full" onclick="dupComp('${id}')">⧉ Duplicate Component</button>
+      <button class="actbtn danger full" onclick="delComp('${id}')"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15Z"/></svg> Delete</button>
+    </div>
+  </div>`;
+
+  // ── BIND EVENTS ──
+  const pb = document.getElementById('propsBody');
+
+  // Color pickers
+  pb.querySelectorAll('[data-sp]').forEach(inp => {
+    if (inp.type === 'color') {
+      inp.addEventListener('input', () => { inner.style[inp.dataset.sp] = inp.value; });
+    } else if (inp.type === 'range') {
+      const unit = inp.dataset.unit ?? 'px';
+      const mult = parseFloat(inp.dataset.mult) || 1;
+      const div  = parseFloat(inp.dataset.div) || 1;
+      const sv   = inp.nextElementSibling;
+      inp.addEventListener('input', () => {
+        const raw = parseFloat(inp.value);
+        const val = raw * mult / div;
+        if (inp.dataset.sp === 'opacity') {
+          inner.style.opacity = val;
+          if (sv) sv.textContent = Math.round(raw / div * 100) + '%';
+        } else if (inp.dataset.sp === 'lineHeight') {
+          inner.style.lineHeight = val.toFixed(1);
+          if (sv) sv.textContent = val.toFixed(1);
+        } else if (inp.dataset.sp === 'letterSpacing') {
+          inner.style.letterSpacing = val.toFixed(1) + 'px';
+          if (sv) sv.textContent = val.toFixed(1) + 'px';
+        } else {
+          inner.style[inp.dataset.sp] = val + unit;
+          if (sv) sv.textContent = val + unit;
+        }
+      });
+    } else if (inp.type === 'text' || inp.type === 'number') {
+      const prop = inp.dataset.sp;
+      // width/minHeight/maxWidth apply to the wrapper (.cc) so they affect layout flow
+      // everything else applies to inner
+      const sizeProps = ['width','minWidth','maxWidth','height','minHeight','maxHeight'];
+      const applyVal = () => {
+        let v = inp.value.trim();
+        if (!v) { (sizeProps.includes(prop) ? el : inner).style[prop] = ''; return; }
+        // Auto-append px if value is a plain number
+        if (/^\d+(\.\d+)?$/.test(v)) v = v + 'px';
+        if (sizeProps.includes(prop)) {
+          el.style[prop] = v;
+          inner.style[prop] = v;
+        } else {
+          inner.style[prop] = v;
+        }
+      };
+      inp.addEventListener('input', applyVal);
+      inp.addEventListener('change', applyVal);
+    }
+  });
+
+  // Selects
+  pb.querySelectorAll('select[data-sp]').forEach(sel => {
+    sel.addEventListener('change', () => { inner.style[sel.dataset.sp] = sel.value; });
+    if (inner.style[sel.dataset.sp]) sel.value = inner.style[sel.dataset.sp];
+  });
+
+  // Text align
+  pb.querySelectorAll('[data-ta]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inner.style.textAlign = btn.dataset.ta;
+      pb.querySelectorAll('[data-ta]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+    });
+    if (cs.textAlign === btn.dataset.ta) btn.classList.add('on');
+  });
+
+  // Per-component CSS vars (accent/text/bg colors)
+  pb.querySelectorAll('[data-compcolor]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const varName = inp.dataset.cssvar;
+      const colorKey = inp.dataset.compcolor;
+      // Store on element for persistence
+      const stored = el.dataset.compColors ? JSON.parse(el.dataset.compColors) : {};
+      stored[colorKey] = inp.value;
+      el.dataset.compColors = JSON.stringify(stored);
+      // Create/update a per-component style block
+      let styleEl = el.querySelector('.comp-color-vars');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.className = 'comp-color-vars';
+        el.appendChild(styleEl);
+      }
+      const stored2 = el.dataset.compColors ? JSON.parse(el.dataset.compColors) : {};
+      const rules = [];
+      if (stored2.text)   rules.push(`--ct:${stored2.text}`);
+      if (stored2.bg)     rules.push(`--cb:${stored2.bg}`);
+      if (stored2.accent) rules.push(`--ca:${stored2.accent}`);
+      styleEl.textContent = `#${id}{${rules.join(';')}}`;
+      // Also apply directly to wrapper
+      if (stored2.text)   el.style.setProperty('--ct', stored2.text);
+      if (stored2.bg)     { el.style.setProperty('--cb', stored2.bg); inner.style.backgroundColor = stored2.bg; }
+      if (stored2.accent) el.style.setProperty('--ca', stored2.accent);
+    });
+  });
+
+  // Reset color buttons
+  pb.querySelectorAll('[data-reset-color]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const colorKey = btn.dataset.resetColor;
+      const stored = el.dataset.compColors ? JSON.parse(el.dataset.compColors) : {};
+      delete stored[colorKey];
+      el.dataset.compColors = JSON.stringify(stored);
+      const varMap = {text:'--ct',bg:'--cb',accent:'--ca'};
+      el.style.removeProperty(varMap[colorKey]);
+      if (colorKey === 'bg') inner.style.backgroundColor = '';
+      const styleEl = el.querySelector('.comp-color-vars');
+      if (styleEl) {
+        const rules = [];
+        if (stored.text)   rules.push(`--ct:${stored.text}`);
+        if (stored.bg)     rules.push(`--cb:${stored.bg}`);
+        if (stored.accent) rules.push(`--ca:${stored.accent}`);
+        styleEl.textContent = rules.length ? `#${id}{${rules.join(';')}}` : '';
+      }
+      // Refresh color picker value
+      const picker = pb.querySelector(`[data-compcolor="${colorKey}"]`);
+      if (picker) {
+        const canvasCSS = getComputedStyle(canvas);
+        picker.value = canvasCSS.getPropertyValue(varMap[colorKey]).trim() || '#000000';
+      }
+      toast('Color reset to theme', 'nfo');
+    });
+  });
+
+  // Position mode
+  const posModeEl = pb.querySelector('#posMode');
+  if (posModeEl) {
+    posModeEl.value = el.style.position || 'relative';
+    const xyRow  = pb.querySelector('#xyRow');
+    const xyRow2 = pb.querySelector('#xyRow2');
+    const showXY = v => { xyRow.style.display = (v==='absolute'||v==='fixed')?'':'none'; xyRow2.style.display = (v==='absolute'||v==='fixed')?'':'none'; };
+    showXY(posModeEl.value);
+    posModeEl.addEventListener('change', () => {
+      el.style.position = posModeEl.value;
+      showXY(posModeEl.value);
+      if (posModeEl.value === 'relative') { el.style.left=''; el.style.top=''; }
+      saveHist();
+    });
+    const posXEl = pb.querySelector('#posX');
+    const posYEl = pb.querySelector('#posY');
+    if (posXEl) {
+      posXEl.value = parseInt(el.style.left)||0;
+      posXEl.addEventListener('input', () => { el.style.left = posXEl.value + 'px'; });
+    }
+    if (posYEl) {
+      posYEl.value = parseInt(el.style.top)||0;
+      posYEl.addEventListener('input', () => { el.style.top = posYEl.value + 'px'; });
+    }
+  }
+
+  // Z-Index
+  const ziEl = pb.querySelector('#zIndex');
+  const ziValEl = pb.querySelector('#zIndexVal');
+  if (ziEl) {
+    ziEl.addEventListener('input', () => { el.style.zIndex = ziEl.value; if(ziValEl) ziValEl.textContent = ziEl.value; });
+  }
+
+  // Gap
+  const gapEl = pb.querySelector('#gapCtrl');
+  const gapValEl = pb.querySelector('#gapVal');
+  if (gapEl) {
+    gapEl.addEventListener('input', () => {
+      inner.style.gap = gapEl.value + 'px';
+      const firstChild = inner.firstElementChild;
+      if (firstChild) firstChild.style.gap = gapEl.value + 'px';
+      if(gapValEl) gapValEl.textContent = gapEl.value + 'px';
+    });
+  }
+
+  // Padding T/B and L/R independent
+  const pTB = pb.querySelector('#paddingTB');
+  const pLR = pb.querySelector('#paddingLR');
+  if (pTB) {
+    pTB.addEventListener('input', () => {
+      inner.style.paddingTop = pTB.value + 'px';
+      inner.style.paddingBottom = pTB.value + 'px';
+      pb.querySelector('#paddingTBVal').textContent = pTB.value + 'px';
+    });
+  }
+  if (pLR) {
+    pLR.addEventListener('input', () => {
+      inner.style.paddingLeft = pLR.value + 'px';
+      inner.style.paddingRight = pLR.value + 'px';
+      pb.querySelector('#paddingLRVal').textContent = pLR.value + 'px';
+    });
+  }
+
+  // ── IMAGE UPLOAD / URL ──
+  const imgUpload = pb.querySelector('#imgUpload');
+  if (imgUpload) {
+    const imgPh = inner.querySelector('.img-ph');
+    const imgEl = inner.querySelector('img');
+    const heightSlider = pb.querySelector('#imgHeight');
+    const heightVal = pb.querySelector('#imgHeightVal');
+    const fitSel = pb.querySelector('#imgFit');
+
+    const applyImg = (src) => {
+      let img = inner.querySelector('img');
+      if (!img) {
+        inner.innerHTML = `<img src="" style="width:100%;height:180px;object-fit:cover;border-radius:7px;display:block">`;
+        img = inner.querySelector('img');
+      }
+      img.src = src;
+      if (heightSlider) { img.style.height = heightSlider.value + 'px'; }
+    };
+
+    imgUpload.addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ev => applyImg(ev.target.result);
+      reader.readAsDataURL(f);
+      toast('Image uploaded!', 'ok');
+    });
+
+    const imgUrlBtn = pb.querySelector('#imgUrlBtn');
+    if (imgUrlBtn) imgUrlBtn.addEventListener('click', () => {
+      const url = pb.querySelector('#imgUrl').value.trim();
+      if (url) { applyImg(url); toast('Image URL applied!', 'ok'); }
+    });
+
+    if (heightSlider) {
+      const curImg = inner.querySelector('img');
+      if (curImg) { heightSlider.value = parseInt(curImg.style.height)||180; heightVal.textContent = heightSlider.value+'px'; }
+      heightSlider.addEventListener('input', () => {
+        const img = inner.querySelector('img');
+        if (img) img.style.height = heightSlider.value + 'px';
+        heightVal.textContent = heightSlider.value + 'px';
+      });
+    }
+    if (fitSel) {
+      const curImg = inner.querySelector('img');
+      if (curImg) fitSel.value = curImg.style.objectFit || 'cover';
+      fitSel.addEventListener('change', () => {
+        const img = inner.querySelector('img');
+        if (img) img.style.objectFit = fitSel.value;
+      });
+    }
+  }
+
+  // ── VIDEO UPLOAD / URL ──
+  const vidUpload = pb.querySelector('#vidUpload');
+  if (vidUpload) {
+    const applyVideoSrc = (src, isEmbed) => {
+      if (isEmbed) {
+        inner.innerHTML = `<div class="comp-video"><div style="width:100%;height:${pb.querySelector('#vidHeight')?.value||220}px;border-radius:8px;overflow:hidden"><iframe src="${src}" width="100%" height="100%" frameborder="0" allowfullscreen style="display:block"></iframe></div></div>`;
+      } else {
+        inner.innerHTML = `<div class="comp-video"><video src="${src}" controls style="width:100%;height:${pb.querySelector('#vidHeight')?.value||220}px;border-radius:8px;background:#000;display:block"></video></div>`;
+      }
+    };
+    vidUpload.addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ev => { applyVideoSrc(ev.target.result, false); toast('Video uploaded!', 'ok'); };
+      reader.readAsDataURL(f);
+    });
+    const vidUrlBtn = pb.querySelector('#vidUrlBtn');
+    if (vidUrlBtn) vidUrlBtn.addEventListener('click', () => {
+      let url = pb.querySelector('#vidUrl').value.trim();
+      if (!url) return;
+      // Convert YouTube/Vimeo to embed
+      let embedUrl = url;
+      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+      if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+      const vmMatch = url.match(/vimeo\.com\/(\d+)/);
+      if (vmMatch) embedUrl = `https://player.vimeo.com/video/${vmMatch[1]}`;
+      const isEmbed = ytMatch || vmMatch || url.includes('/embed/');
+      applyVideoSrc(embedUrl, !!isEmbed);
+      toast('Video embedded!', 'ok');
+    });
+    const vidH = pb.querySelector('#vidHeight');
+    const vidHVal = pb.querySelector('#vidHeightVal');
+    if (vidH) vidH.addEventListener('input', () => {
+      const v = inner.querySelector('video,iframe');
+      if (v) v.style.height = vidH.value + 'px';
+      if (vidHVal) vidHVal.textContent = vidH.value + 'px';
+    });
+  }
+
+  // ── GALLERY UPLOAD ──
+  const galUpload = pb.querySelector('#galleryUpload');
+  if (galUpload) {
+    const getGrid = () => inner.querySelector('.gallery-grid');
+    galUpload.addEventListener('change', e => {
+      const files = [...e.target.files]; if (!files.length) return;
+      const grid = getGrid() || inner.querySelector('div');
+      const cols = pb.querySelector('.pgbtn.on[data-galcols]')?.dataset.galcols || 3;
+      if (grid) grid.innerHTML = '';
+      let loaded = 0;
+      files.forEach(f => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const item = document.createElement('div');
+          item.className = 'gallery-item';
+          item.style.cssText = 'opacity:1;background:none;border:none';
+          item.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:5px">`;
+          if (grid) grid.appendChild(item);
+          loaded++;
+          if (loaded === files.length) toast(`${files.length} images added!`, 'ok');
+        };
+        reader.readAsDataURL(f);
+      });
+    });
+    pb.querySelectorAll('[data-galcols]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pb.querySelectorAll('[data-galcols]').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        const grid = getGrid();
+        if (grid) grid.style.gridTemplateColumns = `repeat(${btn.dataset.galcols},1fr)`;
+      });
+    });
+    const galGap = pb.querySelector('#galGap');
+    const galGapVal = pb.querySelector('#galGapVal');
+    if (galGap) galGap.addEventListener('input', () => {
+      const grid = getGrid();
+      if (grid) grid.style.gap = galGap.value + 'px';
+      if (galGapVal) galGapVal.textContent = galGap.value + 'px';
+    });
+  }
+
+  // Border
+  pb.querySelectorAll('[data-border]').forEach(inp => {
+    const bk = inp.dataset.border;
+    inp.addEventListener('input', () => {
+      if (bk === 'width') {
+        inner.style.borderWidth = inp.value + 'px';
+        inner.style.borderStyle = inner.style.borderStyle || 'solid';
+        inp.nextElementSibling && (inp.nextElementSibling.textContent = inp.value + 'px');
+      } else if (bk === 'color') {
+        inner.style.borderColor = inp.value;
+      } else if (bk === 'style') {
+        inner.style.borderStyle = inp.value;
+      }
+    });
+    if (bk === 'style' && inner.style.borderStyle) inp.value = inner.style.borderStyle;
+  });
+
+  // Shadow presets
+  pb.querySelectorAll('[data-sh]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inner.style.boxShadow = btn.dataset.sh === 'none' ? '' : btn.dataset.sh;
+      toast('Shadow applied', 'nfo');
+    });
+  });
+
+  // Animation buttons
+  pb.querySelectorAll('[data-an]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const anId = btn.dataset.an;
+      setAnim(id, anId);
+      pb.querySelectorAll('[data-an]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      if (anId !== 'none') {
+        const dur = document.getElementById('durSel')?.value || '0.8s';
+        // Apply duration via inline style on inner to override CSS class defaults
+        const innerEl = document.getElementById(id)?.querySelector('.cc-inner');
+        if (innerEl) innerEl.style.animationDuration = dur;
+        setTimeout(() => replayAnim(id), 10);
+      }
+      toast('Animation: ' + anId, 'nfo');
+    });
+  });
+
+  // Duration select
+  pb.querySelector('#durSel')?.addEventListener('change', function () {
+    const innerEl = document.getElementById(id)?.querySelector('.cc-inner');
+    if (innerEl) innerEl.style.animationDuration = this.value;
+    replayAnim(id);
+  });
+
+  // Replay button
+  pb.querySelector('#replayBtn')?.addEventListener('click', () => replayAnim(id));
+
+  // Transform sliders
+  const transformState = { scale: 100, rotate: 0, skewX: 0 };
+  pb.querySelectorAll('[data-transform]').forEach(inp => {
+    const sv = inp.nextElementSibling;
+    inp.addEventListener('input', () => {
+      const k = inp.dataset.transform;
+      transformState[k] = parseFloat(inp.value);
+      const s = transformState.scale / 100;
+      const r = transformState.rotate;
+      const sk = transformState.skewX;
+      inner.style.transform = `scale(${s}) rotate(${r}deg) skewX(${sk}deg)`;
+      if (k === 'scale' && sv) sv.textContent = s.toFixed(2) + '×';
+      if (k === 'rotate' && sv) sv.textContent = r + '°';
+      if (k === 'skewX' && sv) sv.textContent = sk + '°';
+    });
+  });
+}
+
+/* ════════════════════════════════════════
+   UNDO / REDO
+════════════════════════════════════════ */
+function getState() {
+  const canvas = document.getElementById('canvas');
+  return [...canvas.querySelectorAll('.cc')].map(el => ({
+    id: el.id,
+    type: el.getAttribute('data-type'),
+    html: el.querySelector('.cc-inner')?.innerHTML,
+    style: el.querySelector('.cc-inner')?.style.cssText,
+    elStyle: el.style.cssText,
+    animClass: [...el.classList].filter(c => c.startsWith('an-')).join(' '),
+    compColors: el.dataset.compColors || '',
+  }));
+}
+
+function saveHist() {
+  const snapshot = JSON.stringify(getState());
+  S.hist = S.hist.slice(0, S.hIdx + 1);
+  S.hist.push(snapshot);
+  if (S.hist.length > 60) S.hist.shift();
+  S.hIdx = S.hist.length - 1;
+}
+
+function restoreState(snapshot) {
+  const data = JSON.parse(snapshot);
+  const canvas = document.getElementById('canvas');
+  const ph = document.getElementById('drop-ph');
+  document.querySelectorAll('#canvas .cc').forEach(e => e.remove());
+  data.forEach(d => {
+    const el = mkEl(d.type, d.id);
+    if (!el) return;
+    el.querySelector('.cc-inner').innerHTML = d.html;
+    el.querySelector('.cc-inner').style.cssText = d.style;
+    if (d.elStyle) el.style.cssText = d.elStyle;
+    if (d.compColors) el.dataset.compColors = d.compColors;
+    if (d.animClass) d.animClass.split(' ').forEach(c => c && el.classList.add(c));
+    canvas.insertBefore(el, ph);
+  });
+  canvas.appendChild(ph);
+  checkEmpty(); updCount();
+}
+
+function undo() {
+  if (S.hIdx <= 0) { toast('Nothing to undo', 'er'); return; }
+  S.hIdx--;
+  restoreState(S.hist[S.hIdx]);
+  deselect(); toast('↩ Undo', 'nfo');
+}
+
+function redo() {
+  if (S.hIdx >= S.hist.length - 1) { toast('Nothing to redo', 'er'); return; }
+  S.hIdx++;
+  restoreState(S.hist[S.hIdx]);
+  deselect(); toast('↪ Redo', 'nfo');
+}
+
+/* ════════════════════════════════════════
+   PREVIEW
+════════════════════════════════════════ */
+function togglePreview() {
+  S.preview = !S.preview;
+  document.body.classList.toggle('preview', S.preview);
+  const btn = document.getElementById('prevBtn');
+  btn.classList.toggle('active', S.preview);
+  btn.innerHTML = S.preview
+    ? `<svg viewBox="0 0 16 16"><path fill="currentColor" d="M.143 2.31a.75.75 0 0 1 1.047-.167l14.5 10.5a.75.75 0 0 1-.88 1.214L.31 3.357A.75.75 0 0 1 .143 2.31Zm16 .143a.75.75 0 0 0-1.048-.167l-14.5 10.5a.75.75 0 0 0 .88 1.214l14.5-10.5a.75.75 0 0 0 .168-1.047Z"/></svg> Exit`
+    : `<svg viewBox="0 0 16 16"><path fill="currentColor" d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8ZM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8Z"/><circle cx="8" cy="8" r="2"/></svg> Preview`;
+  toast(S.preview ? 'Preview mode' : 'Edit mode', 'nfo');
+}
+
+/* ════════════════════════════════════════
+   ZOOM
+════════════════════════════════════════ */
+function zm(delta, mode) {
+  if (mode === 'reset') S.zmLevel = 1;
+  else S.zmLevel = Math.max(0.3, Math.min(2, S.zmLevel + delta));
+  document.getElementById('canvas').style.transform = `scale(${S.zmLevel})`;
+  document.getElementById('zmVal').textContent = Math.round(S.zmLevel * 100) + '%';
+}
+
+/* ════════════════════════════════════════
+   CODE EXPORT
+════════════════════════════════════════ */
+function buildHTML() {
+  const canvas = document.getElementById('canvas');
+  const cs = canvas.style;
+  const bg = cs.getPropertyValue('--cb') || '#ffffff';
+  const tx = cs.getPropertyValue('--ct') || '#1f2328';
+  const ac = cs.getPropertyValue('--ca') || '#0969da';
+  const sf = cs.getPropertyValue('--cs') || '#f6f8fa';
+  const br = cs.getPropertyValue('--cbr') || '#d0d7de';
+
+  const rows = [...canvas.querySelectorAll('.cc')].map(el => {
+    const inner = el.querySelector('.cc-inner');
+    const anCls = [...el.classList].filter(c => c.startsWith('an-')).join(' ');
+    const style = inner.style.cssText;
+    return `  <!-- ${el.getAttribute('data-type')} -->\n  <div class="${anCls ? 'section ' + anCls : 'section'}"${style ? ` style="${style}"` : ''}>\n    ${inner.innerHTML.replace(/contenteditable=""/g, '').replace(/spellcheck="false"/g, '').trim()}\n  </div>`;
+  }).join('\n\n');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Website — Built with WebCraft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cb:${bg};
+  --ct:${tx};
+  --ca:${ac};
+  --cs:${sf};
+  --cbr:${br};
+}
+html{font-family:'Mona Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px}
+body{background:var(--cb);color:var(--ct);line-height:1.5}
+.section{position:relative}
+
+/* ── Reusable Styles ── */
+${getExportStyles()}
+
+/* ── Animations ── */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideInLeft{from{transform:translateX(-60px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInRight{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideInDown{from{transform:translateY(-50px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes zoomIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes bounceIn{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.1)}80%{transform:scale(.95)}100%{transform:scale(1);opacity:1}}
+@keyframes flipInX{from{transform:perspective(400px) rotateX(-90deg);opacity:0}to{transform:perspective(400px) rotateX(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes swing{0%,100%{transform:rotate(0deg)}20%{transform:rotate(12deg)}40%{transform:rotate(-8deg)}60%{transform:rotate(5deg)}80%{transform:rotate(-4deg)}}
+@keyframes rubberBand{0%{transform:scale(1)}30%{transform:scaleX(1.2) scaleY(.75)}40%{transform:scaleX(.75) scaleY(1.2)}50%{transform:scaleX(1.12) scaleY(.88)}65%{transform:scaleX(.97) scaleY(1.03)}75%{transform:scaleX(1.03) scaleY(.97)}100%{transform:scale(1)}}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3) drop-shadow(0 0 12px currentColor)}}
+@keyframes colorCycle{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+@keyframes floatUpDown{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes rotateSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes tada{0%,100%{transform:scale(1) rotate(0deg)}10%,20%{transform:scale(.9) rotate(-3deg)}30%,50%,70%,90%{transform:scale(1.1) rotate(3deg)}40%,60%,80%{transform:scale(1.1) rotate(-3deg)}}
+@keyframes heartBeat{0%{transform:scale(1)}14%{transform:scale(1.15)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}
+@keyframes jello{0%,100%{transform:scale3d(1,1,1)}30%{transform:scale3d(1.2,.75,1)}40%{transform:scale3d(.75,1.2,1)}50%{transform:scale3d(1.15,.85,1)}65%{transform:scale3d(.95,1.05,1)}75%{transform:scale3d(1.05,.95,1)}}
+
+.an-fadeIn .section,.an-fadeIn{animation:fadeIn .8s ease both}
+.an-slideLeft .section,.an-slideLeft{animation:slideInLeft .7s ease both}
+.an-slideRight .section,.an-slideRight{animation:slideInRight .7s ease both}
+.an-slideUp .section,.an-slideUp{animation:slideInUp .7s ease both}
+.an-slideDown .section,.an-slideDown{animation:slideInDown .7s ease both}
+.an-zoomIn .section,.an-zoomIn{animation:zoomIn .65s cubic-bezier(.175,.885,.32,1.275) both}
+.an-bounceIn .section,.an-bounceIn{animation:bounceIn .85s ease both}
+.an-flipInX .section,.an-flipInX{animation:flipInX .75s ease both}
+.an-shake .section,.an-shake{animation:shake .65s ease both}
+.an-pulse .section,.an-pulse{animation:pulse 1.5s ease infinite}
+.an-swing .section,.an-swing{animation:swing .85s ease both}
+.an-rubber .section,.an-rubber{animation:rubberBand .85s ease both}
+.an-glow .section,.an-glow{animation:glow 2s ease infinite}
+.an-colorCycle .section,.an-colorCycle{animation:colorCycle 3s linear infinite}
+.an-float .section,.an-float{animation:floatUpDown 3s ease infinite}
+.an-spin .section,.an-spin{animation:rotateSpin 2s linear infinite}
+.an-tada .section,.an-tada{animation:tada .9s ease both}
+.an-heartBeat .section,.an-heartBeat{animation:heartBeat 1.3s ease infinite}
+.an-jello .section,.an-jello{animation:jello .9s ease both}
+</style>
+</head>
+<body>
+
+${rows}
+
+</body>
+</html>`;
+}
+
+function getExportStyles() {
+  // Extract relevant <style> from current document for component classes
+  const styles = [];
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (rule.selectorText && (rule.selectorText.includes('comp-') || rule.selectorText.includes('.al.') || rule.selectorText.includes('.nb-') || rule.selectorText.includes('.plan') || rule.selectorText.includes('.feat') || rule.selectorText.includes('.stat'))) {
+          styles.push(rule.cssText);
+        }
+      }
+    } catch(e) {}
+  }
+  return styles.join('\n');
+}
+
+function showCode() {
+  const code = buildHTML();
+  document.getElementById('codeOut').textContent = code;
+  const lines = code.split('\n').length;
+  document.getElementById('codeInfo').textContent = lines + ' lines · ' + Math.round(code.length / 1024) + ' KB';
+  document.getElementById('codeOvl').classList.remove('hidden');
+}
+
+function copyCode() {
+  const code = document.getElementById('codeOut').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg> Copied!`;
+    setTimeout(() => {
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg> Copy Code`;
+    }, 2000);
+    toast('Code copied to clipboard!', 'ok');
+  });
+}
+
+function downloadCode() {
+  const code = buildHTML();
+  const blob = new Blob([code], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'my-website.html';
+  a.click();
+  toast('Downloaded my-website.html', 'ok');
+}
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+function toast(msg, type = 'nfo') {
+  const stack = document.getElementById('tstack');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  stack.appendChild(t);
+  setTimeout(() => t.style.opacity = '0', 2200);
+  setTimeout(() => t.remove(), 2500);
+}
+
+/* ════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+  if (e.key === 'Escape') {
+    deselect();
+    document.getElementById('codeOvl').classList.add('hidden');
+    if (S.preview) togglePreview();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); togglePreview(); }
+  if (e.key === 'Delete' && S.selId && !e.target.isContentEditable && e.target.tagName !== 'INPUT') {
+    delComp(S.selId);
+  }
+});
+
+/* ════════════════════════════════════════
+   PROJECT MANAGER & LOCALSTORAGE
+════════════════════════════════════════ */
+const PM = {
+  STORE_KEY: 'webcraft_projects',
+  ACTIVE_KEY: 'webcraft_active',
+  currentId: null,
+  saveTimer: null,
+};
+
+// ── Helpers ──
+function pmLoad() {
+  try { return JSON.parse(localStorage.getItem(PM.STORE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function pmSave(data) {
+  localStorage.setItem(PM.STORE_KEY, JSON.stringify(data));
+}
+function pmGenId() {
+  return 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+}
+function pmFmt(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return 'Just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return d.toLocaleDateString();
+}
+
+// ── Template definitions ──
+const PM_TEMPLATES = [
+  { id:'blank',      name:'Blank Canvas',    desc:'Start with an empty page',                   em:'blank', color:'#f6f8fa', comps:[] },
+  { id:'landing',    name:'Landing Page',    desc:'Hero, features, pricing & CTA',              em:'rocket', color:'#ddf4ff', comps:['navbar','hero','feature','feature','stats','pricing','newsletter','footer'] },
+  { id:'portfolio',  name:'Portfolio',       desc:'Showcase your work beautifully',             em:'palette', color:'#f3e8ff', comps:['navbar','hero','cols3','gallery','testimonial','footer'] },
+  { id:'blog',       name:'Blog / Article',  desc:'Clean reading layout with content',          em:'pen', color:'#fff8c5', comps:['navbar','hero','para','quote','list','divider','footer'] },
+  { id:'saas',       name:'SaaS / Product',  desc:'Product page with pricing table',            em:'briefcase', color:'#dafbe1', comps:['navbar','hero','stats','feature','feature','feature','pricing','newsletter','footer'] },
+  { id:'restaurant', name:'Restaurant',      desc:'Menu, ambience & reservations',              em:'utensils', color:'#ffebe9', comps:['navbar','hero','cols2','testimonial','gallery','form','footer'] },
+  { id:'agency',     name:'Agency',          desc:'Services, team & contact',                   em:'building', color:'#fff0e6', comps:['navbar','hero','feature','cols3','stats','testimonial','form','footer'] },
+];
+
+// ── Render PM screen ──
+function renderPmScreen() {
+  const projects = pmLoad();
+  const ids = Object.keys(projects);
+
+  // Templates
+  const tplGrid = document.getElementById('pmTemplates');
+  tplGrid.innerHTML = PM_TEMPLATES.map(t => `
+    <div class="pm-tpl" onclick="openFromTemplate('${t.id}')">
+      <div class="pm-tpl-thumb" style="background:${t.color}">
+        <div class="pm-tpl-thumb-inner" style="color:var(--ac)">${ICON_SVG[t.em] ? ICON_SVG[t.em].replace('<svg ','<svg width="44" height="44" ') : t.em}</div>
+      </div>
+      <div class="pm-tpl-info">
+        <div class="pm-tpl-name">${t.name}</div>
+        <div class="pm-tpl-desc">${t.desc}</div>
+      </div>
+    </div>`).join('') +
+    `<div class="pm-new-card" onclick="openPmModal()">
+      <svg viewBox="0 0 16 16"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+      <span>Custom New Project</span>
+    </div>`;
+
+  // Projects
+  const projTitle = document.getElementById('myProjTitle');
+  const projGrid = document.getElementById('pmProjects');
+  if (ids.length === 0) {
+    projTitle.style.display = 'none';
+    projGrid.innerHTML = '';
+    return;
+  }
+  projTitle.style.display = 'flex';
+  // Sort by last modified desc
+  const sorted = ids.sort((a,b) => (projects[b].modified||0) - (projects[a].modified||0));
+  projGrid.innerHTML = sorted.map(id => {
+    const p = projects[id];
+    const compCount = (p.components||[]).length;
+    return `
+    <div class="pm-proj" onclick="openProject('${id}')">
+      <div class="pm-proj-thumb">
+        <span style="color:var(--ac);opacity:.7">${(()=>{const tpl=PM_TEMPLATES.find(t=>t.id===p.template);const key=tpl?.em||'file';return (ICON_SVG[key]||ICON_SVG.file).replace('<svg ','<svg width="32" height="32" ');})()}</span>
+        <div style="font-size:9px;color:var(--txs);margin-top:4px;position:absolute;bottom:8px">${compCount} component${compCount!==1?'s':''}</div>
+      </div>
+      <div class="pm-proj-info">
+        <div class="pm-proj-name">${p.name||'Untitled'}</div>
+        <div class="pm-proj-meta">Modified ${pmFmt(p.modified||p.created)}</div>
+      </div>
+      <div class="pm-proj-actions">
+        <button class="pm-proj-btn dup" title="Duplicate" onclick="dupProject(event,'${id}')"><svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></button>
+        <button class="pm-proj-btn del" title="Delete" onclick="deleteProject(event,'${id}')"><svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Show / hide PM screen ──
+function showPmScreen() {
+  autoSave();
+  renderPmScreen();
+  document.getElementById('pmScreen').classList.remove('hidden');
+}
+function hidePmScreen() {
+  document.getElementById('pmScreen').classList.add('hidden');
+}
+
+// ── Modal ──
+function openPmModal() {
+  document.getElementById('pmProjName').value = '';
+  document.getElementById('pmModalBg').classList.remove('hidden');
+  setTimeout(() => document.getElementById('pmProjName').focus(), 50);
+}
+function closePmModal() {
+  document.getElementById('pmModalBg').classList.add('hidden');
+}
+document.getElementById('pmProjName')?.addEventListener('keydown', e => { if (e.key === 'Enter') createNewProject(); if (e.key === 'Escape') closePmModal(); });
+
+// ── Create from template tile ──
+function openFromTemplate(tplId) {
+  const tpl = PM_TEMPLATES.find(t => t.id === tplId);
+  if (!tpl) return;
+  const name = tpl.name + ' — ' + new Date().toLocaleDateString('en',{month:'short',day:'numeric'});
+  launchProject(pmGenId(), name, tplId, tpl.comps);
+}
+
+// ── Create from modal ──
+function createNewProject() {
+  const name = document.getElementById('pmProjName').value.trim() || 'Untitled Project';
+  const tplId = document.getElementById('pmProjTpl').value;
+  const tpl = PM_TEMPLATES.find(t => t.id === tplId);
+  closePmModal();
+  launchProject(pmGenId(), name, tplId, tpl ? tpl.comps : []);
+}
+
+// ── Open existing project ──
+function openProject(id) {
+  const projects = pmLoad();
+  const p = projects[id];
+  if (!p) return;
+  PM.currentId = id;
+  localStorage.setItem(PM.ACTIVE_KEY, id);
+  document.getElementById('projNameTag').textContent = p.name || 'Untitled';
+  hidePmScreen();
+  // Clear canvas and restore
+  document.querySelectorAll('#canvas .cc').forEach(e => e.remove());
+  if (p.components && p.components.length) {
+    p.components.forEach(d => {
+      if (!GEN[d.type]) return;
+      UID = Math.max(UID, parseInt(d.id.replace('cc',''))||0);
+      const el = mkEl(d.type, d.id);
+      if (!el) return;
+      el.querySelector('.cc-inner').innerHTML = d.html || GEN[d.type]();
+      if (d.innerStyle) el.querySelector('.cc-inner').style.cssText = d.innerStyle;
+      if (d.elStyle) el.style.cssText = d.elStyle;
+      if (d.compColors) el.dataset.compColors = d.compColors;
+      if (d.animClass) d.animClass.split(' ').forEach(c => c && el.classList.add(c));
+      document.getElementById('canvas').insertBefore(el, document.getElementById('drop-ph'));
+    });
+    document.getElementById('canvas').appendChild(document.getElementById('drop-ph'));
+    // Rebind nested-cc events (they lost listeners when innerHTML was set)
+    document.querySelectorAll('.nested-cc').forEach(ncc => {
+      const nid = ncc.id;
+      const parentId = ncc.getAttribute('data-parent') || ncc.closest('.cc')?.id;
+      const area = ncc.closest('.nested-drop-area');
+      ncc.addEventListener('click', e => { e.stopPropagation(); selectNestedComp(nid, parentId); });
+      ncc.draggable = true;
+      ncc.addEventListener('dragstart', e => {
+        e.stopPropagation();
+        S.dragSrc = 'nested';
+        nestedDragSrc = { nccEl: ncc, area };
+        setTimeout(() => ncc.style.opacity = '.4', 0);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      ncc.addEventListener('dragend', () => {
+        ncc.style.opacity = '';
+        if (S.dragSrc === 'nested') { S.dragSrc = null; nestedDragSrc = null; }
+      });
+      // Restore nested-ph visibility
+      if (area) updateNestedPh(area);
+    });
+  }
+  // Restore canvas theme
+  if (p.canvasVars) {
+    const cv = p.canvasVars;
+    const c = document.getElementById('canvas');
+    if (cv.cb) c.style.setProperty('--cb', cv.cb);
+    if (cv.ct) c.style.setProperty('--ct', cv.ct);
+    if (cv.ca) c.style.setProperty('--ca', cv.ca);
+    if (cv.cs) c.style.setProperty('--cs', cv.cs);
+    if (cv.cbr) c.style.setProperty('--cbr', cv.cbr);
+    c.style.background = cv.cb || '#ffffff';
+  }
+  deselect(); checkEmpty(); updCount(); saveHist();
+  setSaveState('saved');
+  // Re-init nested col drop zones
+  document.querySelectorAll('#canvas .cc[data-type="cols2"], #canvas .cc[data-type="cols3"]').forEach(el => {
+    initNestedCols(el.id);
+  });
+  toast('Opened: ' + p.name, 'ok');
+}
+
+// ── Launch new project ──
+function launchProject(id, name, tplId, comps) {
+  // Save new blank entry
+  const projects = pmLoad();
+  projects[id] = { id, name, template: tplId, created: Date.now(), modified: Date.now(), components: [], canvasVars: {} };
+  pmSave(projects);
+  PM.currentId = id;
+  localStorage.setItem(PM.ACTIVE_KEY, id);
+  document.getElementById('projNameTag').textContent = name;
+  hidePmScreen();
+  // Clear canvas
+  document.querySelectorAll('#canvas .cc').forEach(e => e.remove());
+  // Apply template components
+  comps.forEach(type => { if (GEN[type]) addCompSilent(type); });
+  deselect(); checkEmpty(); updCount(); saveHist();
+  autoSave();
+  toast('Created: ' + name, 'ok');
+}
+
+// ── Delete project ──
+function deleteProject(e, id) {
+  e.stopPropagation();
+  const projects = pmLoad();
+  const name = projects[id]?.name || 'this project';
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  delete projects[id];
+  pmSave(projects);
+  renderPmScreen();
+  toast('Deleted project', 'er');
+}
+
+// ── Duplicate project ──
+function dupProject(e, id) {
+  e.stopPropagation();
+  const projects = pmLoad();
+  const orig = projects[id]; if (!orig) return;
+  const newId = pmGenId();
+  projects[newId] = { ...JSON.parse(JSON.stringify(orig)), id: newId, name: orig.name + ' (Copy)', created: Date.now(), modified: Date.now() };
+  pmSave(projects);
+  renderPmScreen();
+  toast('Project duplicated!', 'ok');
+}
+
+// ── Rename current ──
+function renameCurrent() {
+  if (!PM.currentId) return;
+  const projects = pmLoad();
+  const p = projects[PM.currentId]; if (!p) return;
+  const newName = prompt('Rename project:', p.name);
+  if (!newName || !newName.trim()) return;
+  p.name = newName.trim();
+  p.modified = Date.now();
+  pmSave(projects);
+  document.getElementById('projNameTag').textContent = p.name;
+  toast('Renamed to: ' + p.name, 'nfo');
+}
+
+// ── Auto-save ──
+function setSaveState(state) {
+  const el = document.getElementById('saveIndicator');
+  el.className = state;
+  if (state === 'saving') el.innerHTML = `<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm-.75 4.75a.75.75 0 0 1 1.5 0v3.5l2.25 2.25a.75.75 0 1 1-1.06 1.06l-2.5-2.5a.75.75 0 0 1-.19-.51v-3.8Z"/></svg> Saving…`;
+  else if (state === 'saved') el.innerHTML = `<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06L6 11.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg> Saved`;
+}
+
+function autoSave() {
+  if (!PM.currentId) return;
+  setSaveState('saving');
+  clearTimeout(PM.saveTimer);
+  PM.saveTimer = setTimeout(() => {
+    const projects = pmLoad();
+    if (!projects[PM.currentId]) return;
+    // Collect canvas state
+    const canvas = document.getElementById('canvas');
+    const cs = canvas.style;
+    const components = [...canvas.querySelectorAll('.cc')].map(el => ({
+      id: el.id,
+      type: el.getAttribute('data-type'),
+      html: el.querySelector('.cc-inner')?.innerHTML || '',
+      innerStyle: el.querySelector('.cc-inner')?.style.cssText || '',
+      elStyle: el.style.cssText || '',
+      animClass: [...el.classList].filter(c => c.startsWith('an-')).join(' '),
+      compColors: el.dataset.compColors || '',
+    }));
+    projects[PM.currentId].components = components;
+    projects[PM.currentId].modified = Date.now();
+    projects[PM.currentId].canvasVars = {
+      cb: cs.getPropertyValue('--cb') || '#ffffff',
+      ct: cs.getPropertyValue('--ct') || '#1f2328',
+      ca: cs.getPropertyValue('--ca') || '#0969da',
+      cs: cs.getPropertyValue('--cs') || '#f6f8fa',
+      cbr: cs.getPropertyValue('--cbr') || '#d0d7de',
+    };
+    pmSave(projects);
+    setSaveState('saved');
+  }, 800);
+}
+
+// Hook auto-save into existing saveHist
+const _origSaveHist = saveHist;
+// Override saveHist to also trigger autosave
+window.saveHist = function() {
+  _origSaveHist();
+  autoSave();
+};
+
+// ── addComp silent version (no toast, no select) ──
+function addCompSilent(type) {
+  if (!GEN[type]) return;
+  const id = genId();
+  const el = mkEl(type, id);
+  if (!el) return;
+  const canvas = document.getElementById('canvas');
+  const ph = document.getElementById('drop-ph');
+  canvas.insertBefore(el, ph);
+  canvas.appendChild(ph);
+  if (type === 'cols2' || type === 'cols3') initNestedCols(id);
+}
+
+/* ════════════════════════════════════════
+   DEPLOY
+════════════════════════════════════════ */
+function deployProject() {
+  if (!PM.currentId) {
+    toast('Please open or create a project first', 'er'); return;
+  }
+  autoSave();
+  const code = buildHTML();
+  try {
+    localStorage.setItem('temp-code', code);
+    toast('Deploying — redirecting to deploy page', 'ok');
+    setTimeout(() => { window.location.href = 'deploy-web.html'; }, 800);
+  } catch(e) {
+    // If localStorage is full (5MB limit) try sessionStorage fallback
+    try {
+      sessionStorage.setItem('temp-code', code);
+      toast('Deploying via session…', 'ok');
+      setTimeout(() => { window.location.href = 'deploy-web.html'; }, 800);
+    } catch(e2) {
+      toast('Code too large to store. Use Export instead.', 'er');
+    }
+  }
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+// Restore saved UI dark/light theme
+(function() {
+  const saved = localStorage.getItem('webcraft_ui_theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    updateThemeIcon(saved);
+  }
+})();
+
+renderSidebar();
+saveHist();
+checkEmpty();
+
+// Show project manager on load — always start there
+(function initApp() {
+  renderPmScreen();
+  // Check if there was an active project
+  const lastId = localStorage.getItem(PM.ACTIVE_KEY);
+  const projects = pmLoad();
+  if (lastId && projects[lastId]) {
+    // Show a "Resume" button hint in PM screen
+    const resumeHint = document.createElement('div');
+    resumeHint.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);padding:12px 20px;box-shadow:var(--sh3);display:flex;align-items:center;gap:12px;z-index:10001;font-size:12px;color:var(--tx)';
+    resumeHint.innerHTML = `<span>Resume <strong>${projects[lastId].name}</strong>?</span><button class="pm-btn pm-btn-pri" onclick="openProject('${lastId}');this.closest('div').remove()">Resume</button><button class="pm-btn pm-btn-sec" onclick="this.closest('div').remove()">Dismiss</button>`;
+    document.body.appendChild(resumeHint);
+    setTimeout(() => resumeHint.remove(), 8000);
+  }
+})();
+</script>
+</body>
+</html>
