@@ -795,8 +795,12 @@ DEPLOY RULES — READ CAREFULLY:
       body: JSON.stringify({ question: prompt, model: modelKey, username: username, password: password })
     });
     if (!r.ok) throw new Error("HTTP " + r.status);
-    const data = await r.json();
-    const content = data?.choices?.[0]?.message?.content;
+    const data = await r.text();
+      
+      // await r.json();
+    const content = data;
+      
+      // data?.choices?.[0]?.message?.content;
     if (!content) throw new Error("Empty AI response");
     return content;
   }
@@ -934,7 +938,7 @@ DEPLOY RULES — READ CAREFULLY:
 
       updateThinking(thinkingEl, "Planning…");
       const planPrompt = P_EXPAND + "\n\nRequest: \"" + txt + "\"" + edCtx + "\nGame: " + gameName + " | Type: " + (gameConfig ? gameConfig.type : "personal") + " | Starting dir: " + currentDir + "\nHistory: " + getHist(chat) + (thinkText ? "\n\nPre-analysis:\n" + thinkText : "");
-      const plan = await callAI("gpt-oss", planPrompt);
+      const plan = await callAI("claude-opus-4.6", planPrompt);
 
       removeThinking(thinkingEl);
       const planEl = showPlanMessage(plan, thinkText);
