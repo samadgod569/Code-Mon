@@ -84,7 +84,7 @@ if (path === "/api/api-load") {
 }
 
 // 4. /api/api-list
-if (path === "/api/api-list") {
+if (path === "/api/api-list-api") {
   let body;
   try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
