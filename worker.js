@@ -30,17 +30,30 @@ const corsHeaders = {
 // 1. /api/api-save
 if (path === "/api/api-save") {
   let body;
-  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+  try { body = await request.json(); } 
+  catch { return json({ error: "Invalid JSON" }, 400); }
 
   const { user, pass, key, content } = body;
   if (!user || !pass || !key) return json({ error: "Missing user, pass, or key" }, 400);
 
   const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
-  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
+  if (!storedPass) return json({ error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ error: "Incorrect password" }, 403);
 
-  await env.API.put(`${user}/${key}`, content ?? "");
-  return json({ success: true, message: "Key saved successfully" });
+  const kvKey = `${user}/${key}`;
+  const exists = await env.API.get(kvKey);
+
+  if (exists === null) {
+    return json({ error: "Key does not exist" }, 404);
+  }
+
+  await env.API.put(kvKey, content ?? "");
+
+  return json({
+    success: true,
+    message: "Content saved",
+    key
+  });
 }
 
 // 2. /api/api-create (charges 5 shells)
