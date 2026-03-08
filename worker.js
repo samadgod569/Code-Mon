@@ -28,6 +28,138 @@ const corsHeaders = {
       });
 
 
+
+if (path === "/api/api-save") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { user, pass, key, content } = body;
+
+  if (!user || !pass || !key) {
+    return json({ error: "Missing user, pass, or key" }, 400);
+  }
+
+  const storedPass = await env.Pass.get(user, { type: "text" });
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
+
+  const fileKey = `${user}/${key}`;
+  await env.API.put(fileKey, content ?? "");
+
+  return json({ success: true, message: "Key saved successfully" });
+}
+
+
+
+if (path === "/api/api-create") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { user, pass } = body;
+  if (!user || !pass) return json({ error: "Missing user or pass" }, 400);
+
+  const storedPass = await env.Pass.get(user, { type: "text" });
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
+
+
+  const current = await env.PAY.get(user);
+  const balance = parseInt(current) || 0;
+  if (balance < 5) {
+    return json({ success: false, error: "Insufficient balance" }, 402);
+  }
+
+  const key = `#$$${Math.floor(1000000 + Math.random() * 9000000)}`; // 7-digit starting with #$$
+  const fileKey = `${user}/${key}`;
+
+  await env.FILES.put(fileKey, "Welcome");
+
+
+  const newBalance = balance - 5;
+  await env.PAY.put(user, newBalance.toString());
+
+  return json({ 
+    success: true, 
+    key, 
+    message: "Key created with default content (5 shells charged)", 
+    balance: newBalance 
+  });
+}
+if (path === "/api/api-load") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { user, pass, key } = body;
+  if (!user || !pass || !key) return json({ error: "Missing user, pass, or key" }, 400);
+
+  const storedPass = await env.Pass.get(user, { type: "text" });
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
+
+  const fileKey = `${user}/${key}`;
+  const content = await env.API.get(fileKey);
+
+  if (!content) return json({ success: false, error: "Key not found" }, 404);
+  return json({ success: true, key, content });
+}
+
+
+if (path === "/api/api-list") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { user, pass } = body;
+  if (!user || !pass) return json({ error: "Missing user or pass" }, 400);
+
+  const storedPass = await env.Pass.get(user, { type: "text" });
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
+
+  const list = [];
+  for await (const entry of env.API.list({ prefix: `${user}/` })) {
+    list.push(entry.key.replace(`${user}/`, ""));
+  }
+
+  return json({ success: true, keys: list });
+}
+
+if (path === "/api/api-delete") {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { user, pass, key } = body;
+  if (!user || !pass || !key) return json({ error: "Missing user, pass, or key" }, 400);
+
+  const storedPass = await env.Pass.get(user, { type: "text" });
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
+
+  const fileKey = `${user}/${key}`;
+  await env.API.delete(fileKey);
+
+  return json({ success: true, message: "Key deleted successfully" });
+}
+    
 if (path === "/api/credits") {
 
 let username = "";
