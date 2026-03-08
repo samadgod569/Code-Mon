@@ -84,23 +84,21 @@ if (path === "/api/api-load") {
 }
 
 // 4. /api/api-list
-if (path === "/api/api-list-api") {
-  let body;
-  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+if (path === "/api/api-list") {
+  const user = url.searchParams.get("user");
+  const pass = url.searchParams.get("pass");
 
-  const { user, pass } = body;
   if (!user || !pass) return json({ error: "Missing user or pass" }, 400);
 
   const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
-  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
+  if (!storedPass) return json({ error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ error: "Incorrect password" }, 403);
 
-  const keys = [];
-  for await (const entry of env.API.list({ prefix: `${user}/` })) {
-    keys.push(entry.key.replace(`${user}/`, ""));
-  }
+  const list = await env.API.list({ prefix: `${user}/` });
 
-  return json({ success: true, keys });
+  return json({
+    keys: list.keys.map(k => k.name.replace(`${user}/`, ""))
+  });
 }
 
 // 5. /api/api-delete
