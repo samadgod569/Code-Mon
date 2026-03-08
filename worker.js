@@ -30,246 +30,96 @@ const corsHeaders = {
 // 1. /api/api-save
 if (path === "/api/api-save") {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   const { user, pass, key, content } = body;
-  if (!user || !pass || !key) {
-    return new Response(JSON.stringify({ error: "Missing user, pass, or key" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!user || !pass || !key) return json({ error: "Missing user, pass, or key" }, 400);
 
   const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) {
-    return new Response(JSON.stringify({ success: false, error: "Username not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
 
-  if (storedPass !== pass) {
-    return new Response(JSON.stringify({ success: false, error: "Incorrect password" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
-
-  const fileKey = `${user}/${key}`;
-  await env.API.put(fileKey, content ?? "");
-
-  return new Response(JSON.stringify({ success: true, message: "Key saved successfully" }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-  });
+  await env.API.put(`${user}/${key}`, content ?? "");
+  return json({ success: true, message: "Key saved successfully" });
 }
 
 // 2. /api/api-create (charges 5 shells)
 if (path === "/api/api-create") {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   const { user, pass } = body;
-  if (!user || !pass) {
-    return new Response(JSON.stringify({ error: "Missing user or pass" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!user || !pass) return json({ error: "Missing user or pass" }, 400);
 
   const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) {
-    return new Response(JSON.stringify({ success: false, error: "Username not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
 
-  if (storedPass !== pass) {
-    return new Response(JSON.stringify({ success: false, error: "Incorrect password" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
-
-  const current = await env.PAY.get(user);
-  const balance = parseInt(current) || 0;
-  if (balance < 5) {
-    return new Response(JSON.stringify({ success: false, error: "Insufficient balance" }), {
-      status: 402,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  const balance = parseInt(await env.PAY.get(user)) || 0;
+  if (balance < 5) return json({ success: false, error: "Insufficient balance" }, 402);
 
   const key = `#$$${Math.floor(1000000 + Math.random() * 9000000)}`;
-  const fileKey = `${user}/${key}`;
-  await env.API.put(fileKey, "Welcome");
-
+  await env.API.put(`${user}/${key}`, "Welcome");
   await env.PAY.put(user, (balance - 5).toString());
 
-  return new Response(JSON.stringify({
-    success: true,
-    key,
-    message: "Key created with default content (5 shells charged)",
-    balance: balance - 5
-  }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-  });
+  return json({ success: true, key, message: "Key created (5 shells charged)", balance: balance - 5 });
 }
 
 // 3. /api/api-load
 if (path === "/api/api-load") {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   const { user, pass, key } = body;
-  if (!user || !pass || !key) {
-    return new Response(JSON.stringify({ error: "Missing user, pass, or key" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!user || !pass || !key) return json({ error: "Missing user, pass, or key" }, 400);
 
   const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) {
-    return new Response(JSON.stringify({ success: false, error: "Username not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
 
-  if (storedPass !== pass) {
-    return new Response(JSON.stringify({ success: false, error: "Incorrect password" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  const content = await env.API.get(`${user}/${key}`);
+  if (!content) return json({ success: false, error: "Key not found" }, 404);
 
-  const fileKey = `${user}/${key}`;
-  const content = await env.API.get(fileKey);
-  if (!content) {
-    return new Response(JSON.stringify({ success: false, error: "Key not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
-
-  return new Response(JSON.stringify({ success: true, key, content }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-  });
+  return json({ success: true, key, content });
 }
 
 // 4. /api/api-list
 if (path === "/api/api-list") {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   const { user, pass } = body;
-  if (!user || !pass) {
-    return new Response(JSON.stringify({ error: "Missing user or pass" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!user || !pass) return json({ error: "Missing user or pass" }, 400);
 
   const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) {
-    return new Response(JSON.stringify({ success: false, error: "Username not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
 
-  if (storedPass !== pass) {
-    return new Response(JSON.stringify({ success: false, error: "Incorrect password" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
-
-  const list = [];
+  const keys = [];
   for await (const entry of env.API.list({ prefix: `${user}/` })) {
-    list.push(entry.key.replace(`${user}/`, ""));
+    keys.push(entry.key.replace(`${user}/`, ""));
   }
 
-  return new Response(JSON.stringify({ success: true, keys: list }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-  });
+  return json({ success: true, keys });
 }
 
 // 5. /api/api-delete
 if (path === "/api/api-delete") {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   const { user, pass, key } = body;
-  if (!user || !pass || !key) {
-    return new Response(JSON.stringify({ error: "Missing user, pass, or key" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!user || !pass || !key) return json({ error: "Missing user, pass, or key" }, 400);
 
   const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) {
-    return new Response(JSON.stringify({ success: false, error: "Username not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
-
-  if (storedPass !== pass) {
-    return new Response(JSON.stringify({ success: false, error: "Incorrect password" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
-  }
+  if (!storedPass) return json({ success: false, error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ success: false, error: "Incorrect password" }, 403);
 
   await env.API.delete(`${user}/${key}`);
+  return json({ success: true, message: "Key deleted successfully" });
+                                        }
+  
 
-  return new Response(JSON.stringify({ success: true, message: "Key deleted successfully" }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-  });
-      }
 
 
 
