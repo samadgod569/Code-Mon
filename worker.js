@@ -27,6 +27,31 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+    
+
+if (path === "/api/game-delete") {
+  let body;
+  try { body = await request.json(); }
+  catch { return json({ error: "Invalid JSON" }, 400); }
+
+  const { user, pass, game } = body;
+  if (!user || !pass || !game) return json({ error: "Missing user, pass, or game" }, 400);
+
+  const storedPass = await env.Pass.get(user, { type: "text" });
+  if (!storedPass) return json({ error: "Username not found" }, 404);
+  if (storedPass !== pass) return json({ error: "Incorrect password" }, 403);
+
+  const kvKey = `game/${user}/${game}`;
+  await env.STORAGE.delete(kvKey);
+
+  return json({
+    success: true,
+    message: "Game deleted",
+    game
+  });
+}
+
+    
 // 1. /api/api-save
 if (path === "/api/api-save") {
   let body;
