@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Mon · Code Space</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg0: #0d0e11;
+  --bg1: #13151a;
+  --bg2: #1a1d24;
+  --bg3: #22262f;
+  --bg4: #2a2f3a;
+  --bd: #2e3340;
+  --bd2: #3a4050;
+  --tx: #d4dae8;
+  --txm: #7a8499;
+  --txs: #4a5168;
+  --ac: #00d4aa;
+  --ach: #00b896;
+  --acb: rgba(0,212,170,.08);
+  --ace: rgba(0,212,170,.3);
+  --ac2: #6c8ef7;
+  --ac2b: rgba(108,142,247,.1);
+  --er: #ff5e5e;
+  --erb: rgba(255,94,94,.1);
+  --ok: #3dd68c;
+  --okb: rgba(61,214,140,.1);
+  --wn: #f5a623;
+  --wnb: rgba(245,166,35,.1);
+  --r: 4px;
+  --sh: 0 2px 12px rgba(0,0,0,.5);
+  --sh2: 0 8px 32px rgba(0,0,0,.6);
+  --copilot-w: 320px;
+  --explorer-w: 240px;
+  --term-h: 220px;
+}
+
+*,*::before,*::after { box-sizing: border-box; margin:0; padding:0; }
+html { font-family: 'Syne', system-ui, sans-serif; }
+body { background: var(--bg0); color: var(--tx); height:100vh; overflow:hidden; font-size:13px; display:flex; flex-direction:column; }
+button,input,textarea,select { font-family: inherit; }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:3px; }
+
+/* ─── TITLE BAR ─── */
+.title-bar {
+  height:38px; background:var(--bg1); border-bottom:1px solid var(--bd);
+  display:flex; align-items:center; padding:0 12px; gap:12px; flex-shrink:0;
+  -webkit-app-region: drag; z-index:100;
+}
+.tb-brand { display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; color:var(--tx); letter-spacing:-.3px; }
+.tb-logo { width:22px; height:22px; border-radius:5px; background:linear-gradient(135deg,var(--ac),var(--ac2)); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.tb-logo svg { width:13px; height:13px; fill:#000; }
+.tb-sep { width:1px; height:16px; background:var(--bd); flex-shrink:0; }
+.tb-btns { display:flex; align-items:center; gap:4px; margin-left:auto; }
+.tb-btn { background:none; border:1px solid var(--bd); border-radius:var(--r); color:var(--txm); padding:3px 8px; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:4px; transition:.15s; white-space:nowrap; -webkit-app-region:no-drag; }
+.tb-btn:hover { background:var(--bg3); color:var(--tx); border-color:var(--bd2); }
+.tb-btn.active { background:var(--acb); border-color:var(--ace); color:var(--ac); }
+.tb-btn svg { width:12px; height:12px; fill:currentColor; flex-shrink:0; }
+.kbd { font-size:9px; color:var(--txs); background:var(--bg3); border:1px solid var(--bd); border-radius:3px; padding:1px 4px; font-family:'JetBrains Mono',monospace; }
+
+/* ─── MAIN AREA ─── */
+.app { display:flex; flex:1; overflow:hidden; min-height:0; }
+
+/* ─── EXPLORER SIDEBAR ─── */
+.explorer {
+  width:var(--explorer-w); background:var(--bg1); border-right:1px solid var(--bd);
+  display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; transition:width .18s ease;
+}
+.explorer.closed { width:0; border-right:none; }
+.exp-hd { padding:8px 10px 8px 12px; border-bottom:1px solid var(--bd); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.exp-title { font-size:10px; font-weight:700; color:var(--txm); text-transform:uppercase; letter-spacing:.8px; }
+.exp-actions { display:flex; gap:2px; }
+.icon-btn { background:none; border:none; color:var(--txm); cursor:pointer; padding:3px; border-radius:3px; display:flex; align-items:center; transition:.15s; }
+.icon-btn:hover { background:var(--bg3); color:var(--tx); }
+.icon-btn svg { width:14px; height:14px; fill:currentColor; }
+.exp-tree { flex:1; overflow-y:auto; padding:4px 0; }
+.file-item { display:flex; align-items:center; gap:6px; padding:4px 10px 4px 12px; cursor:pointer; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--txm); border-left:2px solid transparent; transition:.12s; white-space:nowrap; position:relative; }
+.file-item:hover { background:var(--bg3); color:var(--tx); }
+.file-item.active { background:var(--acb); border-left-color:var(--ac); color:var(--tx); }
+.file-item .fi { width:14px; height:14px; flex-shrink:0; fill:var(--txm); }
+.file-item.active .fi { fill:var(--ac); }
+.fi.html { fill:#e34c26; }
+.fi.css { fill:#264de4; }
+.fi.js,.fi.mjs { fill:#f0c30f; }
+.fi.ts { fill:#3178c6; }
+.fi.py { fill:#3776ab; }
+.fi.json { fill:#5dc9e2; }
+.fi.md { fill:var(--txm); }
+.fi.txt { fill:var(--txs); }
+.file-item .del-btn { margin-left:auto; background:none; border:none; color:transparent; cursor:pointer; padding:1px 3px; border-radius:2px; line-height:1; font-size:12px; transition:.12s; }
+.file-item:hover .del-btn { color:var(--txs); }
+.file-item .del-btn:hover { color:var(--er)!important; }
+.exp-empty { padding:20px 12px; font-size:11px; color:var(--txs); text-align:center; line-height:1.6; }
+
+/* ─── CENTER PANEL ─── */
+.center { flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden; }
+
+/* TABS */
+.tabs-bar { height:35px; background:var(--bg1); border-bottom:1px solid var(--bd); display:flex; align-items:flex-end; overflow-x:auto; overflow-y:hidden; flex-shrink:0; }
+.tabs-bar::-webkit-scrollbar { height:2px; }
+.tab { display:flex; align-items:center; gap:7px; padding:0 14px; height:100%; background:var(--bg0); border-right:1px solid var(--bd); font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--txm); cursor:pointer; transition:.12s; white-space:nowrap; border-top:2px solid transparent; flex-shrink:0; }
+.tab:hover { background:var(--bg2); color:var(--tx); }
+.tab.active { background:var(--bg2); color:var(--tx); border-top-color:var(--ac); }
+.tab-dot { width:7px; height:7px; border-radius:50%; background:var(--wn); display:none; }
+.tab.dirty .tab-dot { display:block; }
+.tab-close { width:15px; height:15px; display:flex; align-items:center; justify-content:center; border-radius:3px; opacity:0; transition:.12s; margin-left:2px; }
+.tab:hover .tab-close { opacity:.6; }
+.tab-close:hover { background:var(--bg4); opacity:1!important; }
+.tab-close svg { width:11px; height:11px; fill:currentColor; }
+.no-tabs { display:flex; align-items:center; justify-content:center; height:100%; font-size:11px; color:var(--txs); }
+
+/* EDITOR */
+.editor-wrap { flex:1; position:relative; overflow:hidden; background:var(--bg2); min-height:0; }
+.editor-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; opacity:.4; pointer-events:none; }
+.editor-placeholder .big-logo { width:60px; height:60px; border-radius:14px; background:linear-gradient(135deg,var(--ac),var(--ac2)); display:flex; align-items:center; justify-content:center; }
+.editor-placeholder .big-logo svg { width:34px; height:34px; fill:#000; }
+.editor-placeholder p { font-size:13px; color:var(--txm); }
+#line-nums { position:absolute; top:0; left:0; bottom:0; width:48px; padding:14px 8px 14px 0; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; text-align:right; color:var(--txs); background:var(--bg2); border-right:1px solid var(--bd); overflow:hidden; user-select:none; z-index:2; pointer-events:none; }
+#highlighted-code { position:absolute; top:0; left:48px; right:0; bottom:0; padding:14px 16px; margin:0; overflow:auto; pointer-events:none; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; white-space:pre-wrap; word-wrap:break-word; background:var(--bg2); z-index:1; }
+#highlighted-code code { background:transparent!important; padding:0!important; font-size:inherit!important; }
+#editor { position:absolute; top:0; left:48px; right:0; bottom:0; padding:14px 16px; background:transparent; border:none; color:transparent; caret-color:var(--tx); font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; resize:none; outline:none; tab-size:2; overflow:auto; z-index:3; white-space:pre-wrap; word-wrap:break-word; }
+#editor::selection { background:rgba(0,212,170,.2); }
+
+/* hljs overrides */
+.hljs { background:transparent!important; color:#c9d1d9!important; }
+.hljs-keyword,.hljs-selector-tag,.hljs-literal { color:#ff7b72!important; }
+.hljs-string,.hljs-name { color:#a5d6ff!important; }
+.hljs-comment,.hljs-meta { color:#8b949e!important; font-style:italic!important; }
+.hljs-number { color:#79c0ff!important; }
+.hljs-built_in,.hljs-class .hljs-title { color:#ffa657!important; }
+.hljs-attr,.hljs-params { color:#79c0ff!important; }
+.hljs-tag { color:#7ee787!important; }
+.hljs-title { color:#d2a8ff!important; }
+.hljs-variable { color:#ffa657!important; }
+
+/* ─── TERMINAL ─── */
+.terminal-wrap { height:var(--term-h); background:var(--bg0); border-top:1px solid var(--bd); display:flex; flex-direction:column; flex-shrink:0; transition:height .18s ease; }
+.terminal-wrap.closed { height:0; border-top:none; }
+.term-hd { height:30px; background:var(--bg1); border-bottom:1px solid var(--bd); display:flex; align-items:center; padding:0 10px; gap:10px; flex-shrink:0; user-select:none; cursor:ns-resize; }
+.term-hd-title { font-size:10px; font-weight:700; color:var(--txm); text-transform:uppercase; letter-spacing:.7px; flex:1; display:flex; align-items:center; gap:7px; }
+.term-dot { width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 6px var(--ok); flex-shrink:0; }
+.term-hd-actions { display:flex; gap:3px; }
+.term-body { flex:1; overflow-y:auto; padding:10px 14px; font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.6; }
+.term-line { display:flex; gap:6px; margin-bottom:2px; }
+.term-line.cmd .prompt { color:var(--ac); }
+.term-line.cmd .text { color:var(--tx); }
+.term-line.out .text { color:var(--txm); white-space:pre-wrap; word-break:break-all; }
+.term-line.err .text { color:var(--er); white-space:pre-wrap; }
+.term-line.ok .text { color:var(--ok); }
+.term-line.info .text { color:var(--ac2); font-style:italic; }
+.term-input-row { display:flex; align-items:center; gap:6px; padding:6px 14px 10px; border-top:1px solid var(--bd); flex-shrink:0; }
+.term-prompt-label { color:var(--ac); font-family:'JetBrains Mono',monospace; font-size:12px; flex-shrink:0; user-select:none; }
+#term-input { flex:1; background:none; border:none; outline:none; color:var(--tx); font-family:'JetBrains Mono',monospace; font-size:12px; caret-color:var(--ac); }
+#term-input::placeholder { color:var(--txs); }
+
+/* ─── COPILOT SIDEBAR ─── */
+.copilot { width:var(--copilot-w); background:var(--bg1); border-left:1px solid var(--bd); display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; transition:width .18s ease; }
+.copilot.closed { width:0; border-left:none; }
+.cp-hd { padding:8px 10px; border-bottom:1px solid var(--bd); display:flex; align-items:center; gap:7px; flex-shrink:0; flex-wrap:wrap; }
+.cp-hd-title { font-size:10px; font-weight:700; color:var(--txm); text-transform:uppercase; letter-spacing:.8px; flex:1; }
+.cp-badge { font-size:9px; background:linear-gradient(90deg,var(--ac),var(--ac2)); color:#000; font-weight:700; padding:1px 6px; border-radius:10px; }
+.cp-msgs { flex:1; overflow-y:auto; padding:12px 10px; display:flex; flex-direction:column; gap:12px; min-height:0; }
+.cp-welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px; padding:28px 14px; flex:1; }
+.cp-wlogo { width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg,var(--ac),var(--ac2)); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px rgba(0,212,170,.25); }
+.cp-wlogo svg { width:26px; height:26px; fill:#000; }
+.cp-wtitle { font-size:15px; font-weight:700; color:var(--tx); }
+.cp-wsub { font-size:11px; color:var(--txm); line-height:1.6; }
+.cp-chips { display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-top:4px; }
+.cp-chip { background:var(--bg3); border:1px solid var(--bd); border-radius:20px; padding:3px 9px; font-size:10px; color:var(--txm); cursor:pointer; transition:.12s; }
+.cp-chip:hover { border-color:var(--ace); color:var(--ac); background:var(--acb); }
+
+/* Messages */
+.cp-msg { display:flex; gap:7px; }
+.cp-msg.u { flex-direction:row-reverse; }
+.cp-av { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; font-size:9px; font-weight:700; }
+.cp-msg.ai .cp-av { background:var(--acb); color:var(--ac); border:1px solid var(--ace); }
+.cp-msg.u .cp-av { background:var(--bg3); color:var(--txm); border:1px solid var(--bd); }
+.cp-mc { display:flex; flex-direction:column; gap:3px; min-width:0; max-width:calc(100% - 32px); }
+.cp-msg.u .cp-mc { align-items:flex-end; }
+.cp-bbl { padding:8px 11px; border-radius:10px; font-size:12px; line-height:1.6; word-break:break-word; }
+.cp-msg.ai .cp-bbl { background:var(--bg2); border:1px solid var(--bd); border-top-left-radius:3px; max-width:100%; }
+.cp-msg.u .cp-bbl { background:linear-gradient(135deg,var(--ac),var(--ac2)); color:#000; font-weight:500; border-top-right-radius:3px; }
+.cp-meta { font-size:10px; color:var(--txs); padding:0 2px; }
+.cp-msg.u .cp-meta { text-align:right; }
+.cp-bbl .md h1,.cp-bbl .md h2,.cp-bbl .md h3 { font-weight:600; margin:8px 0 4px; font-size:1em; }
+.cp-bbl .md p { margin-bottom:5px; }
+.cp-bbl .md p:last-child { margin-bottom:0; }
+.cp-bbl .md code { background:rgba(0,212,170,.1); border-radius:3px; padding:1px 4px; font-size:.82em; font-family:'JetBrains Mono',monospace; color:var(--ac); }
+.cp-bbl .md pre { background:var(--bg0); border:1px solid var(--bd); border-radius:var(--r); padding:0; margin:6px 0; overflow:hidden; }
+.cp-bbl .md pre code { background:none; padding:8px 10px; font-size:11px; display:block; overflow-x:auto; color:var(--tx); border-radius:0; }
+.cp-bbl .md ul,.cp-bbl .md ol { padding-left:16px; margin-bottom:5px; }
+.cp-bbl .md li { margin-bottom:2px; }
+.cp-bbl .md strong { font-weight:700; color:var(--tx); }
+.cp-bbl .md a { color:var(--ac); }
+/* Code block header */
+.cbw { position:relative; margin:6px 0; }
+.cbh { display:flex; align-items:center; justify-content:space-between; background:var(--bg3); border:1px solid var(--bd); border-bottom:none; border-radius:var(--r) var(--r) 0 0; padding:3px 8px; }
+.cbh .lang { font-size:10px; color:var(--txm); font-family:'JetBrains Mono',monospace; }
+.cbh .cp-btn { background:none; border:none; color:var(--txm); cursor:pointer; padding:2px 6px; border-radius:3px; font-size:10px; transition:.12s; display:flex; align-items:center; gap:3px; }
+.cbh .cp-btn:hover { background:var(--bg4); color:var(--tx); }
+/* Action tags (SAVE, RUN) */
+.cp-action-tag { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:4px; font-size:10px; font-weight:600; font-family:'JetBrains Mono',monospace; margin:2px 3px; cursor:pointer; transition:.12s; border:1px solid; }
+.cp-action-tag.save { background:var(--okb); border-color:rgba(61,214,140,.3); color:var(--ok); }
+.cp-action-tag.save:hover { background:var(--ok); color:#000; }
+.cp-action-tag.run { background:var(--ac2b); border-color:rgba(108,142,247,.3); color:var(--ac2); }
+.cp-action-tag.run:hover { background:var(--ac2); color:#000; }
+.cp-action-tag svg { width:10px; height:10px; fill:currentColor; }
+/* Thinking */
+.cp-thinking { display:flex; gap:7px; }
+.cp-think-bbl { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg2); border:1px solid var(--bd); border-radius:10px; border-top-left-radius:3px; font-size:11px; color:var(--txm); }
+.dots { display:flex; gap:3px; }
+.dot { width:4px; height:4px; border-radius:50%; background:var(--ac); animation:pd 1.3s ease infinite; }
+.dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+@keyframes pd{0%,80%,100%{transform:scale(.6);opacity:.35}40%{transform:scale(1);opacity:1}}
+
+/* Input zone */
+.cp-input-zone { padding:8px 10px 10px; border-top:1px solid var(--bd); background:var(--bg1); flex-shrink:0; }
+.cp-irow { display:flex; gap:6px; align-items:flex-end; }
+.cp-twrap { flex:1; position:relative; }
+#cp-input { width:100%; background:var(--bg2); border:1px solid var(--bd); border-radius:8px; padding:8px 10px; font-size:12px; color:var(--tx); resize:none; outline:none; max-height:120px; min-height:36px; line-height:1.5; transition:border-color .15s; }
+#cp-input:focus { border-color:var(--ace); }
+#cp-input::placeholder { color:var(--txs); }
+.cp-sbtn { background:linear-gradient(135deg,var(--ac),var(--ac2)); border:none; border-radius:var(--r); color:#000; cursor:pointer; padding:7px 10px; display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; transition:.15s; flex-shrink:0; }
+.cp-sbtn:hover { opacity:.88; }
+.cp-sbtn:disabled { opacity:.4; cursor:not-allowed; }
+.cp-hint { font-size:10px; color:var(--txs); margin-top:5px; padding:0 2px; }
+.cp-hint kbd { font-family:'JetBrains Mono',monospace; font-size:9px; background:var(--bg3); border:1px solid var(--bd); border-radius:3px; padding:0 3px; color:var(--txm); }
+
+/* ─── STATUS BAR ─── */
+.status-bar { height:22px; background:var(--bg0); border-top:1px solid var(--bd); display:flex; align-items:center; padding:0 12px; font-size:10px; font-family:'JetBrains Mono',monospace; color:var(--txm); gap:18px; flex-shrink:0; }
+.st-item { display:flex; align-items:center; gap:5px; white-space:nowrap; }
+.st-item.ac { color:var(--ac); }
+.st-item svg { width:10px; height:10px; fill:currentColor; }
+.st-pill { background:var(--acb); border:1px solid var(--ace); border-radius:20px; padding:0px 7px; color:var(--ac); font-size:10px; }
+
+/* ─── MODALS ─── */
+.ovl { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.ovl.hidden { display:none; }
+.modal { background:var(--bg2); border:1px solid var(--bd2); border-radius:8px; box-shadow:var(--sh2); width:400px; overflow:hidden; animation:min .2s ease; }
+@keyframes min { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+.modal-hd { padding:14px 16px; border-bottom:1px solid var(--bd); display:flex; align-items:center; justify-content:space-between; }
+.modal-title { font-size:14px; font-weight:700; }
+.modal-close { background:none; border:none; color:var(--txm); cursor:pointer; font-size:16px; padding:2px 6px; border-radius:3px; transition:.12s; }
+.modal-close:hover { background:var(--bg3); color:var(--tx); }
+.modal-body { padding:16px; display:flex; flex-direction:column; gap:12px; }
+.modal-foot { padding:10px 16px; border-top:1px solid var(--bd); display:flex; justify-content:flex-end; gap:8px; }
+.fg { display:flex; flex-direction:column; gap:5px; }
+.fl { font-size:11px; font-weight:600; color:var(--txm); }
+.fin { width:100%; padding:8px 10px; background:var(--bg1); border:1px solid var(--bd); border-radius:var(--r); font-size:13px; color:var(--tx); outline:none; font-family:'JetBrains Mono',monospace; transition:.15s; }
+.fin:focus { border-color:var(--ace); }
+.fin::placeholder { color:var(--txs); }
+.btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:var(--r); font-size:12px; font-weight:600; cursor:pointer; border:1px solid; transition:.15s; }
+.bsec { background:var(--bg2); border-color:var(--bd); color:var(--tx); }
+.bsec:hover { background:var(--bg3); }
+.bpri { background:linear-gradient(135deg,var(--ac),var(--ac2)); border-color:transparent; color:#000; }
+.bpri:hover { opacity:.88; }
+.bdan { background:var(--erb); border-color:rgba(255,94,94,.3); color:var(--er); }
+.bdan:hover { background:var(--er); color:#fff; }
+
+/* Toasts */
+.tstack { position:fixed; bottom:28px; right:14px; z-index:500; display:flex; flex-direction:column; gap:5px; }
+.toast { padding:8px 12px; border-radius:var(--r); font-size:11px; font-weight:600; border:1px solid; box-shadow:var(--sh); animation:tin .18s ease; max-width:280px; }
+.toast.ok { background:var(--okb); border-color:rgba(61,214,140,.3); color:var(--ok); }
+.toast.er { background:var(--erb); border-color:rgba(255,94,94,.3); color:var(--er); }
+.toast.nfo { background:var(--acb); border-color:var(--ace); color:var(--ac); }
+@keyframes tin { from{transform:translateX(12px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+/* Command palette */
+.cmdpal { position:fixed; top:60px; left:50%; transform:translateX(-50%); z-index:300; background:var(--bg2); border:1px solid var(--bd2); border-radius:8px; box-shadow:var(--sh2); width:520px; max-width:90vw; animation:min .15s ease; }
+.cmdpal.hidden { display:none; }
+.cmdpal-input { width:100%; padding:12px 16px; background:none; border:none; border-bottom:1px solid var(--bd); font-size:14px; font-family:'JetBrains Mono',monospace; color:var(--tx); outline:none; }
+.cmdpal-input::placeholder { color:var(--txs); }
+.cmdpal-list { max-height:240px; overflow-y:auto; padding:4px 0; }
+.cmdpal-item { display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; transition:.1s; font-size:12px; }
+.cmdpal-item:hover,.cmdpal-item.selected { background:var(--bg3); }
+.cmdpal-item svg { width:14px; height:14px; fill:var(--txm); flex-shrink:0; }
+.cmdpal-item .ci-label { flex:1; color:var(--tx); }
+.cmdpal-item .ci-kbd { font-size:10px; font-family:'JetBrains Mono',monospace; color:var(--txs); }
+</style>
+</head>
+<body>
+
+<!-- TITLE BAR -->
+<div class="title-bar">
+  <div class="tb-brand">
+    <div class="tb-logo">
+      <svg viewBox="0 0 16 16"><path d="M8 1C4.686 1 2 3.686 2 7c0 1.766.72 3.36 1.875 4.5L3 14h10l-.875-2.5C13.28 10.36 14 8.766 14 7c0-3.314-2.686-6-6-6zm0 1.5c2.485 0 4.5 2.015 4.5 4.5 0 1.326-.572 2.52-1.488 3.355L9.5 11h-3l-1.512-1.645A4.482 4.482 0 0 1 3.5 7C3.5 4.515 5.515 2.5 8 2.5zm-1 3v1H6v1h1v1H6v1h2V9h1V8h1V7H9V6H8V5H7z"/></svg>
+    </div>
+    Code Mon · Code Space
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-btns">
+    <button class="tb-btn active" id="btn-explorer" title="Toggle Explorer (Ctrl+B)" onclick="toggleExplorer()">
+      <svg viewBox="0 0 16 16"><path d="M1.75 2.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H7.5c-.55 0-1.07-.26-1.4-.7l-.9-1.2a.25.25 0 0 0-.2-.1H1.75zM0 2.75C0 1.784.784 1 1.75 1H5c.55 0 1.07.26 1.4.7l.9 1.2a.25.25 0 0 0 .2.1h6.75c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75z"/></svg>
+      <span>Explorer</span>
+      <span class="kbd">⌃B</span>
+    </button>
+    <button class="tb-btn" id="btn-terminal" title="Toggle Terminal (Ctrl+`)" onclick="toggleTerminal()">
+      <svg viewBox="0 0 16 16"><path d="M0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75zm1.75-.25a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V2.75a.25.25 0 0 0-.25-.25H1.75zM7.25 8a.75.75 0 0 1-.22.53l-2.25 2.25a.749.749 0 1 1-1.06-1.06L5.44 8 3.72 6.28a.749.749 0 1 1 1.06-1.06l2.25 2.25c.141.14.22.331.22.53zm1.5 1.5h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1 0-1.5z"/></svg>
+      <span>Terminal</span>
+      <span class="kbd">⌃`</span>
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="btn-copilot" title="Toggle Copilot (Ctrl+I)" onclick="toggleCopilot()">
+      <svg viewBox="0 0 16 16"><path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.508 6.508 0 0 0 8 1.5ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.195 2.416 2.416 0 0 0-.692.742A2.65 2.65 0 0 0 7 9h1.5a1.15 1.15 0 0 1 .025-.242 1.01 1.01 0 0 1 .274-.39 5.21 5.21 0 0 1 .197-.133l.01-.006.35-.214c.17-.105.36-.225.52-.35.22-.17.42-.38.57-.65.15-.27.22-.56.22-.865 0-.47-.17-.92-.47-1.26C9.83 4.72 9.33 4.5 8 4.5c-.636 0-1.162.156-1.58.438-.413.278-.71.657-.88 1.047Z"/></svg>
+      <span>Copilot</span>
+      <span class="kbd">⌃I</span>
+    </button>
+    <button class="tb-btn" onclick="openCmdPal()">
+      <svg viewBox="0 0 16 16"><path d="M7.25 1.083a.75.75 0 0 1 .65.448l1.677 3.95 4.144.42a.75.75 0 0 1 .42 1.297l-3.06 2.726.89 4.05a.75.75 0 0 1-1.112.81L8 12.49l-2.859 2.294a.75.75 0 0 1-1.112-.81l.89-4.05L1.86 7.198a.75.75 0 0 1 .42-1.297l4.144-.42 1.677-3.95a.75.75 0 0 1 .15-.448z"/></svg>
+      <span>Commands</span>
+      <span class="kbd">⌃P</span>
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="openNewFileModal()">
+      <svg viewBox="0 0 16 16"><path d="M9 2.5A2.5 2.5 0 0 1 11.5 0h1.25a.75.75 0 0 1 .75.75V3.5h2.25a.75.75 0 0 1 0 1.5h-2.25v2.25a.75.75 0 0 1-1.5 0V5h-2.25a.75.75 0 0 1 0-1.5H10V1.5a1 1 0 0 0-1-1H2.75A.25.25 0 0 0 2.5 1v4.25a.75.75 0 0 1-1.5 0V1A1.75 1.75 0 0 1 2.75-.5H8a2.5 2.5 0 0 1 1 .104V.5zM1.75 7.5a.75.75 0 0 1 .75.75v5.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V10a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 11.25 15h-8.5A1.75 1.75 0 0 1 1 13.25v-5a.75.75 0 0 1 .75-.75z"/></svg>
+      New File
+    </button>
+    <button class="tb-btn" id="btn-save" onclick="saveCurrentFile()">
+      <svg viewBox="0 0 16 16"><path d="M2.75 1A1.75 1.75 0 0 0 1 2.75v10.5c0 .966.784 1.75 1.75 1.75h10.5A1.75 1.75 0 0 0 15 13.25V4.56L11.44 1H2.75zM2.5 2.75a.25.25 0 0 1 .25-.25H10v3.5c0 .138.112.25.25.25h3.25v7a.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25V2.75zM11.5 4.75V3l2 2h-1.75a.25.25 0 0 1-.25-.25z"/></svg>
+      Save
+      <span class="kbd">⌃S</span>
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- EXPLORER -->
+  <aside class="explorer" id="explorer">
+    <div class="exp-hd">
+      <span class="exp-title">Explorer</span>
+      <div class="exp-actions">
+        <button class="icon-btn" title="New File" onclick="openNewFileModal()">
+          <svg viewBox="0 0 16 16"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+        </button>
+        <button class="icon-btn" title="Refresh" onclick="loadFiles()">
+          <svg viewBox="0 0 16 16"><path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="exp-tree" id="exp-tree">
+      <div class="exp-empty">Loading files…</div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="tabs-bar" id="tabs-bar">
+      <div class="no-tabs" id="no-tabs-msg">Open a file to start editing</div>
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-placeholder" id="editor-placeholder">
+        <div class="big-logo">
+          <svg viewBox="0 0 16 16"><path d="M8 1C4.686 1 2 3.686 2 7c0 1.766.72 3.36 1.875 4.5L3 14h10l-.875-2.5C13.28 10.36 14 8.766 14 7c0-3.314-2.686-6-6-6zm0 1.5c2.485 0 4.5 2.015 4.5 4.5 0 1.326-.572 2.52-1.488 3.355L9.5 11h-3l-1.512-1.645A4.482 4.482 0 0 1 3.5 7C3.5 4.515 5.515 2.5 8 2.5zm-1 3v1H6v1h1v1H6v1h2V9h1V8h1V7H9V6H8V5H7z"/></svg>
+        </div>
+        <p>Select or create a file to start editing</p>
+      </div>
+      <div id="line-nums"></div>
+      <pre id="highlighted-code"><code></code></pre>
+      <textarea id="editor" spellcheck="false" placeholder=""></textarea>
+    </div>
+    <!-- TERMINAL -->
+    <div class="terminal-wrap closed" id="terminal-wrap">
+      <div class="term-hd" id="term-resize-handle">
+        <div class="term-hd-title">
+          <div class="term-dot"></div>
+          TERMINAL
+        </div>
+        <div class="term-hd-actions">
+          <button class="icon-btn" title="Clear" onclick="clearTerminal()">
+            <svg viewBox="0 0 16 16"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg>
+          </button>
+          <button class="icon-btn" title="Close" onclick="toggleTerminal()">
+            <svg viewBox="0 0 16 16"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="term-body" id="term-body"></div>
+      <div class="term-input-row">
+        <span class="term-prompt-label">❯</span>
+        <input id="term-input" placeholder="Type a command… (Enter to run)" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
+
+  <!-- COPILOT -->
+  <aside class="copilot closed" id="copilot">
+    <div class="cp-hd">
+      <span class="cp-hd-title">Copilot</span>
+      <span class="cp-badge">AI</span>
+    </div>
+    <div class="cp-msgs" id="cp-msgs">
+      <div class="cp-welcome" id="cp-welcome">
+        <div class="cp-wlogo">
+          <svg viewBox="0 0 16 16"><path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.508 6.508 0 0 0 8 1.5ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.195 2.416 2.416 0 0 0-.692.742A2.65 2.65 0 0 0 7 9h1.5a1.15 1.15 0 0 1 .025-.242 1.01 1.01 0 0 1 .274-.39 5.21 5.21 0 0 1 .197-.133l.01-.006.35-.214c.17-.105.36-.225.52-.35.22-.17.42-.38.57-.65.15-.27.22-.56.22-.865 0-.47-.17-.92-.47-1.26C9.83 4.72 9.33 4.5 8 4.5c-.636 0-1.162.156-1.58.438-.413.278-.71.657-.88 1.047Z"/></svg>
+        </div>
+        <div class="cp-wtitle">Code Mon Copilot</div>
+        <div class="cp-wsub">Your AI coding companion. Ask anything — I can write code, edit files & run commands.</div>
+        <div class="cp-chips">
+          <div class="cp-chip" onclick="cpSuggest('Explain this file')">Explain file</div>
+          <div class="cp-chip" onclick="cpSuggest('Fix bugs in this code')">Fix bugs</div>
+          <div class="cp-chip" onclick="cpSuggest('Add error handling to this code')">Add error handling</div>
+          <div class="cp-chip" onclick="cpSuggest('Optimize this code for performance')">Optimize</div>
+          <div class="cp-chip" onclick="cpSuggest('Write unit tests for this code')">Write tests</div>
+          <div class="cp-chip" onclick="cpSuggest('Refactor and clean up this code')">Refactor</div>
+        </div>
+      </div>
+    </div>
+    <div class="cp-input-zone">
+      <div class="cp-irow">
+        <div class="cp-twrap">
+          <textarea id="cp-input" rows="1" placeholder="Ask Copilot… (Enter to send)"></textarea>
+        </div>
+        <button class="cp-sbtn" id="cp-send-btn" onclick="sendCopilot()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M.989 8 .064 2.68a1.342 1.342 0 0 1 1.85-1.462l13.402 5.744a1.13 1.13 0 0 1 0 2.076L1.913 14.782a1.343 1.343 0 0 1-1.85-1.463L.99 8Zm.603-5.288L2.38 7.25h4.87a.75.75 0 0 1 0 1.5H2.38l-.788 4.538L13.929 8Z"/></svg>
+        </button>
+      </div>
+      <div class="cp-hint">
+        <kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> newline · <kbd>Ctrl+I</kbd> focus
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="st-item ac">
+    <svg viewBox="0 0 16 16"><path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.508 6.508 0 0 0 8 1.5ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.195 2.416 2.416 0 0 0-.692.742A2.65 2.65 0 0 0 7 9h1.5a1.15 1.15 0 0 1 .025-.242 1.01 1.01 0 0 1 .274-.39 5.21 5.21 0 0 1 .197-.133l.01-.006.35-.214c.17-.105.36-.225.52-.35.22-.17.42-.38.57-.65.15-.27.22-.56.22-.865 0-.47-.17-.92-.47-1.26C9.83 4.72 9.33 4.5 8 4.5c-.636 0-1.162.156-1.58.438-.413.278-.71.657-.88 1.047Z"/></svg>
+    Code Mon
+  </div>
+  <div class="st-item" id="st-file">No file open</div>
+  <div class="st-item" id="st-lang"></div>
+  <div class="st-item" id="st-lines"></div>
+  <div class="st-item" id="st-pos">Ln 1, Col 1</div>
+  <div style="margin-left:auto" class="st-item" id="st-copilot">
+    <span class="st-pill">✦ Copilot Ready</span>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="tstack" id="tstack"></div>
+
+<!-- COMMAND PALETTE -->
+<div class="cmdpal hidden" id="cmdpal">
+  <input class="cmdpal-input" id="cmdpal-input" placeholder="Type a command or file name…" autocomplete="off">
+  <div class="cmdpal-list" id="cmdpal-list"></div>
+</div>
+
+<!-- NEW FILE MODAL -->
+<div class="ovl hidden" id="new-file-ovl">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title">New File</span>
+      <button class="modal-close" onclick="closeModal('new-file-ovl')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label class="fl">Filename</label>
+        <input class="fin" id="new-file-input" placeholder="e.g. index.js" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn bsec" onclick="closeModal('new-file-ovl')">Cancel</button>
+      <button class="btn bpri" onclick="createNewFile()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE FILE MODAL -->
+<div class="ovl hidden" id="del-file-ovl">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title">Delete File</span>
+      <button class="modal-close" onclick="closeModal('del-file-ovl')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--txm)">Are you sure you want to delete <strong id="del-file-name" style="color:var(--er)"></strong>? This cannot be undone.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn bsec" onclick="closeModal('del-file-ovl')">Cancel</button>
+      <button class="btn bdan" id="del-confirm-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000';
+
+// ─── STATE ───────────────────────────────────────────────────────
+let openTabs = [];        // [{filename, content, dirty}]
+let activeTab = null;     // filename
+let termHistory = [];
+let termHistIdx = -1;
+let cpBusy = false;
+let cpHistory = [];       // [{role,content}]
+
+// ─── API HELPERS ─────────────────────────────────────────────────
+async function apiList() {
+  const r = await fetch(`${API}/list`);
+  const d = await r.json();
+  return d.files || [];
+}
+async function apiLoad(filename) {
+  const r = await fetch(`${API}/load?filename=${encodeURIComponent(filename)}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d.content;
+}
+async function apiSave(filename, content) {
+  const r = await fetch(`${API}/save`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({filename, content}) });
+  const d = await r.json();
+  if (!d.success) throw new Error(d.error || 'Save failed');
+  return true;
+}
+async function apiCreate(filename) {
+  const r = await fetch(`${API}/create`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({filename}) });
+  const d = await r.json();
+  if (!d.success && !d.error?.includes('already')) throw new Error(d.error || 'Create failed');
+  return true;
+}
+async function apiDelete(filename) {
+  const r = await fetch(`${API}/delete`, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({filename}) });
+  const d = await r.json();
+  if (!d.success) throw new Error(d.error || 'Delete failed');
+  return true;
+}
+async function apiExecute(command) {
+  const r = await fetch(`${API}/execute`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({command}) });
+  const d = await r.json();
+  return d;
+}
+
+// ─── FILE EXPLORER ────────────────────────────────────────────────
+async function loadFiles() {
+  const tree = document.getElementById('exp-tree');
+  try {
+    const files = await apiList();
+    if (!files.length) {
+      tree.innerHTML = '<div class="exp-empty">No files yet.<br>Create one with the + button.</div>';
+      return;
+    }
+    tree.innerHTML = '';
+    files.sort().forEach(f => tree.appendChild(makeFileItem(f)));
+  } catch(e) {
+    tree.innerHTML = `<div class="exp-empty" style="color:var(--er)">Cannot reach server.<br>Is localhost:3000 running?</div>`;
+  }
+}
+
+function getFileExt(name) {
+  return name.includes('.') ? name.split('.').pop().toLowerCase() : 'default';
+}
+
+function makeFileItem(filename) {
+  const div = document.createElement('div');
+  div.className = 'file-item' + (activeTab === filename ? ' active' : '');
+  div.dataset.file = filename;
+  const ext = getFileExt(filename);
+  const iconCls = ['html','css','js','ts','py','json','md','txt'].includes(ext) ? ext : 'default';
+  div.innerHTML = `
+    <svg class="fi ${iconCls}" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+    <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${escHtml(filename)}</span>
+    <button class="del-btn" title="Delete" onclick="confirmDelete('${escHtml(filename)}',event)">✕</button>
+  `;
+  div.addEventListener('click', () => openFile(filename));
+  return div;
+}
+
+function updateExpActive() {
+  document.querySelectorAll('.file-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.file === activeTab);
+  });
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────
+function renderTabs() {
+  const bar = document.getElementById('tabs-bar');
+  const noMsg = document.getElementById('no-tabs-msg');
+  bar.innerHTML = '';
+  if (!openTabs.length) {
+    bar.appendChild(noMsg);
+    noMsg.style.display = '';
+    return;
+  }
+  noMsg.style.display = 'none';
+  openTabs.forEach(tab => {
+    const el = document.createElement('div');
+    el.className = 'tab' + (tab.filename === activeTab ? ' active' : '') + (tab.dirty ? ' dirty' : '');
+    el.dataset.file = tab.filename;
+    const ext = getFileExt(tab.filename);
+    el.innerHTML = `
+      <div class="tab-dot"></div>
+      <span>${escHtml(tab.filename)}</span>
+      <span class="tab-close" onclick="closeTab('${escHtml(tab.filename)}',event)">
+        <svg viewBox="0 0 16 16"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg>
+      </span>
+    `;
+    el.addEventListener('click', () => switchTab(tab.filename));
+    bar.appendChild(el);
+  });
+  bar.appendChild(noMsg);
+}
+
+async function openFile(filename) {
+  let tab = openTabs.find(t => t.filename === filename);
+  if (!tab) {
+    try {
+      const content = await apiLoad(filename);
+      tab = { filename, content, dirty: false };
+      openTabs.push(tab);
+    } catch(e) {
+      toast('Failed to load: ' + e.message, 'er');
+      return;
+    }
+  }
+  switchTab(filename);
+}
+
+function switchTab(filename) {
+  // save current editor content to current tab
+  if (activeTab) {
+    const cur = openTabs.find(t => t.filename === activeTab);
+    if (cur) {
+      const newContent = document.getElementById('editor').value;
+      if (cur.content !== newContent) { cur.content = newContent; cur.dirty = true; }
+    }
+  }
+  activeTab = filename;
+  const tab = openTabs.find(t => t.filename === filename);
+  if (!tab) return;
+  const editor = document.getElementById('editor');
+  editor.value = tab.content;
+  updateHighlighting();
+  updateLineNums();
+  updateStatusBar();
+  renderTabs();
+  updateExpActive();
+  document.getElementById('editor-placeholder').style.display = 'none';
+}
+
+function closeTab(filename, e) {
+  if (e) e.stopPropagation();
+  const idx = openTabs.findIndex(t => t.filename === filename);
+  if (idx === -1) return;
+  const tab = openTabs[idx];
+  if (tab.dirty) {
+    if (!confirm(`Save ${filename} before closing?`)) { openTabs.splice(idx,1); } 
+    else { saveCurrentFile().then(() => { openTabs.splice(idx,1); afterCloseTab(filename, idx); }); return; }
+  } else { openTabs.splice(idx,1); }
+  afterCloseTab(filename, idx);
+}
+
+function afterCloseTab(filename, idx) {
+  if (activeTab === filename) {
+    if (openTabs.length) {
+      const nextIdx = Math.min(idx, openTabs.length - 1);
+      switchTab(openTabs[nextIdx].filename);
+    } else {
+      activeTab = null;
+      document.getElementById('editor').value = '';
+      document.getElementById('highlighted-code').innerHTML = '<code></code>';
+      document.getElementById('line-nums').textContent = '';
+      document.getElementById('editor-placeholder').style.display = '';
+      updateStatusBar();
+    }
+  }
+  renderTabs();
+  updateExpActive();
+}
+
+// ─── EDITOR ───────────────────────────────────────────────────────
+const editor = document.getElementById('editor');
+const hCode = document.getElementById('highlighted-code');
+const lineNums = document.getElementById('line-nums');
+
+function getLangFromFilename(name) {
+  const ext = getFileExt(name);
+  const map = { js:'javascript', mjs:'javascript', ts:'typescript', py:'python', html:'html', htm:'html', css:'css', json:'json', java:'java', cpp:'cpp', c:'c', rb:'ruby', rs:'rust', go:'go', md:'markdown', sh:'bash', xml:'xml', php:'php' };
+  return map[ext] || 'plaintext';
+}
+
+function updateHighlighting() {
+  if (!activeTab) return;
+  const lang = getLangFromFilename(activeTab);
+  const raw = editor.value;
+  const esc = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let highlighted;
+  try { highlighted = hljs.highlight(raw, {language:lang, ignoreIllegals:true}).value; }
+  catch(e) { highlighted = esc; }
+  hCode.innerHTML = `<code>${highlighted}\n</code>`;
+  // sync scroll
+  hCode.scrollTop = editor.scrollTop;
+  hCode.scrollLeft = editor.scrollLeft;
+}
+
+function updateLineNums() {
+  if (!activeTab) return;
+  const lines = editor.value.split('\n').length;
+  let html = '';
+  for (let i=1;i<=lines;i++) html += i + '\n';
+  lineNums.textContent = html;
+}
+
+function updateStatusBar() {
+  document.getElementById('st-file').textContent = activeTab || 'No file open';
+  if (activeTab) {
+    document.getElementById('st-lang').textContent = getLangFromFilename(activeTab).toUpperCase();
+    const lines = editor.value.split('\n').length;
+    document.getElementById('st-lines').textContent = `${lines} lines`;
+  } else {
+    document.getElementById('st-lang').textContent = '';
+    document.getElementById('st-lines').textContent = '';
+  }
+  updateCursorPos();
+}
+
+function updateCursorPos() {
+  const pos = editor.selectionStart;
+  const text = editor.value.substr(0, pos);
+  const line = text.split('\n').length;
+  const col = text.split('\n').pop().length + 1;
+  document.getElementById('st-pos').textContent = `Ln ${line}, Col ${col}`;
+}
+
+editor.addEventListener('input', () => {
+  if (!activeTab) return;
+  const tab = openTabs.find(t => t.filename === activeTab);
+  if (tab) { tab.content = editor.value; tab.dirty = true; }
+  updateHighlighting();
+  updateLineNums();
+  updateStatusBar();
+  renderTabs();
+});
+
+editor.addEventListener('scroll', () => {
+  hCode.scrollTop = editor.scrollTop;
+  hCode.scrollLeft = editor.scrollLeft;
+  lineNums.scrollTop = editor.scrollTop;
+});
+
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    editor.value = editor.value.substring(0,start) + '  ' + editor.value.substring(end);
+    editor.selectionStart = editor.selectionEnd = start + 2;
+    editor.dispatchEvent(new Event('input'));
+  }
+});
+
+editor.addEventListener('click', updateCursorPos);
+editor.addEventListener('keyup', updateCursorPos);
+
+// ─── SAVE ─────────────────────────────────────────────────────────
+async function saveCurrentFile() {
+  if (!activeTab) return;
+  const tab = openTabs.find(t => t.filename === activeTab);
+  if (!tab) return;
+  const content = editor.value;
+  try {
+    await apiSave(tab.filename, content);
+    tab.content = content;
+    tab.dirty = false;
+    renderTabs();
+    toast(`Saved ${tab.filename}`, 'ok');
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'er');
+  }
+}
+
+// ─── CREATE FILE ──────────────────────────────────────────────────
+function openNewFileModal() {
+  document.getElementById('new-file-input').value = '';
+  openModal('new-file-ovl');
+  setTimeout(() => document.getElementById('new-file-input').focus(), 80);
+}
+
+async function createNewFile() {
+  const name = document.getElementById('new-file-input').value.trim();
+  if (!name) { toast('Enter a filename', 'er'); return; }
+  try {
+    await apiCreate(name);
+    closeModal('new-file-ovl');
+    await loadFiles();
+    openFile(name);
+    toast(`Created ${name}`, 'ok');
+  } catch(e) {
+    toast('Create failed: ' + e.message, 'er');
+  }
+}
+
+// ─── DELETE FILE ──────────────────────────────────────────────────
+let pendingDelete = null;
+function confirmDelete(filename, e) {
+  if (e) e.stopPropagation();
+  pendingDelete = filename;
+  document.getElementById('del-file-name').textContent = filename;
+  document.getElementById('del-confirm-btn').onclick = doDelete;
+  openModal('del-file-ovl');
+}
+async function doDelete() {
+  if (!pendingDelete) return;
+  try {
+    await apiDelete(pendingDelete);
+    // close tab if open
+    const idx = openTabs.findIndex(t => t.filename === pendingDelete);
+    if (idx !== -1) { openTabs.splice(idx,1); afterCloseTab(pendingDelete, idx); }
+    closeModal('del-file-ovl');
+    await loadFiles();
+    toast(`Deleted ${pendingDelete}`, 'ok');
+    pendingDelete = null;
+  } catch(e) {
+    toast('Delete failed: ' + e.message, 'er');
+  }
+}
+
+// ─── TERMINAL ─────────────────────────────────────────────────────
+const termBody = document.getElementById('term-body');
+const termInput = document.getElementById('term-input');
+
+function termLine(text, type='out') {
+  if (text === undefined || text === null || text === '') return;
+  const div = document.createElement('div');
+  div.className = `term-line ${type}`;
+  if (type === 'cmd') {
+    div.innerHTML = `<span class="prompt">❯</span><span class="text">${escHtml(text)}</span>`;
+  } else {
+    div.innerHTML = `<span class="text">${escHtml(text)}</span>`;
+  }
+  termBody.appendChild(div);
+  termBody.scrollTop = termBody.scrollHeight;
+}
+
+function clearTerminal() {
+  termBody.innerHTML = '';
+  termLine('Terminal cleared.', 'info');
+}
+
+async function runTerminalCommand(cmd) {
+  if (!cmd.trim()) return;
+  termLine(cmd, 'cmd');
+  termHistory.unshift(cmd);
+  termHistIdx = -1;
+  try {
+    const result = await apiExecute(cmd);
+    if (result.stdout && result.stdout.trim()) {
+      result.stdout.trim().split('\n').forEach(l => termLine(l, 'out'));
+    }
+    if (result.stderr && result.stderr.trim()) {
+      result.stderr.trim().split('\n').forEach(l => termLine(l, result.success ? 'out' : 'err'));
+    }
+    if (!result.stdout && !result.stderr) {
+      termLine(result.success ? '(no output)' : (result.error || 'Command failed'), result.success ? 'info' : 'err');
+    }
+  } catch(e) {
+    termLine('Error: Cannot reach server. Is localhost:3000 running?', 'err');
+  }
+}
+
+termInput.addEventListener('keydown', async e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    const cmd = termInput.value.trim();
+    termInput.value = '';
+    await runTerminalCommand(cmd);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (termHistory.length) {
+      termHistIdx = Math.min(termHistIdx + 1, termHistory.length - 1);
+      termInput.value = termHistory[termHistIdx];
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (termHistIdx > 0) { termHistIdx--; termInput.value = termHistory[termHistIdx]; }
+    else { termHistIdx = -1; termInput.value = ''; }
+  }
+});
+
+// ─── TERMINAL RESIZE ──────────────────────────────────────────────
+(function() {
+  const handle = document.getElementById('term-resize-handle');
+  const wrap = document.getElementById('terminal-wrap');
+  let dragging = false, startY, startH;
+  handle.addEventListener('mousedown', e => {
+    if (e.target.closest('button')) return;
+    dragging = true;
+    startY = e.clientY;
+    startH = wrap.offsetHeight;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'ns-resize';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = startY - e.clientY;
+    const newH = Math.max(80, Math.min(600, startH + delta));
+    wrap.style.height = newH + 'px';
+    document.documentElement.style.setProperty('--term-h', newH+'px');
+  });
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+  });
+})();
+
+// ─── PANEL TOGGLES ────────────────────────────────────────────────
+function toggleExplorer() {
+  const el = document.getElementById('explorer');
+  const btn = document.getElementById('btn-explorer');
+  el.classList.toggle('closed');
+  btn.classList.toggle('active', !el.classList.contains('closed'));
+}
+
+function toggleTerminal() {
+  const el = document.getElementById('terminal-wrap');
+  const btn = document.getElementById('btn-terminal');
+  el.classList.toggle('closed');
+  btn.classList.toggle('active', !el.classList.contains('closed'));
+  if (!el.classList.contains('closed')) {
+    setTimeout(() => termInput.focus(), 120);
+    if (!termBody.children.length) {
+      termLine('Code Mon Terminal — connected to localhost:3000', 'info');
+      termLine('Type commands below. Powered by /execute endpoint.', 'info');
+    }
+  }
+}
+
+function toggleCopilot() {
+  const el = document.getElementById('copilot');
+  const btn = document.getElementById('btn-copilot');
+  el.classList.toggle('closed');
+  btn.classList.toggle('active', !el.classList.contains('closed'));
+  if (!el.classList.contains('closed')) {
+    setTimeout(() => document.getElementById('cp-input').focus(), 120);
+  }
+}
+
+// ─── COMMAND PALETTE ─────────────────────────────────────────────
+const COMMANDS = [
+  { label:'New File', action: openNewFileModal, kbd:'Ctrl+N', icon:'<path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>' },
+  { label:'Save File', action: saveCurrentFile, kbd:'Ctrl+S', icon:'<path d="M2.75 1A1.75 1.75 0 0 0 1 2.75v10.5c0 .966.784 1.75 1.75 1.75h10.5A1.75 1.75 0 0 0 15 13.25V4.56L11.44 1H2.75z"/>' },
+  { label:'Toggle Terminal', action: toggleTerminal, kbd:'Ctrl+`', icon:'<path d="M0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75z"/>' },
+  { label:'Toggle Explorer', action: toggleExplorer, kbd:'Ctrl+B', icon:'<path d="M1.75 2.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H7.5c-.55 0-1.07-.26-1.4-.7l-.9-1.2a.25.25 0 0 0-.2-.1H1.75z"/>' },
+  { label:'Toggle Copilot', action: toggleCopilot, kbd:'Ctrl+I', icon:'<path d="M8 1.5A6.5 6.5 0 1 0 14.5 8z"/>' },
+  { label:'Clear Terminal', action: clearTerminal, icon:'<path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326z"/>' },
+  { label:'Refresh Files', action: loadFiles, icon:'<path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97z"/>' },
+];
+
+let cmdSelIdx = 0;
+function openCmdPal() {
+  const pal = document.getElementById('cmdpal');
+  pal.classList.remove('hidden');
+  const input = document.getElementById('cmdpal-input');
+  input.value = '';
+  input.focus();
+  renderCmdList('');
+}
+function closeCmdPal() {
+  document.getElementById('cmdpal').classList.add('hidden');
+}
+function renderCmdList(q) {
+  const list = document.getElementById('cmdpal-list');
+  const lower = q.toLowerCase();
+  const items = q ? COMMANDS.filter(c => c.label.toLowerCase().includes(lower)) : COMMANDS;
+  cmdSelIdx = 0;
+  list.innerHTML = '';
+  items.forEach((cmd, i) => {
+    const div = document.createElement('div');
+    div.className = 'cmdpal-item' + (i === 0 ? ' selected' : '');
+    div.innerHTML = `<svg viewBox="0 0 16 16">${cmd.icon}</svg><span class="ci-label">${escHtml(cmd.label)}</span><span class="ci-kbd">${cmd.kbd||''}</span>`;
+    div.addEventListener('click', () => { cmd.action(); closeCmdPal(); });
+    list.appendChild(div);
+  });
+}
+document.getElementById('cmdpal-input').addEventListener('input', e => renderCmdList(e.target.value));
+document.getElementById('cmdpal-input').addEventListener('keydown', e => {
+  const items = document.querySelectorAll('.cmdpal-item');
+  if (e.key === 'ArrowDown') { e.preventDefault(); cmdSelIdx = Math.min(cmdSelIdx+1, items.length-1); items.forEach((el,i)=>el.classList.toggle('selected',i===cmdSelIdx)); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); cmdSelIdx = Math.max(cmdSelIdx-1,0); items.forEach((el,i)=>el.classList.toggle('selected',i===cmdSelIdx)); }
+  else if (e.key === 'Enter') { if(items[cmdSelIdx]){items[cmdSelIdx].click();} }
+  else if (e.key === 'Escape') closeCmdPal();
+});
+
+// ─── COPILOT ─────────────────────────────────────────────────────
+const SYSTEM_PROMPT = `You are Code Mon Copilot — an expert coding assistant embedded in Code Mon Code Space IDE.
+
+You have special abilities via mnemonics:
+
+**To save/edit a file**, use the format:
+\`\`\`[SAVE:filename]\n<full file content>\n\`\`\`
+After the code block, add: [SAVE:filename] — this will auto-trigger saving.
+
+**To run a terminal command**, use:
+[RUN:your-command-here]
+
+You can use multiple mnemonics in one response. Always wrap file contents in the appropriate language code block. Be concise, practical, and production-focused. Format your responses with Markdown.`;
+
+function getEditorContext() {
+  if (!activeTab) return '';
+  const content = editor.value;
+  if (!content.trim()) return `\n\nCurrently open file: ${activeTab} (empty)`;
+  return `\n\nCurrently open file: ${activeTab} (${content.split('\n').length} lines)\n\`\`\`${getLangFromFilename(activeTab)}\n${content}\n\`\`\``;
+}
+
+function cpSuggest(text) {
+  document.getElementById('cp-input').value = text;
+  if (document.getElementById('copilot').classList.contains('closed')) toggleCopilot();
+  document.getElementById('cp-input').focus();
+}
+
+function renderCpMsg(role, contentHtml, isHtml=false) {
+  const welcome = document.getElementById('cp-welcome');
+  if (welcome) welcome.remove();
+  const msgs = document.getElementById('cp-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = `cp-msg ${role}`;
+  const av = role === 'user' ? 'U' : `<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.508 6.508 0 0 0 8 1.5ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>`;
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  wrap.innerHTML = `
+    <div class="cp-av">${av}</div>
+    <div class="cp-mc">
+      <div class="cp-bbl">${isHtml ? contentHtml : `<div class="md">${contentHtml}</div>`}</div>
+      <div class="cp-meta">${time}</div>
+    </div>
+  `;
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+  return wrap;
+}
+
+function showCpThinking() {
+  const msgs = document.getElementById('cp-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'cp-thinking';
+  const av = `<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.508 6.508 0 0 0 8 1.5ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>`;
+  wrap.innerHTML = `<div class="cp-av" style="background:var(--acb);color:var(--ac);border:1px solid var(--ace)">${av}</div><div class="cp-think-bbl"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Thinking…</span></div>`;
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+  return wrap;
+}
+
+// Parse and render mnemonics in AI response
+async function processAIMnemonics(text) {
+  // [SAVE:filename] mnemonic — find file blocks
+  const saveRe = /```\[SAVE:([^\]]+)\]\n([\s\S]*?)```/g;
+  let saveMatch;
+  const savedFiles = [];
+  while ((saveMatch = saveRe.exec(text)) !== null) {
+    const fname = saveMatch[1].trim();
+    const content = saveMatch[2];
+    try {
+      // Create if not exists, then save
+      const files = await apiList();
+      if (!files.includes(fname)) await apiCreate(fname);
+      await apiSave(fname, content);
+      savedFiles.push(fname);
+      toast(`✦ Copilot saved: ${fname}`, 'ok');
+      await loadFiles();
+      // Update open tab if it exists
+      const tab = openTabs.find(t => t.filename === fname);
+      if (tab) { tab.content = content; tab.dirty = false; if (activeTab === fname) { editor.value = content; updateHighlighting(); updateLineNums(); renderTabs(); } }
+    } catch(e) {
+      toast(`Save failed for ${fname}: ` + e.message, 'er');
+    }
+  }
+
+  // [RUN:command] mnemonic
+  const runRe = /\[RUN:([^\]]+)\]/g;
+  let runMatch;
+  while ((runMatch = runRe.exec(text)) !== null) {
+    const cmd = runMatch[1].trim();
+    // Show terminal and run
+    if (document.getElementById('terminal-wrap').classList.contains('closed')) toggleTerminal();
+    toast(`✦ Copilot running: ${cmd}`, 'nfo');
+    await runTerminalCommand(cmd);
+  }
+
+  return { savedFiles };
+}
+
+function renderMarkdownWithActions(text) {
+  // Pre-process [SAVE:...] code blocks for display
+  let displayText = text;
+  
+  // Replace ```[SAVE:filename] blocks with styled display
+  displayText = displayText.replace(/```\[SAVE:([^\]]+)\]\n([\s\S]*?)```/g, (match, fname, content) => {
+    return `\n\n**📁 Saving to: \`${fname}\`**\n\`\`\`\n${content}\`\`\``;
+  });
+  
+  // Replace [RUN:cmd] with styled tag display
+  displayText = displayText.replace(/\[RUN:([^\]]+)\]/g, (match, cmd) => {
+    return `\n\n**▶ Running command:** \`${cmd}\`\n`;
+  });
+
+  // Convert markdown
+  let html = marked.parse(displayText, { breaks: true, gfm: true });
+
+  // Post-process code blocks to add copy + apply headers
+  html = html.replace(/<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/g, (match, lang, code) => {
+    const label = lang || 'code';
+    return `<div class="cbw"><div class="cbh"><span class="lang">${escHtml(label)}</span><button class="cp-btn" onclick="cpCopyCode(this)">Copy</button></div><pre><code class="language-${escHtml(label)}">${code}</code></pre></div>`;
+  });
+
+  return html;
+}
+
+function cpCopyCode(btn) {
+  const code = btn.closest('.cbw').querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(() => { btn.textContent = 'Copied!'; setTimeout(()=>btn.textContent='Copy', 1500); });
+}
+
+async function sendCopilot() {
+  if (cpBusy) return;
+  const input = document.getElementById('cp-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Show user message
+  renderCpMsg('user', escHtml(text), true);
+  cpHistory.push({ role: 'user', content: text + getEditorContext() });
+  input.value = '';
+  input.style.height = 'auto';
+
+  cpBusy = true;
+  document.getElementById('cp-send-btn').disabled = true;
+
+  const thinking = showCpThinking();
+
+  try {
+    const messages = [
+      ...cpHistory.slice(-10) // keep last 10 turns
+    ];
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages
+      })
+    });
+
+    const data = await response.json();
+    thinking.remove();
+
+    const aiText = data.content?.map(c => c.text || '').join('') || 'Sorry, I could not generate a response.';
+    cpHistory.push({ role: 'assistant', content: aiText });
+
+    // Process mnemonics first
+    await processAIMnemonics(aiText);
+
+    // Render response
+    const html = renderMarkdownWithActions(aiText);
+    const msgEl = renderCpMsg('ai', html, true);
+
+    // Re-run hljs on code blocks in message
+    msgEl.querySelectorAll('pre code').forEach(el => { try { hljs.highlightElement(el); } catch(e){} });
+
+  } catch(e) {
+    thinking.remove();
+    renderCpMsg('ai', `<span style="color:var(--er)">Error: ${escHtml(e.message)}</span>`, true);
+  } finally {
+    cpBusy = false;
+    document.getElementById('cp-send-btn').disabled = false;
+  }
+}
+
+// Copilot input auto-resize + enter to send
+const cpInput = document.getElementById('cp-input');
+cpInput.addEventListener('input', () => {
+  cpInput.style.height = 'auto';
+  cpInput.style.height = Math.min(cpInput.scrollHeight, 120) + 'px';
+});
+cpInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendCopilot(); }
+});
+
+// ─── MODAL HELPERS ────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('.ovl').forEach(ovl => {
+  ovl.addEventListener('click', e => { if (e.target === ovl) ovl.classList.add('hidden'); });
+});
+document.getElementById('new-file-input').addEventListener('keydown', e => { if (e.key === 'Enter') createNewFile(); });
+
+// ─── TOAST ───────────────────────────────────────────────────────
+function toast(msg, type='nfo') {
+  const stack = document.getElementById('tstack');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 300); }, 2800);
+}
+
+// ─── UTILITIES ───────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── KEYBOARD SHORTCUTS ──────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && e.key === 's') { e.preventDefault(); saveCurrentFile(); }
+  if (ctrl && e.key === 'b') { e.preventDefault(); toggleExplorer(); }
+  if (ctrl && e.key === 'i') { e.preventDefault(); toggleCopilot(); if (!document.getElementById('copilot').classList.contains('closed')) cpInput.focus(); }
+  if (ctrl && e.key === '`') { e.preventDefault(); toggleTerminal(); }
+  if (ctrl && e.key === 'p') { e.preventDefault(); openCmdPal(); }
+  if (ctrl && e.key === 'n') { e.preventDefault(); openNewFileModal(); }
+  if (e.key === 'Escape') { closeCmdPal(); document.querySelectorAll('.ovl').forEach(o=>o.classList.add('hidden')); }
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────
+loadFiles();
+termLine('Code Mon Terminal — type commands and press Enter.', 'info');
+</script>
+</body>
+</html>
