@@ -1637,7 +1637,7 @@ async function sendChat(){
 
     // ── Stage 2: Plan (haiku) ───────────────────────────────────────────────
     updThinkingBubble(thinkEl,'Planning…');
-    const plan = await callAI('claude-haiku-4-5',
+    const plan = await callAI('claude-haiku-4.5',
       `You are a coding task planner for CodeMon Copilot.\nCreate a concise step-by-step plan (60-100 words) for:\n"${text}"${ctx}${thinkResult?'\n\nPre-analysis:\n'+thinkResult:''}`
     );
 
