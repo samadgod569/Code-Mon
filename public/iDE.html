@@ -1417,9 +1417,9 @@ function denyPerm(){document.getElementById('perm').classList.remove('show');if(
 
 // ─── COPILOT / CHAT ───────────────────────────────────────────────────────────
 const MODELS=[
-  {key:'claude-sonnet-4-6',label:'Claude Sonnet 4.6'},
-  {key:'claude-opus-4-6',label:'Claude Opus 4.6'},
-  {key:'claude-haiku-4-5',label:'Claude Haiku 4.5'},
+  {key:'claude-sonnet-4.6',label:'Claude Sonnet 4.6'},
+  {key:'claude-opus-4.6',label:'Claude Opus 4.6'},
+  {key:'claude-haiku-4.5',label:'Claude Haiku 4.5'},
   {key:'gpt-5.2',label:'GPT-5.2'},
   {key:'gemini-3-pro',label:'Gemini 3 Pro'},
   {key:'llama-3-70b',label:'Llama 3 70B'},
@@ -1748,14 +1748,14 @@ async function sendChat(){
   try{
     if(thinkMode){
       updThinkingBubble(thinkEl,'Deep thinking…');
-      thinkResult = await callAI('claude-haiku-4-5',
+      thinkResult = await callAI('claude-haiku-4.5',
         `You are a deep reasoning engine for CodeMon Copilot.\nThink step-by-step about this coding task (60-100 words, plain text, no code).\n\nTask: "${text}"${ctx}`
       );
     }
 
     // ── Stage 2: Plan (haiku) ───────────────────────────────────────────────
     updThinkingBubble(thinkEl,'Planning…');
-    const plan = await callAI('claude-haiku-4-5',
+    const plan = await callAI('claude-haiku-4.5',
       `You are a coding task planner for CodeMon Copilot.\nCreate a concise step-by-step plan (60-100 words) for:\n"${text}"${ctx}${thinkResult?'\n\nPre-analysis:\n'+thinkResult:''}`
     );
 
