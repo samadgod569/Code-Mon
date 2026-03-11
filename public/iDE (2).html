@@ -1,0 +1,2026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>CodeMon</title>
+<link rel="icon" href="favicon.png">
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:ital,wght@0,200..900;1,200..900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.9.0/lib/addon-fit.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bd:#30363d;--bdm:#1c2128;
+  --tx:#e6edf3;--txm:#8b949e;--txs:#6e7681;
+  --ac:#58a6ff;--ach:#79c0ff;--acb:rgba(56,139,253,.1);--ace:rgba(56,139,253,.4);
+  --ok:#3fb950;--okb:rgba(46,160,67,.1);--oke:rgba(63,185,80,.3);
+  --er:#f85149;--erb:rgba(248,81,73,.1);--ere:rgba(248,81,73,.3);
+  --wn:#e3b341;--wnb:rgba(187,128,9,.15);--wne:rgba(227,179,65,.3);
+  --pu:#bc8cff;--pub:rgba(188,140,255,.12);
+  --sh1:0 1px 0 rgba(0,0,0,.3);--sh2:0 3px 6px rgba(0,0,0,.35);--sh3:0 8px 32px rgba(0,0,0,.55);
+  --r:6px;--rl:12px;--tr:80ms cubic-bezier(.33,1,.68,1);
+  --font-ui:'Mona Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono',monospace
+}
+html,body{height:100%;overflow:hidden;font-family:var(--font-ui)}
+body{background:var(--bg);color:var(--tx);display:flex;flex-direction:column;font-size:13px;line-height:1.5}
+button,input,textarea,select{font-family:inherit}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+.hidden{display:none!important}
+
+#tb{height:40px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:100;user-select:none;box-shadow:var(--sh1)}
+#tb-logo{display:flex;align-items:center;gap:7px}
+#tb-logo img{width:20px;height:20px;border-radius:5px;object-fit:cover}
+#tb-logo span{font-size:13px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(90deg,var(--tx),var(--pu));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#tb-menus{display:flex;gap:1px;margin-left:4px}
+.tbm{padding:4px 9px;border-radius:var(--r);font-size:12px;color:var(--txm);cursor:pointer;background:none;border:none;transition:background var(--tr),color var(--tr)}
+.tbm:hover{background:var(--bg3);color:var(--tx)}
+#tb-center{flex:1;display:flex;justify-content:center}
+#srchwrap{display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:5px 12px;width:300px;transition:border-color var(--tr),box-shadow var(--tr)}
+#srchwrap:focus-within{border-color:var(--ace);box-shadow:0 0 0 3px var(--acb)}
+#srch{background:none;border:none;outline:none;color:var(--tx);font-size:12px;width:100%;font-family:var(--font-ui)}
+#srch::placeholder{color:var(--txs)}
+#tb-right{display:flex;align-items:center;gap:3px}
+.tb-btn{width:28px;height:28px;border:none;background:none;border-radius:var(--r);color:var(--txm);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--tr),color var(--tr)}
+.tb-btn:hover{background:var(--bg3);color:var(--tx)}
+
+#ws{display:flex;flex:1;overflow:hidden;min-height:0}
+
+#ab{width:48px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;flex-shrink:0}
+.ab-btn{width:36px;height:36px;border:none;background:none;border-radius:var(--r);color:var(--txs);cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:background var(--tr),color var(--tr)}
+.ab-btn:hover{background:var(--bg3);color:var(--txm)}.ab-btn.on{color:var(--tx)}
+.ab-btn.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:2px;height:20px;background:var(--ac);border-radius:0 2px 2px 0}
+#ab-bot{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:6px}
+.ab-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;cursor:pointer}.ab-av:hover{opacity:.8}
+
+#sb{width:240px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .18s ease}
+#sb.off{width:0;border-right:none}
+.sbp{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}.sbp.hidden{display:none!important}
+.sbhd{padding:10px 12px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--bd)}
+.sbtitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--txm)}
+.sbacts{display:flex;gap:2px}
+.sbi{width:22px;height:22px;border:none;background:none;border-radius:4px;color:var(--txs);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--tr),color var(--tr)}.sbi:hover{background:var(--bg3);color:var(--tx)}
+
+#ftree{flex:1;overflow-y:auto;padding:4px 0}
+.fdr{display:flex;align-items:center;gap:4px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--tx);transition:background var(--tr);user-select:none;white-space:nowrap}.fdr:hover{background:var(--bg3)}
+.fdarr{width:12px;height:12px;fill:var(--txm);transition:transform .15s;flex-shrink:0}.fdarr.open{transform:rotate(90deg)}
+.fdico{width:13px;height:13px;fill:#daa520;flex-shrink:0}
+.fdc{padding-left:12px;display:none}.fdc.open{display:block}
+.fr{display:flex;align-items:center;gap:6px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--tx);transition:background var(--tr);user-select:none;white-space:nowrap;border-left:2px solid transparent}
+.fr:hover{background:var(--bg3)}.fr.on{background:var(--acb);border-left-color:var(--ac)}
+.fdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.d-js{background:#f1e05a}.d-ts{background:#3178c6}.d-py{background:#3572a5}.d-html{background:#e34c26}.d-css{background:#264de4}.d-json{background:#5dc9e2}.d-md{background:var(--txm)}.d-rs{background:#dea584}.d-go{background:#00add8}.d-def{background:var(--txs)}
+
+#extlist{flex:1;overflow-y:auto;padding:8px}
+.cs-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 16px 20px;gap:10px;position:relative;overflow:hidden}
+.cs-glow{position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(88,166,255,.18) 0%,transparent 70%);pointer-events:none}
+.cs-ico{width:52px;height:52px;border-radius:14px;background:var(--bg3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;color:var(--ac);box-shadow:0 0 20px rgba(88,166,255,.12)}
+.cs-title{font-size:13px;font-weight:700;color:var(--tx);letter-spacing:-.01em}
+.cs-sub{font-size:11px;color:var(--txs);line-height:1.6;max-width:200px}
+.cs-pills{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:4px}
+.cs-pill{padding:3px 9px;background:var(--bg3);border:1px solid var(--bd);border-radius:20px;font-size:10px;color:var(--txm)}
+
+#setbody{flex:1;overflow-y:auto;padding:12px}
+.sg{margin-bottom:18px}.sgtitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--txm);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+.sr{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.sl{font-size:11px;font-weight:600;color:var(--txm)}.sd{font-size:10px;color:var(--txs);line-height:1.4}
+.si{width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;color:var(--tx);outline:none;transition:border-color var(--tr),box-shadow var(--tr);font-family:var(--font-mono)}.si:focus{border-color:var(--ace);box-shadow:0 0 0 3px var(--acb)}
+.stog{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;transition:border-color var(--tr);margin-bottom:8px}.stog:hover{border-color:var(--ace)}
+.ttrack{width:34px;height:18px;border-radius:9px;background:var(--bd);position:relative;transition:background var(--tr);flex-shrink:0}.ttrack.on{background:var(--ac)}
+.tthumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform var(--tr)}.ttrack.on .tthumb{transform:translateX(16px)}
+.tlbl{font-size:12px;color:var(--tx);flex:1}.tdesc{font-size:10px;color:var(--txs)}
+.ssave{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;background:var(--ac);border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:opacity var(--tr)}.ssave:hover{opacity:.85}
+
+/* ── Upload to CodeMon modal ── */
+#uploadovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:6000;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+#uploadovl.show{display:flex}
+#uploadcard{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);width:100%;max-width:440px;box-shadow:var(--sh3);animation:mdin .15s ease;overflow:hidden}
+.uphd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bd)}
+.uptitle{font-size:14px;font-weight:700;color:var(--tx)}
+.upclose{background:none;border:none;color:var(--txs);cursor:pointer;font-size:16px;line-height:1;padding:2px;border-radius:3px;transition:color var(--tr)}.upclose:hover{color:var(--er)}
+.upbody{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.uptabs{display:flex;gap:4px;padding:3px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd)}
+.uptab{flex:1;padding:6px;border:none;border-radius:calc(var(--r) - 2px);font-size:12px;font-weight:600;cursor:pointer;transition:var(--tr);background:none;color:var(--txm)}
+.uptab.on{background:var(--bg);color:var(--tx);box-shadow:var(--sh1)}
+.uprow{display:flex;flex-direction:column;gap:4px}
+.uplbl{font-size:11px;font-weight:600;color:var(--txm)}
+.upinp{width:100%;padding:8px 10px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;color:var(--tx);outline:none;transition:border-color var(--tr),box-shadow var(--tr);font-family:var(--font-mono)}.upinp:focus{border-color:var(--ace);box-shadow:0 0 0 3px var(--acb)}
+.upsel{width:100%;padding:8px 10px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;color:var(--tx);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 16 16' fill='%236e7681'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 7H4.604a.25.25 0 0 0-.177.427z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.upinfonote{font-size:10px;color:var(--txs);line-height:1.5;padding:7px 10px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd)}
+.upfoot{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--bd);background:var(--bg2)}
+.upbtn{padding:7px 16px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:var(--tr)}
+.upbtn.sec{background:var(--bg3);border-color:var(--bd);color:var(--txm)}.upbtn.sec:hover{color:var(--tx);border-color:var(--ace)}
+.upbtn.pri{background:var(--ac);color:#fff;border-color:var(--ac)}.upbtn.pri:hover{opacity:.88}.upbtn.pri:disabled{opacity:.45;cursor:not-allowed}
+.up-cred-warn{font-size:11px;color:var(--wn);display:flex;align-items:center;gap:5px;padding:7px 10px;background:var(--wnb);border:1px solid var(--wne);border-radius:var(--r)}
+
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+#tabs{height:36px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:stretch;overflow-x:auto;flex-shrink:0}
+#tabs::-webkit-scrollbar{height:0}
+#tabsi{display:flex;align-items:stretch}
+.tab{display:flex;align-items:center;gap:7px;padding:0 14px;min-width:110px;max-width:200px;border-right:1px solid var(--bd);cursor:pointer;color:var(--txs);font-size:12px;background:var(--bg2);transition:background var(--tr),color var(--tr);user-select:none;flex-shrink:0}
+.tab:hover{background:var(--bg3);color:var(--txm)}.tab.on{background:var(--bg);color:var(--tx);border-top:1px solid var(--ac)}
+.tname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tmod{width:7px;height:7px;border-radius:50%;background:var(--ac);flex-shrink:0}
+.tx2{width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--txs);transition:background var(--tr),color var(--tr);flex-shrink:0}.tx2:hover{background:var(--bg3);color:var(--tx)}
+#tabs-r{margin-left:auto;display:flex;align-items:center;padding:0 8px;gap:6px;flex-shrink:0}
+#rbtn{display:flex;align-items:center;gap:5px;padding:4px 12px;background:var(--ok);color:#000;border:none;border-radius:var(--r);font-size:11px;font-weight:700;cursor:pointer;transition:opacity var(--tr),transform var(--tr)}.rbtn:hover{opacity:.9}
+
+#bc{height:26px;background:var(--bg);border-bottom:1px solid var(--bdm);display:flex;align-items:center;padding:0 12px;gap:4px;font-size:11px;color:var(--txs);flex-shrink:0}
+.bc-sep{font-size:9px}.bc-i{color:var(--txm);cursor:pointer}.bc-i:hover{color:var(--tx)}.bc-i.cur{color:var(--tx)}
+
+#ea{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--txs);text-align:center;padding:32px}
+#empty svg{opacity:.1}
+#empty h2{font-size:20px;font-weight:300;color:var(--txm);letter-spacing:-.02em}
+#empty p{font-size:11px;color:var(--txs);max-width:280px;line-height:1.6}
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.qcard{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:9px 12px;font-size:11px;color:var(--txm);cursor:pointer;text-align:left;transition:border-color var(--tr),background var(--tr)}.qcard:hover{border-color:var(--ace);background:var(--acb);color:var(--tx)}
+.qcard kbd{display:inline-block;background:var(--bg3);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;font-family:var(--font-mono);font-size:10px;color:var(--txs);margin-right:4px}
+#editor{flex:1;overflow:hidden;display:none}
+
+#rz{height:4px;cursor:row-resize;background:transparent;flex-shrink:0;position:relative}
+#rz:hover::after{content:'';position:absolute;left:0;right:0;top:1px;height:2px;background:var(--ace);border-radius:1px}
+
+#panel{height:200px;background:#080a0d;border-top:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
+#panel.off{height:36px}
+#xterm-wrap{flex:1;overflow:hidden;min-height:0;padding:2px 4px;background:#080a0d}
+#xterm-wrap .xterm{height:100%}
+#xterm-wrap .xterm-viewport{overflow-y:auto!important}
+#phd{height:36px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 6px;gap:3px;flex-shrink:0;position:relative}
+/* VS Code style indeterminate loading bar */
+#exec-bar{position:absolute;bottom:0;left:0;right:0;height:2px;overflow:hidden;display:none}
+#exec-bar.on{display:block}
+#exec-bar::after{content:'';position:absolute;top:0;height:100%;width:40%;background:var(--ac);border-radius:1px;animation:execsweep 1.4s ease-in-out infinite}
+@keyframes execsweep{0%{left:-40%}100%{left:100%}}
+.ptab{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r);font-size:11px;color:var(--txs);cursor:pointer;transition:background var(--tr),color var(--tr)}.ptab:hover{background:var(--bg3);color:var(--txm)}.ptab.on{color:var(--tx);background:var(--bg3)}
+#phdr{margin-left:auto;display:flex;align-items:center;gap:2px}
+#tbody{flex:1;overflow-y:auto;padding:8px 12px;font-family:var(--font-mono);font-size:12px;line-height:1.65}
+.tprompt{color:var(--ac)}.tcmd{color:var(--tx)}.tout{color:var(--txm)}.terr{color:var(--er)}.twso{color:#c9d1d9}.tinfo{color:var(--pu);font-style:italic;font-size:11px}
+#tirow{display:flex;align-items:center;gap:7px;padding:6px 12px 8px;border-top:1px solid var(--bdm);flex-shrink:0}
+.tip{color:var(--ac);font-family:var(--font-mono);font-size:12px;flex-shrink:0}
+#ti{flex:1;background:none;border:none;outline:none;color:var(--tx);font-family:var(--font-mono);font-size:12px;caret-color:var(--ac)}
+#ti::placeholder{color:var(--txs)}
+.tsend{background:var(--ac);border:none;border-radius:4px;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;transition:background var(--tr);flex-shrink:0}.tsend:hover{background:var(--ach)}
+.wsdot{width:6px;height:6px;border-radius:50%;background:var(--er);transition:background var(--tr)}.wsdot.on{background:var(--ok)}
+#procbody{flex:1;overflow-y:auto;padding:8px 12px;display:none}
+.proc-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bdm)}
+.proc-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex-shrink:0;box-shadow:0 0 6px rgba(63,185,80,.4)}
+.proc-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.proc-cmd{font-size:11px;font-family:var(--font-mono);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proc-pid{font-size:10px;color:var(--txs)}
+.proc-stop{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;background:var(--erb);border:1px solid var(--ere);color:var(--er);transition:var(--tr);flex-shrink:0}.proc-stop:hover{background:var(--er);color:#fff;border-color:var(--er)}.proc-stop:disabled{opacity:.5;cursor:not-allowed}
+
+#stbar{height:22px;background:var(--ac);display:flex;align-items:center;padding:0 6px;flex-shrink:0;user-select:none}
+.sti{display:flex;align-items:center;gap:4px;padding:0 8px;height:100%;font-size:11px;font-weight:500;color:rgba(255,255,255,.9);cursor:pointer;transition:background var(--tr);white-space:nowrap}.sti:hover{background:rgba(0,0,0,.12)}
+.stsep{width:1px;height:13px;background:rgba(255,255,255,.2)}
+#str{margin-left:auto;display:flex;align-items:center}
+
+#cp{width:300px;background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .18s ease}
+#cp.off{width:0;border-left:none}
+.aihd{padding:8px 10px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.aihdt{font-size:10px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.1em;flex:1;white-space:nowrap}
+.msel{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:3px 20px 3px 7px;font-size:11px;color:var(--tx);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 16 16' fill='%236e7681'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 7H4.604a.25.25 0 0 0-.177.427z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;max-width:120px}
+.thkbtn{background:none;border:1px solid var(--bd);border-radius:var(--r);color:var(--txm);cursor:pointer;padding:3px 7px;display:flex;align-items:center;gap:3px;font-size:10px;transition:var(--tr)}.thkbtn.on{background:var(--pub);border-color:rgba(188,140,255,.4);color:var(--pu)}
+.thkdot{width:5px;height:5px;border-radius:50%;background:var(--pu);display:none}.thkbtn.on .thkdot{display:inline-block}
+.chatlist{background:var(--bg2);border-bottom:1px solid var(--bd);overflow-x:auto;display:flex;align-items:center;padding:4px 6px;gap:3px;flex-shrink:0;scrollbar-width:thin}
+.ctab{display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;border:1px solid transparent;font-size:11px;cursor:pointer;white-space:nowrap;color:var(--txm);background:none;transition:var(--tr);flex-shrink:0}.ctab:hover{background:var(--bg3)}.ctab.on{background:var(--bg);border-color:var(--bd);color:var(--tx);box-shadow:var(--sh1)}
+.ctdel{background:none;border:none;color:transparent;cursor:pointer;padding:0;line-height:1;display:flex;border-radius:2px;transition:var(--tr)}.ctab:hover .ctdel{color:var(--txs)}.ctdel:hover{color:var(--er)!important}
+.ncbtn{background:var(--ac);border:none;border-radius:var(--r);color:#fff;font-size:10px;font-weight:700;cursor:pointer;padding:3px 7px;display:flex;align-items:center;gap:3px;flex-shrink:0;transition:var(--tr)}.ncbtn:hover{background:var(--ach)}
+#msgs{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;min-height:0}
+#msgsi{display:flex;flex-direction:column;gap:14px}
+.wscr{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:28px 16px;flex:1}
+.wlogo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(56,139,253,.25)}
+.wt{font-size:15px;font-weight:700;color:var(--tx)}.wsub{font-size:11px;color:var(--txm);line-height:1.6;max-width:220px}
+.wmn{display:flex;flex-direction:column;gap:4px;margin-top:8px;width:100%;text-align:left}
+.wmni{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:var(--bg3);border-radius:var(--r);font-size:10px;color:var(--txm)}
+.wmni code{color:var(--ac);font-family:var(--font-mono);font-size:10px;flex-shrink:0}
+.msg{display:flex;gap:8px;width:100%}.msg.u{flex-direction:row-reverse}
+.av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700}
+.msg.ai .av{background:var(--acb);color:var(--ac);border:1px solid var(--ace)}.msg.u .av{background:var(--bg3);color:var(--txm);border:1px solid var(--bd)}
+.mc{display:flex;flex-direction:column;gap:3px;min-width:0;max-width:calc(100% - 34px)}.msg.u .mc{align-items:flex-end}
+.bbl{padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.6;word-break:break-word}
+.msg.ai .bbl{background:var(--bg);border:1px solid var(--bd);border-top-left-radius:3px;max-width:100%}.msg.u .bbl{background:var(--ac);color:#fff;border-top-right-radius:3px}
+.mmeta{font-size:10px;color:var(--txs);padding:0 2px}.msg.u .mmeta{text-align:right}
+.cpbtn2{background:none;border:none;color:var(--txs);cursor:pointer;padding:0 3px;line-height:1;display:inline-flex;align-items:center;transition:color var(--tr)}.cpbtn2:hover{color:var(--ac)}
+.planbbl{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;border-top-left-radius:3px;overflow:hidden;margin-bottom:4px}
+.planhd{display:flex;align-items:center;gap:5px;padding:6px 10px;background:var(--bg3);border-bottom:1px solid var(--bd);cursor:pointer}
+.planhd span{font-size:11px;font-weight:500;color:var(--txm)}.planch{color:var(--txs);font-size:9px}
+.planbody{padding:8px 10px;font-size:11px;color:var(--txm);line-height:1.6}.planbody.col{display:none}
+.ptyping{white-space:pre-wrap;word-break:break-word}
+.thkbbl2{background:var(--bg2);border:1px solid rgba(188,140,255,.3);border-radius:10px;border-top-left-radius:3px;overflow:hidden;margin-bottom:4px}
+.thkhd2{display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(188,140,255,.06);border-bottom:1px solid rgba(188,140,255,.2);cursor:pointer}
+.thkhd2 span{font-size:11px;font-weight:500;color:var(--pu)}.thkbody2{padding:8px 10px;font-size:11px;color:var(--txm);line-height:1.6;font-style:italic}.thkbody2.col{display:none}
+.thwrap2{display:flex;gap:8px;width:100%}
+.thbbl2{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;border-top-left-radius:3px;font-size:11px;color:var(--txm)}
+.dots{display:flex;gap:3px}.dot{width:4px;height:4px;border-radius:50%;background:var(--ac);animation:pd 1.3s ease-in-out infinite}.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pd{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.md h1,.md h2,.md h3{font-weight:600;line-height:1.3;margin:10px 0 4px}.md h1:first-child,.md h2:first-child,.md h3:first-child{margin-top:0}
+.md h1{font-size:1.15em;padding-bottom:4px;border-bottom:1px solid var(--bd)}.md h2{font-size:1.05em}.md h3{font-size:.95em}
+.md p{margin-bottom:6px}.md p:last-child{margin-bottom:0}.md a{color:var(--ac)}
+.md ul,.md ol{padding-left:16px;margin-bottom:6px}.md li{margin-bottom:2px}
+.md code{background:rgba(175,184,193,.15);border-radius:4px;padding:1px 4px;font-size:.82em;font-family:var(--font-mono)}.msg.u .md code{background:rgba(255,255,255,.2)}
+.md pre{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:0;margin:6px 0;overflow:hidden}
+.md pre code{background:none;border:none;padding:10px 12px;font-size:11px;display:block;overflow-x:auto;color:var(--tx)}
+.md strong{font-weight:600}.md em{font-style:italic}.md hr{border:none;border-top:1px solid var(--bd);margin:8px 0}
+.md table{border-collapse:collapse;width:100%;margin:6px 0;font-size:11px}.md th,.md td{border:1px solid var(--bd);padding:4px 8px;text-align:left}.md th{background:var(--bg3);font-weight:600}
+.cbw{position:relative;margin:6px 0}
+.cbhd{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--bd);border-bottom:none;border-radius:var(--r) var(--r) 0 0;padding:4px 8px}
+.cbhd .lang{font-size:10px;color:var(--txm);font-family:monospace}.cbhd .cbcp{background:none;border:none;color:var(--txm);cursor:pointer;padding:2px 6px;border-radius:3px;font-size:10px;transition:var(--tr)}.cbhd .cbcp:hover{background:var(--bdm);color:var(--tx)}
+.cbw pre{margin:0!important;border-radius:0 0 var(--r) var(--r)!important;border-top:1px solid var(--bdm)!important}
+.stream-cur{display:inline-block;color:var(--ac);animation:scur .6s step-end infinite;font-size:12px;margin-left:1px}
+@keyframes scur{0%,100%{opacity:1}50%{opacity:0}}
+.fgc{display:flex;align-items:center;gap:6px;padding:5px 9px;background:var(--okb);border:1px solid var(--oke);border-radius:var(--r);font-size:11px;color:var(--ok);margin-top:4px;flex-wrap:wrap}.fgc .fn{font-weight:600}
+.aiinput{padding:8px 10px 10px;border-top:1px solid var(--bd);background:var(--bg2);flex-shrink:0}
+.irow{display:flex;gap:6px;align-items:flex-end}.twrap{flex:1}
+.minput{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--tx);resize:none;outline:none;max-height:120px;min-height:36px;line-height:1.5;transition:border-color var(--tr)}.minput:focus{border-color:var(--ace)}.minput::placeholder{color:var(--txs)}
+.sbtn{background:var(--ac);border:none;border-radius:var(--r);color:#fff;cursor:pointer;padding:7px 10px;display:flex;align-items:center;gap:4px;transition:var(--tr);flex-shrink:0}.sbtn:hover{background:var(--ach)}.sbtn:disabled{opacity:.5;cursor:not-allowed}
+.ihint{font-size:10px;color:var(--txs);margin-top:4px}
+
+#tstack{position:fixed;bottom:28px;right:14px;z-index:9000;display:flex;flex-direction:column;gap:5px}
+.toast{padding:8px 12px;border-radius:var(--r);font-size:11px;font-weight:500;border:1px solid;box-shadow:var(--sh2);animation:tin .2s ease;max-width:260px}
+.toast.ok{background:var(--okb);border-color:var(--oke);color:var(--ok)}.toast.er{background:var(--erb);border-color:var(--ere);color:var(--er)}.toast.nfo{background:var(--acb);border-color:var(--ace);color:var(--ac)}.toast.wn{background:var(--wnb);border-color:var(--wne);color:var(--wn)}
+@keyframes tin{from{transform:translateX(14px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px;animation:fdin .15s ease}.ovl.hidden{display:none!important}
+@keyframes fdin{from{opacity:0}}
+.modal{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh3);display:flex;flex-direction:column;width:100%;overflow:hidden;animation:mdin .15s ease}
+@keyframes mdin{from{opacity:0;transform:scale(.96) translateY(-8px)}}
+.msm{max-width:440px}
+.mhd2{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mttl{font-size:14px;font-weight:700}.mclose{background:none;border:none;color:var(--txm);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:16px;line-height:1;transition:var(--tr)}.mclose:hover{background:var(--bg3);color:var(--tx)}
+.mbdy{padding:16px;display:flex;flex-direction:column;gap:10px}.mft{padding:10px 16px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
+.fg2{display:flex;flex-direction:column;gap:4px}.fl2{font-size:11px;font-weight:600;color:var(--txm)}.fd2{font-size:10px;color:var(--txs);line-height:1.5}
+.fin2{width:100%;padding:8px 10px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;color:var(--tx);outline:none;transition:border-color var(--tr),box-shadow var(--tr)}.fin2:focus{border-color:var(--ace);box-shadow:0 0 0 3px var(--acb)}.fin2::placeholder{color:var(--txs)}
+.btn2{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;border:1px solid;transition:var(--tr)}
+.bsec2{background:var(--bg2);border-color:var(--bd);color:var(--tx)}.bsec2:hover{background:var(--bg3)}
+.bpri2{background:var(--ac);border-color:transparent;color:#fff}.bpri2:hover{background:var(--ach)}
+.bdan2{background:var(--erb);border-color:var(--ere);color:var(--er)}.bdan2:hover{background:var(--er);color:#fff}
+
+#setup{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fdin .3s ease}
+#setup.hidden{display:none!important}
+#setupcard{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;box-shadow:var(--sh3);width:100%;max-width:480px;overflow:hidden}
+.sphd{padding:24px 24px 18px;text-align:center;border-bottom:1px solid var(--bd)}
+.splogo{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 4px 20px rgba(56,139,253,.3)}
+.splogo img{width:32px;height:32px;object-fit:contain}
+.sptitle{font-size:21px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(90deg,var(--tx),var(--pu));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.spsub{font-size:12px;color:var(--txm);margin-top:5px;line-height:1.5}
+.spbody{padding:20px 24px}.spstep{display:flex;flex-direction:column;gap:12px}.spstep.hidden{display:none!important}
+.steplbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ac);margin-bottom:2px}
+.spfoot{padding:14px 24px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.spdots{display:flex;gap:5px}.spdot{width:7px;height:7px;border-radius:50%;background:var(--bd);transition:background var(--tr)}.spdot.on{background:var(--ac)}
+.optcard{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--bd);border-radius:var(--r);cursor:pointer;transition:border-color var(--tr),background var(--tr)}.optcard:hover{border-color:var(--ace)}.optcard.on{border-color:var(--ac);background:var(--acb)}
+.optradio{width:16px;height:16px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0;margin-top:2px;transition:border-color var(--tr);display:flex;align-items:center;justify-content:center}.optcard.on .optradio{border-color:var(--ac)}
+.optdot{width:7px;height:7px;border-radius:50%;background:var(--ac);display:none}.optcard.on .optdot{display:block}
+.opttxt h4{font-size:13px;font-weight:600;margin-bottom:2px}.opttxt p{font-size:11px;color:var(--txm);line-height:1.4}
+
+#perm{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:5000;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+#perm.show{display:flex}
+#permcard{background:var(--bg);border:1px solid var(--wne);border-radius:var(--rl);padding:20px;max-width:380px;width:100%;box-shadow:var(--sh3);animation:mdin .15s ease}
+.permico{width:36px;height:36px;border-radius:50%;background:var(--wnb);border:1px solid var(--wne);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.permtitle{font-size:14px;font-weight:700;margin-bottom:6px}.permdesc{font-size:12px;color:var(--txm);line-height:1.5;margin-bottom:6px}
+.permcmd{font-family:var(--font-mono);font-size:11px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:6px 10px;color:var(--tx);margin-bottom:12px;word-break:break-all}
+.permbtns{display:flex;gap:8px;justify-content:flex-end}
+
+.ctxm{position:fixed;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh3);z-index:9999;min-width:165px;padding:4px;animation:mdin .1s ease}
+.ctxi{display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:12px;color:var(--txm);transition:background var(--tr),color var(--tr)}.ctxi:hover{background:var(--bg3);color:var(--tx)}.ctxi.danger:hover{background:var(--erb);color:var(--er)}
+.ctxsep{height:1px;background:var(--bd);margin:3px 0}.ctxks{margin-left:auto;font-size:10px;color:var(--txs);font-family:var(--font-mono)}
+
+.mobov{display:none;position:fixed;inset:0;top:40px;background:rgba(0,0,0,.45);z-index:30;backdrop-filter:blur(1px)}.mobov.on{display:block}
+
+@media(max-width:768px){
+  #ab{display:none}
+  #sb{position:fixed;top:40px;left:0;height:calc(100dvh - 40px);z-index:35;width:0;transition:width .18s ease;border-right:none}
+  #sb.mob{width:240px;border-right:1px solid var(--bd);box-shadow:var(--sh3)}
+  #cp{position:fixed;top:40px;right:0;height:calc(100dvh - 40px);z-index:35;width:0;border-left:none;transition:width .18s ease}
+  #cp.mob{width:300px;border-left:1px solid var(--bd);box-shadow:var(--sh3)}#cp.off{width:0}
+  #tb-menus{display:none}.qgrid{grid-template-columns:1fr}
+  .mob-ico{display:flex!important}
+}
+@media(max-width:480px){#cp.mob{width:100vw}#sb.mob{width:80vw}}
+</style>
+</head>
+<body>
+
+<!-- SETUP WIZARD -->
+<div id="setup">
+  <div id="setupcard">
+    <div class="sphd">
+      <div class="splogo"><img src="favicon.png" alt="CM"></div>
+      <div class="sptitle">Welcome to CodeMon</div>
+      <div class="spsub">Connect your local server to start coding</div>
+    </div>
+    <div class="spbody">
+      <div class="spstep" id="sp1">
+        <div class="steplbl">Server Connection</div>
+        <div class="fg2"><label class="fl2">Server URL</label><div class="fd2">Your CodeMon backend address. Default is localhost.</div><input class="fin2" id="s-url" placeholder="http://localhost:3000" value="http://localhost:3000"></div>
+        <div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--txm);line-height:1.9"><strong style="color:var(--tx);display:block;margin-bottom:4px">Copilot mnemonics:</strong><code style="color:var(--ac)">[SAVE:filename]</code> — save code to file<br><code style="color:var(--ac)">[RUN:command]</code> — run terminal command<br><code style="color:var(--ac)">[OPEN:filename]</code> — open file in editor</div>
+      </div>
+    </div>
+    <div class="spfoot">
+      <div class="spdots"><div class="spdot on" id="sd1"></div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn2 bpri2" id="spnext" onclick="spNext()">Launch IDE →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PERMISSION DIALOG -->
+<div id="perm">
+  <div id="permcard">
+    <div class="permico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--wn)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <div class="permtitle">Command Execution Request</div>
+    <div class="permdesc">Copilot wants to run this command on your server:</div>
+    <div class="permcmd" id="permcmd"></div>
+    <div class="permbtns">
+      <button class="btn2 bsec2" onclick="denyPerm()">Deny</button>
+      <button class="btn2" style="background:var(--okb);border-color:var(--oke);color:var(--ok)" onclick="approvePerm()">Allow</button>
+    </div>
+  </div>
+</div>
+
+<!-- TITLE BAR -->
+<div id="tb">
+  <div id="tb-logo"><img src="favicon.png" alt="CM"><span>CodeMon</span></div>
+  <div id="tb-menus">
+    <button class="tbm" onclick="showNewFile()">File</button>
+    <button class="tbm" onclick="saveFile()">Edit</button>
+    <button class="tbm" onclick="showRunPrompt()">Run</button>
+    <button class="tbm" onclick="focusTerm()">Terminal</button>
+  </div>
+  <div id="tb-center">
+    <div id="srchwrap">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--txs);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="srch" placeholder="Search files…" spellcheck="false" oninput="searchFiles(this.value)">
+    </div>
+  </div>
+  <div id="tb-right">
+    <button class="tb-btn mob-ico" id="mb-files" title="Files" onclick="mobSB()" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+    <button class="tb-btn mob-ico" id="mb-ai" title="Copilot" onclick="mobCP()" style="display:none"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg></button>
+    <button class="tb-btn" title="Toggle Terminal" onclick="togglePanel()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg></button>
+  </div>
+</div>
+
+<!-- WORKSPACE -->
+<div id="ws">
+
+<!-- ACTIVITY BAR -->
+<div id="ab">
+  <button class="ab-btn on" id="ab-files" title="Explorer" onclick="setAct('files')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+  <button class="ab-btn" id="ab-copilot" title="Copilot" onclick="setAct('copilot')"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg></button>
+  <button class="ab-btn" id="ab-ext" title="Extensions" onclick="setAct('ext')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg></button>
+  <div id="ab-bot">
+    <button class="ab-btn" id="ab-settings" title="Settings" onclick="setAct('settings')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <div class="ab-av">CM</div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sb">
+  <div class="sbp" id="sbp-files">
+    <div class="sbhd"><span class="sbtitle">Explorer</span><div class="sbacts"><button class="sbi" title="New File" onclick="showNewFile()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button><button class="sbi" title="Refresh" onclick="loadTree()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></div></div>
+    <div id="ftree"></div>
+  </div>
+  <div class="sbp hidden" id="sbp-ext">
+    <div class="sbhd"><span class="sbtitle">Extensions</span></div>
+    <div id="extlist">
+      <div class="cs-wrap">
+        <div class="cs-glow"></div>
+        <div class="cs-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg></div>
+        <div class="cs-title">Coming Soon</div>
+        <div class="cs-sub">The extensions marketplace is under construction. Install and manage plugins to supercharge your workspace.</div>
+        <div class="cs-pills">
+          <span class="cs-pill">Themes</span>
+          <span class="cs-pill">Linters</span>
+          <span class="cs-pill">Git Tools</span>
+          <span class="cs-pill">Formatters</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sbp hidden" id="sbp-settings">
+    <div class="sbhd"><span class="sbtitle">Settings</span></div>
+    <div id="setbody">
+      <div class="sg"><div class="sgtitle">Server</div>
+        <div class="sr"><label class="sl">API URL</label><input class="si" id="si-url" placeholder="http://localhost:3000"></div>
+        <div class="sr"><label class="sl">Username</label><input class="si" id="si-user" placeholder="Code Mon username"></div>
+        <div class="sr"><label class="sl">Password</label><input class="si" id="si-pass" type="password" placeholder="••••••••"></div>
+      </div>
+      <div class="sg"><div class="sgtitle">Copilot</div>
+        <div class="stog" onclick="togAR()"><div class="ttrack" id="ttr-ar"><div class="tthumb"></div></div><div><div class="tlbl">Auto-run commands</div><div class="tdesc">Execute without asking permission</div></div></div>
+      </div>
+      <div class="sg"><div class="sgtitle">Editor</div>
+        <div class="stog" onclick="togMM()"><div class="ttrack on" id="ttr-mm"><div class="tthumb"></div></div><div><div class="tlbl">Show minimap</div><div class="tdesc">Code overview on right edge</div></div></div>
+      </div>
+      <button class="ssave" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="tabs"><div id="tabsi"></div><div id="tabs-r">
+    <button class="tb-btn" title="Save file (⌘S)" onclick="saveFile()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+    <button class="tb-btn" title="Delete file" onclick="curFile&&confirmDelete(curFile)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+    <button class="tb-btn" title="Download file" onclick="downloadFile()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+    <div style="width:1px;height:16px;background:var(--bd);margin:0 2px"></div>
+    <button class="tb-btn" title="Upload to CodeMon" onclick="showUpload()" style="color:var(--pu)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button>
+    <div style="width:1px;height:16px;background:var(--bd);margin:0 2px"></div>
+    <button id="rbtn" onclick="showRunPrompt()"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run</button>
+  </div></div>
+  <div id="bc"><span class="bc-i">workspace</span><span class="bc-sep">›</span><span class="bc-i cur" id="bc-f">No file open</span></div>
+  <div id="ea">
+    <div id="empty">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=".8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <h2>CodeMon IDE</h2>
+      <p>Open a file from the Explorer or create a new one to begin</p>
+      <div class="qgrid">
+        <div class="qcard" onclick="showNewFile()"><kbd>⌘N</kbd> New File</div>
+        <div class="qcard" onclick="loadTree()"><kbd>⌘O</kbd> Refresh Files</div>
+        <div class="qcard" onclick="saveFile()"><kbd>⌘S</kbd> Save</div>
+        <div class="qcard" onclick="showRunPrompt()"><kbd>⌘↵</kbd> Run Command</div>
+      </div>
+    </div>
+    <div id="editor"></div>
+  </div>
+  <div id="rz" onmousedown="startRz(event)" ontouchstart="startRzT(event)"></div>
+  <div id="panel">
+    <div id="phd">
+      <div class="ptab on" onclick="setPTab(this,'t')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> Terminal</div>
+      <div class="ptab" onclick="setPTab(this,'p')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Processes</div>
+      <div id="phdr">
+        <div class="wsdot" id="wsdot" title="WebSocket"></div>
+        <button class="sbi" onclick="clearTerm()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+        <button class="sbi" onclick="togglePanel()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+      </div>
+      <div id="exec-bar"></div>
+    </div>
+    <div id="xterm-wrap"></div>
+    <div id="tbody" style="display:none"><div class="tinfo">CodeMon Terminal</div></div>
+    <div id="tirow" style="display:none"><span class="tip">❯</span><input id="ti" placeholder="Enter command…" spellcheck="false" autocomplete="off" onkeydown="handleTK(event)"><button class="tsend" onclick="sendTermCmd()" title="Send"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M.989 8 .064 2.68a1.342 1.342 0 0 1 1.85-1.462l13.402 5.744a1.13 1.13 0 0 1 0 2.076L1.913 14.782a1.343 1.343 0 0 1-1.85-1.463L.99 8Zm.603-5.288L2.38 7.25h4.87a.75.75 0 0 1 0 1.5H2.38l-.788 4.538L13.929 8Z"/></svg></button></div>
+    <div id="procbody"></div>
+  </div>
+</div>
+
+<!-- COPILOT PANEL -->
+<div id="cp" class="off">
+  <div class="aihd">
+    <span class="aihdt">Copilot</span>
+    <select class="msel" id="msel"></select>
+    <button class="thkbtn" id="thkbtn" onclick="togThink()"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.508 6.508 0 0 0 8 1.5ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.195 2.416 2.416 0 0 0-.692.742A2.65 2.65 0 0 0 7 9h1.5a1.15 1.15 0 0 1 .025-.242 1.01 1.01 0 0 1 .274-.39 5.21 5.21 0 0 1 .197-.133l.01-.006.35-.214c.17-.105.36-.225.52-.35.22-.17.42-.38.57-.65.15-.27.22-.56.22-.865 0-.47-.17-.92-.47-1.26C9.83 4.72 9.33 4.5 8 4.5c-.636 0-1.162.156-1.58.438-.413.278-.71.657-.88 1.047Z"/></svg> Think <span class="thkdot" id="thkdot"></span></button>
+  </div>
+  <div class="chatlist" id="chatlist"><button class="ncbtn" onclick="newChat()"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg> New</button></div>
+  <div id="msgs"><div id="msgsi"></div></div>
+  <div class="aiinput">
+    <div class="irow"><div class="twrap"><textarea class="minput" id="aiinput" placeholder="Ask Copilot… (Enter to send)" rows="1"></textarea></div><button class="sbtn" id="aisend" onclick="sendChat()"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M.989 8 .064 2.68a1.342 1.342 0 0 1 1.85-1.462l13.402 5.744a1.13 1.13 0 0 1 0 2.076L1.913 14.782a1.343 1.343 0 0 1-1.85-1.463L.99 8Zm.603-5.288L2.38 7.25h4.87a.75.75 0 0 1 0 1.5H2.38l-.788 4.538L13.929 8Z"/></svg></button></div>
+    <div class="ihint">Context-aware · [SAVE:file] [RUN:cmd] [OPEN:file] [CREATE:file] [GIT:cmd] [INSTALL:pkg] [SEARCH:q] [RENAME:a->b] [TERMINAL:cmd] [TOAST:msg]</div>
+  </div>
+</div>
+
+</div><!-- /ws -->
+
+<!-- STATUS BAR -->
+<div id="stbar">
+  <div class="sti"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> main</div>
+  <div class="stsep"></div>
+  <div class="sti"><span id="st-conn">Connecting…</span></div>
+  <div id="str">
+    <div class="sti" id="st-lang">Plain Text</div><div class="stsep"></div>
+    <div class="sti" id="st-cur">Ln 1, Col 1</div><div class="stsep"></div>
+    <div class="sti">UTF-8</div><div class="stsep"></div>
+    <div class="sti" id="st-ar">Ask mode</div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="ovl hidden" id="nfovl">
+  <div class="modal msm">
+    <div class="mhd2"><span class="mttl">New File</span><button class="mclose" onclick="cModal('nfovl')">✕</button></div>
+    <div class="mbdy"><div class="fg2"><label class="fl2">Filename</label><div class="fd2">Include path if needed: <code style="color:var(--ac)">src/app.js</code></div><input class="fin2" id="nfname" placeholder="filename.ext"></div></div>
+    <div class="mft"><button class="btn2 bsec2" onclick="cModal('nfovl')">Cancel</button><button class="btn2 bpri2" onclick="createFile()">Create</button></div>
+  </div>
+</div>
+
+<div class="ovl hidden" id="delovl">
+  <div class="modal msm">
+    <div class="mhd2"><span class="mttl">Delete File</span><button class="mclose" onclick="cModal('delovl')">✕</button></div>
+    <div class="mbdy"><p style="font-size:13px;color:var(--txm)">Delete <strong id="delfn" style="color:var(--tx)"></strong>? This cannot be undone.</p></div>
+    <div class="mft"><button class="btn2 bsec2" onclick="cModal('delovl')">Cancel</button><button class="btn2 bdan2" id="delcfm">Delete</button></div>
+  </div>
+</div>
+
+<div class="mobov" id="mobov" onclick="closeMob()"></div>
+<div id="tstack"></div>
+<div id="ctxm" style="display:none" class="ctxm"></div>
+
+<!-- UPLOAD TO CODEMON MODAL -->
+<div id="uploadovl">
+  <div id="uploadcard">
+    <div class="uphd">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pu)" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <span class="uptitle">Upload to CodeMon</span>
+      </div>
+      <button class="upclose" onclick="closeUpload()">✕</button>
+    </div>
+    <div class="upbody">
+      <div id="up-credwarn" class="up-cred-warn" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        No CodeMon credentials found. Set your username &amp; password in Settings.
+      </div>
+      <!-- Upload type tabs -->
+      <div class="uptabs">
+        <button class="uptab on" id="up-tab-normal" onclick="setUpTab('normal')">Personal</button>
+        <button class="uptab" id="up-tab-org" onclick="setUpTab('org')">Organisation</button>
+      </div>
+      <!-- File path -->
+      <div class="uprow">
+        <label class="uplbl">Remote filename / path</label>
+        <input class="upinp" id="up-filename" placeholder="e.g. index.js or src/app.js">
+      </div>
+      <!-- Org section (hidden by default) -->
+      <div id="up-org-section" style="display:none;flex-direction:column;gap:8px">
+        <div class="uprow">
+          <label class="uplbl">Organisation</label>
+          <select class="upsel" id="up-org-select"><option value="">Loading orgs…</option></select>
+        </div>
+      </div>
+      <!-- Content source -->
+      <div class="uprow">
+        <label class="uplbl">Content</label>
+        <div class="uptabs" style="width:auto">
+          <button class="uptab on" id="up-src-editor" onclick="setUpSrc('editor')" style="font-size:11px;padding:4px 10px">Current file</button>
+          <button class="uptab" id="up-src-custom" onclick="setUpSrc('custom')" style="font-size:11px;padding:4px 10px">Custom text</button>
+        </div>
+      </div>
+      <div id="up-custom-area" style="display:none">
+        <textarea class="upinp" id="up-content" rows="6" placeholder="Paste your code here…" style="resize:vertical;font-family:var(--font-mono);font-size:11px;line-height:1.6"></textarea>
+      </div>
+      <div class="upinfonote" id="up-info-note">Uploads the currently open file in the editor. New files cost <strong>5 credits</strong>; updates are free.</div>
+    </div>
+    <div class="upfoot">
+      <button class="upbtn sec" onclick="closeUpload()">Cancel</button>
+      <button class="upbtn pri" id="up-submit-btn" onclick="doUpload()">
+        <span id="up-submit-txt">Upload</span>
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const K = {url:'cm-ide-url',user:'cm-ide-user',pass:'cm-ide-pass',ar:'cm-ide-autorun',mm:'cm-ide-minimap',chats:'cm-ide-chats',cur:'cm-ide-cur-chat',ready:'cm-ide-ready'};
+let API='http://localhost:3000', USERNAME='', PASSWORD='', AUTORUN=false, MINIMAP=true;
+let editor=null, monacoReady=false;
+let curFile=null, openTabs=[], modifiedFiles=new Set();
+let allFiles=[];
+let ws=null, wsRetry=null, wsConnected=false;
+let termHistory=[];
+let curPTab='t';
+let panelOpen=true;
+let rzActive=false,rzY=0,rzH=0;
+let curAct='files';
+let ctxTarget=null;
+let permResolve=null;
+let thinkMode=false;
+let aiChats={}, curChatId=null, aiSending=false;
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  loadConfig();
+  const ready=localStorage.getItem(K.ready);
+  if(!ready){document.getElementById('setup').classList.remove('hidden');return;}
+  bootIDE();
+});
+
+function loadConfig(){
+  API=localStorage.getItem(K.url)||'http://localhost:3000';
+  USERNAME=localStorage.getItem(K.user)||'';
+  PASSWORD=localStorage.getItem(K.pass)||'';
+  AUTORUN=localStorage.getItem(K.ar)==='true';
+  MINIMAP=localStorage.getItem(K.mm)!=='false';
+}
+
+function bootIDE(){
+  document.getElementById('setup').classList.add('hidden');
+  applyConfig();
+  initMonaco();
+  connectWS();
+  loadTree();
+  loadChats2();
+  popModels();
+  syncSettingsUI();
+  loadProcesses();
+  document.addEventListener('keydown',onKey);
+  document.addEventListener('click',e=>{if(!document.getElementById('ctxm').contains(e.target))closeCtx();});
+  document.getElementById('aiinput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+  document.getElementById('aiinput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+  // Init xterm after boot — safe timeout so it never blocks launch
+  setTimeout(initXterm, 200);
+}
+
+function applyConfig(){
+  document.getElementById('st-ar').textContent=AUTORUN?'Auto-run':'Ask mode';
+  const tAR=document.getElementById('ttr-ar');
+  if(tAR){tAR.classList.toggle('on',AUTORUN);}
+  const tMM=document.getElementById('ttr-mm');
+  if(tMM){tMM.classList.toggle('on',MINIMAP);}
+  if(editor){editor.updateOptions({minimap:{enabled:MINIMAP}});}
+}
+
+// ─── SETUP WIZARD ────────────────────────────────────────────────────────────
+let spStep=1;
+function spNext(){
+  const url=document.getElementById('s-url').value.trim();
+  if(!url){toast('Enter a server URL','er');return;}
+  API=url;
+  localStorage.setItem(K.url,API);
+  localStorage.setItem(K.ready,'1');
+  bootIDE();
+}
+function spBack(){}
+function goSp(n){}
+let arChoice='ask';
+function selAR(v){
+  arChoice=v;AUTORUN=v==='auto';
+  localStorage.setItem(K.ar,AUTORUN?'true':'false');
+  const oa=document.getElementById('opt-ask');const ob=document.getElementById('opt-auto');
+  if(oa)oa.classList.toggle('on',v==='ask');if(ob)ob.classList.toggle('on',v==='auto');
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+function syncSettingsUI(){
+  document.getElementById('si-url').value=API;
+  document.getElementById('si-user').value=USERNAME;
+  document.getElementById('si-pass').value=PASSWORD;
+  document.getElementById('ttr-ar').classList.toggle('on',AUTORUN);
+  document.getElementById('ttr-mm').classList.toggle('on',MINIMAP);
+}
+function saveSettings(){
+  API=document.getElementById('si-url').value.trim()||API;
+  USERNAME=document.getElementById('si-user').value.trim();
+  PASSWORD=document.getElementById('si-pass').value;
+  localStorage.setItem(K.url,API);localStorage.setItem(K.user,USERNAME);localStorage.setItem(K.pass,PASSWORD);
+  localStorage.setItem(K.ar,AUTORUN?'true':'false');
+  localStorage.setItem(K.mm,MINIMAP?'true':'false');
+  applyConfig();
+  reconnectWS();
+  toast('Settings saved','ok');
+}
+function togAR(){AUTORUN=!AUTORUN;document.getElementById('ttr-ar').classList.toggle('on',AUTORUN);}
+function togMM(){MINIMAP=!MINIMAP;document.getElementById('ttr-mm').classList.toggle('on',MINIMAP);if(editor)editor.updateOptions({minimap:{enabled:MINIMAP}});}
+
+// ─── ACTIVITY BAR ────────────────────────────────────────────────────────────
+function setAct(name){
+  curAct=name;
+  ['files','copilot','ext','settings'].forEach(a=>{
+    const btn=document.getElementById('ab-'+a);
+    if(btn)btn.classList.toggle('on',a===name);
+  });
+  // sidebar panels
+  const sbs={files:'sbp-files',ext:'sbp-ext',settings:'sbp-settings'};
+  Object.keys(sbs).forEach(k=>{
+    const el=document.getElementById(sbs[k]);
+    if(el)el.classList.toggle('hidden',k!==name);
+  });
+  const sb=document.getElementById('sb');
+  const cp=document.getElementById('cp');
+  if(name==='copilot'){
+    sb.classList.add('off');
+    cp.classList.remove('off');
+  } else {
+    sb.classList.remove('off');
+    cp.classList.add('off');
+  }
+  if(name==='ext')loadExt();
+  layoutEd();
+}
+
+// ─── MONACO ──────────────────────────────────────────────────────────────────
+function initMonaco(){
+  require.config({paths:{vs:'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'}});
+  require(['vs/editor/editor.main'],()=>{
+    editor=monaco.editor.create(document.getElementById('editor'),{
+      value:'',language:'plaintext',theme:'vs-dark',
+      fontFamily:'JetBrains Mono',fontSize:13,lineHeight:20,
+      minimap:{enabled:MINIMAP},scrollBeyondLastLine:false,
+      renderLineHighlight:'line',cursorBlinking:'smooth',
+      bracketPairColorization:{enabled:true},
+      automaticLayout:true,wordWrap:'off',
+      padding:{top:10,bottom:10},
+      scrollbar:{verticalScrollbarSize:4,horizontalScrollbarSize:4}
+    });
+    monacoReady=true;
+    editor.onDidChangeCursorPosition(e=>{
+      document.getElementById('st-cur').textContent=`Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+    });
+    editor.onDidChangeModelContent(()=>{
+      if(curFile&&!modifiedFiles.has(curFile)){
+        modifiedFiles.add(curFile);renderTabs();
+      }
+    });
+    editor.addCommand(monaco.KeyMod.CtrlCmd|monaco.KeyCode.KeyS,saveFile);
+  });
+}
+function layoutEd(){if(editor)editor.layout();}
+function getLang(name){
+  const ext=name.split('.').pop().toLowerCase();
+  const m={js:'javascript',ts:'typescript',py:'python',html:'html',css:'css',json:'json',md:'markdown',rs:'rust',go:'go',sh:'shell',yaml:'yaml',yml:'yaml',xml:'xml',cpp:'cpp',c:'c',java:'java',rb:'ruby',php:'php'};
+  return m[ext]||'plaintext';
+}
+function getDotClass(name){
+  const ext=name.split('.').pop().toLowerCase();
+  const m={js:'d-js',ts:'d-ts',py:'d-py',html:'d-html',css:'d-css',json:'d-json',md:'d-md',rs:'d-rs',go:'d-go'};
+  return m[ext]||'d-def';
+}
+
+// ─── FILE TREE ────────────────────────────────────────────────────────────────
+async function loadTree(){
+  try{
+    const r=await fetch(`${API}/list`);
+    const data=await r.json();
+    allFiles=data.files||[];
+    renderTree(allFiles);
+  }catch(e){
+    document.getElementById('ftree').innerHTML='<div style="padding:12px 14px;font-size:11px;color:var(--er)">Cannot connect to server</div>';
+  }
+}
+
+function renderTree(files){
+  const tree=document.getElementById('ftree');
+  if(!files.length){tree.innerHTML='<div style="padding:12px 14px;font-size:11px;color:var(--txs)">No files found</div>';return;}
+  // Build folder structure
+  const dirs={};const roots=[];
+  files.forEach(f=>{
+    const parts=f.split('/');
+    if(parts.length===1){roots.push({type:'file',name:f,full:f});}
+    else{
+      const dir=parts.slice(0,-1).join('/');
+      if(!dirs[dir])dirs[dir]=[];
+      dirs[dir].push({type:'file',name:parts[parts.length-1],full:f});
+    }
+  });
+  let html='';
+  // Sort dirs before files at root
+  const allDirs=Object.keys(dirs).filter(d=>!d.includes('/')||d.split('/').length===1);
+  const deepDirs={};
+  Object.keys(dirs).forEach(d=>{if(d.includes('/')&&d.split('/').length>1)deepDirs[d]=dirs[d];});
+  // Simple flat rendering with indentation
+  html+=renderNodes(files);
+  tree.innerHTML=html;
+}
+
+function renderNodes(files){
+  const structure={};
+  files.forEach(f=>{
+    const parts=f.split('/');
+    let cur=structure;
+    parts.forEach((p,i)=>{
+      if(i===parts.length-1){if(!cur.__files)cur.__files=[];cur.__files.push({name:p,full:f});}
+      else{if(!cur[p])cur[p]={};cur=cur[p];}
+    });
+  });
+  return renderDir(structure,'',0);
+}
+
+function renderDir(node,path,depth){
+  let html='';
+  const pad=depth*12;
+  // Folders first
+  Object.keys(node).filter(k=>k!=='__files').sort().forEach(k=>{
+    const fp=path?path+'/'+k:k;
+    html+=`<div class="fdr" style="padding-left:${8+pad}px" onclick="togFdr(this)" data-path="${fp}">
+      <svg class="fdarr" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      <svg class="fdico" viewBox="0 0 24 24" fill="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <span>${k}</span></div>
+    <div class="fdc" data-fdc="${fp}">${renderDir(node[k],fp,depth+1)}</div>`;
+  });
+  // Files
+  if(node.__files){
+    node.__files.sort((a,b)=>a.name.localeCompare(b.name)).forEach(f=>{
+      html+=fRowHTML(f.name,f.full,pad);
+    });
+  }
+  return html;
+}
+
+function fRowHTML(name,full,pad=0){
+  if(!name||name.trim()==='')return '';
+  const dc=getDotClass(name);
+  const active=curFile===full?'on':'';
+  return `<div class="fr ${active}" style="padding-left:${14+pad}px" onclick="openFile('${full}')" oncontextmenu="showCtxMenu(event,'${full}');return false" data-file="${full}">
+    <div class="fdot ${dc}"></div><span>${name}</span></div>`;
+}
+
+function togFdr(el){
+  const arr=el.querySelector('.fdarr');
+  const path=el.dataset.path;
+  const dc=document.querySelector(`[data-fdc="${path}"]`);
+  if(!dc)return;
+  arr.classList.toggle('open');
+  dc.classList.toggle('open');
+}
+
+function searchFiles(q){
+  if(!q){renderTree(allFiles);return;}
+  const filtered=allFiles.filter(f=>f.toLowerCase().includes(q.toLowerCase()));
+  renderTree(filtered);
+}
+
+// ─── OPEN / SAVE FILE ─────────────────────────────────────────────────────────
+async function openFile(path){
+  try{
+    const r=await fetch(`${API}/load?filename=${encodeURIComponent(path)}`);
+    if(!r.ok)throw new Error('Not found');
+    const data=await r.json();
+    if(data.error)throw new Error(data.error);
+    curFile=path;
+    // Add to tabs
+    if(!openTabs.includes(path))openTabs.push(path);
+    // Set editor content
+    if(monacoReady){
+      const lang=getLang(path);
+      const model=monaco.editor.createModel(data.content||'',lang);
+      editor.setModel(model);
+      document.getElementById('editor').style.display='block';
+      document.getElementById('empty').style.display='none';
+    }
+    renderTabs();
+    // Breadcrumb
+    const parts=path.split('/');
+    document.getElementById('bc-f').textContent=parts[parts.length-1];
+    document.getElementById('st-lang').textContent=getLang(path).replace(/^\w/,c=>c.toUpperCase());
+    // Highlight in tree
+    document.querySelectorAll('.fr').forEach(el=>el.classList.toggle('on',el.dataset.file===path));
+    closeMob();
+  }catch(e){toast('Failed to open file','er');}
+}
+
+async function saveFile(){
+  if(!curFile||!monacoReady)return;
+  const content=editor.getValue();
+  try{
+    await fetch(`${API}/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:curFile,content})});
+    modifiedFiles.delete(curFile);
+    renderTabs();
+    toast('Saved '+curFile.split('/').pop(),'ok');
+  }catch(e){toast('Save failed','er');}
+}
+
+function downloadFile(){
+  if(!curFile||!monacoReady)return;
+  const content=editor.getValue();
+  const blob=new Blob([content],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=curFile.split('/').pop();
+  a.click();URL.revokeObjectURL(a.href);
+  toast('Downloading '+a.download,'ok');
+}
+async function downloadFileByPath(path){
+  try{
+    const r=await fetch(`${API}/load?filename=${encodeURIComponent(path)}`);
+    const data=await r.json();
+    if(data.error)throw new Error(data.error);
+    const blob=new Blob([data.content||''],{type:'text/plain'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=path.split('/').pop();
+    a.click();URL.revokeObjectURL(a.href);
+    toast('Downloading '+a.download,'ok');
+  }catch(e){toast('Download failed','er');}
+}
+
+async function saveFileByName(filename,content){
+  try{
+    await fetch(`${API}/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:filename,content})});
+    toast(`Saved ${filename}`,'ok');
+    loadTree();
+    return true;
+  }catch(e){toast('Save failed','er');return false;}
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function renderTabs(){
+  const c=document.getElementById('tabsi');
+  c.innerHTML=openTabs.map(t=>{
+    const name=t.split('/').pop();
+    const active=t===curFile?'on':'';
+    const mod=modifiedFiles.has(t)?`<span class="tmod"></span>`:'';
+    return `<div class="tab ${active}" onclick="switchTab('${t}')"><div class="fdot ${getDotClass(name)}" style="width:8px;height:8px;border-radius:50%"></div><span class="tname">${name}</span>${mod}<span class="tx2" onclick="closeTab(event,'${t}')"><svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.06 1.06L9.06 8l3.22 3.22a.749.749 0 0 1-1.06 1.06L8 9.06l-3.22 3.22a.749.749 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg></span></div>`;
+  }).join('');
+}
+
+function switchTab(path){openFile(path);}
+function closeTab(e,path){
+  e.stopPropagation();
+  openTabs=openTabs.filter(t=>t!==path);
+  modifiedFiles.delete(path);
+  if(curFile===path){
+    curFile=openTabs[openTabs.length-1]||null;
+    if(curFile)openFile(curFile);
+    else{
+      document.getElementById('empty').style.display='';
+      document.getElementById('editor').style.display='none';
+      document.getElementById('bc-f').textContent='No file open';
+      if(monacoReady)editor.setModel(monaco.editor.createModel('','plaintext'));
+    }
+  }
+  renderTabs();
+}
+
+// ─── CREATE / DELETE ──────────────────────────────────────────────────────────
+function showNewFile(){
+  document.getElementById('nfname').value='';
+  document.getElementById('nfovl').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('nfname').focus(),100);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('nfovl').classList.contains('hidden'))createFile();});
+
+async function createFile(){
+  const name=document.getElementById('nfname').value.trim();
+  if(!name){toast('Enter a filename','er');return;}
+  try{
+    await fetch(`${API}/create`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:name})});
+    cModal('nfovl');
+    await loadTree();
+    openFile(name);
+    toast('Created '+name,'ok');
+  }catch(e){toast('Create failed','er');}
+}
+
+function confirmDelete(path){
+  ctxTarget=path;
+  const name=path.split('/').pop();
+  document.getElementById('delfn').textContent=name;
+  document.getElementById('delovl').classList.remove('hidden');
+  document.getElementById('delcfm').onclick=doDelete;
+}
+async function doDelete(){
+  if(!ctxTarget)return;
+  try{
+    await fetch(`${API}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:ctxTarget})});
+    cModal('delovl');
+    if(curFile===ctxTarget)closeTab({stopPropagation:()=>{}},ctxTarget);
+    else{openTabs=openTabs.filter(t=>t!==ctxTarget);renderTabs();}
+    ctxTarget=null;
+    await loadTree();
+    toast('Deleted','ok');
+  }catch(e){toast('Delete failed','er');}
+}
+
+// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
+function showCtxMenu(e,path){
+  closeCtx();
+  const m=document.getElementById('ctxm');
+  m.style.display='block';
+  m.innerHTML=`
+    <div class="ctxi" onclick="openFile('${path}');closeCtx()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Open<span class="ctxks">↵</span></div>
+    <div class="ctxi" onclick="navigator.clipboard.writeText('${path}');closeCtx();toast('Path copied','nfo')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Path</div>
+    <div class="ctxi" onclick="downloadFileByPath('${path}');closeCtx()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</div>
+    <div class="ctxsep"></div>
+    <div class="ctxi danger" onclick="confirmDelete('${path}');closeCtx()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg> Delete<span class="ctxks">⌫</span></div>`;
+  const {clientX:x,clientY:y}=e;
+  const mw=170,mh=100;
+  m.style.left=Math.min(x,window.innerWidth-mw-8)+'px';
+  m.style.top=Math.min(y,window.innerHeight-mh-8)+'px';
+}
+function closeCtx(){document.getElementById('ctxm').style.display='none';}
+
+// ─── XTERM.JS TERMINAL ───────────────────────────────────────────────────────
+let term=null, xtermFit=null, xtermBuf='', xtermHistIdx=-1;
+
+function initXterm(){
+  try{
+    if(term||!window.Terminal)return;
+    term=new Terminal({
+      fontFamily:'JetBrains Mono,monospace',fontSize:13,lineHeight:1.5,
+      cursorBlink:true,cursorStyle:'bar',scrollback:2000,convertEol:true,
+      theme:{
+        background:'#080a0d',foreground:'#c9d1d9',cursor:'#58a6ff',
+        selectionBackground:'rgba(56,139,253,0.25)',
+        red:'#f85149',green:'#3fb950',yellow:'#e3b341',
+        blue:'#58a6ff',magenta:'#bc8cff',cyan:'#39c5cf',
+        brightBlack:'#6e7681',brightWhite:'#e6edf3'
+      }
+    });
+    if(window.FitAddon){
+      try{
+        const FA=window.FitAddon.FitAddon||window.FitAddon;
+        xtermFit=new FA();
+        term.loadAddon(xtermFit);
+      }catch(e){xtermFit=null;}
+    }
+    const wrap=document.getElementById('xterm-wrap');
+    term.open(wrap);
+    if(xtermFit){setTimeout(()=>{try{xtermFit.fit();}catch(_){}},100);}
+    window.addEventListener('resize',()=>{try{if(xtermFit)xtermFit.fit();}catch(_){}});
+    term.write('\x1b[34m  ╔══════════════════════════════╗\r\n');
+    term.write('  ║  \x1b[36mCodeMon Terminal\x1b[34m            ║\r\n');
+    term.write('  ╚══════════════════════════════╝\x1b[0m\r\n\r\n');
+    xtermPrompt();
+    term.onKey(({key,domEvent:e})=>{
+      if(e.keyCode===13){
+        const cmd=xtermBuf.trim();xtermBuf='';xtermHistIdx=-1;
+        term.write('\r\n');
+        if(cmd){termHistory.push(cmd);if(termHistory.length>50)termHistory.shift();
+          if(wsConnected&&ws){ws.send(cmd+'\n');}else{executeCommand(cmd);}
+        }else{xtermPrompt();}
+      }else if(e.keyCode===8){
+        if(xtermBuf.length>0){xtermBuf=xtermBuf.slice(0,-1);term.write('\b \b');}
+      }else if(e.keyCode===38){
+        if(termHistory.length){
+          if(xtermHistIdx<termHistory.length-1)xtermHistIdx++;
+          xtermReplaceInput(termHistory[termHistory.length-1-xtermHistIdx]||'');
+        }
+      }else if(e.keyCode===40){
+        if(xtermHistIdx>0){xtermHistIdx--;xtermReplaceInput(termHistory[termHistory.length-1-xtermHistIdx]||'');}
+        else if(xtermHistIdx===0){xtermHistIdx=-1;xtermReplaceInput('');}
+      }else if(e.ctrlKey&&e.key==='c'){
+        term.write('^C\r\n');xtermBuf='';xtermHistIdx=-1;xtermPrompt();
+      }else if(e.ctrlKey&&e.key==='l'){
+        term.clear();xtermPrompt();
+      }else if(!e.altKey&&!e.ctrlKey&&!e.metaKey&&key){
+        xtermBuf+=key;term.write(key);
+      }
+    });
+  }catch(err){
+    // xterm failed — fall back to legacy terminal gracefully
+    const w=document.getElementById('xterm-wrap');
+    if(w)w.style.display='none';
+    document.getElementById('tbody').style.display='';
+    document.getElementById('tirow').style.display='flex';
+    addTermLineLegacy('info','Terminal ready');
+  }
+}
+
+function xtermPrompt(){if(term)term.write('\x1b[32m❯\x1b[0m \x1b[96m');}
+function xtermReplaceInput(t){
+  if(!term)return;
+  if(xtermBuf.length)term.write('\b \b'.repeat(xtermBuf.length));
+  xtermBuf=t;term.write('\x1b[96m'+t);
+}
+function xtermWriteOutput(type,text){
+  if(!term)return;
+  const erase=xtermBuf.length;
+  if(erase)term.write('\b \b'.repeat(erase));
+  term.write('\r\x1b[K');
+  const c={out:'\x1b[0m',err:'\x1b[31m',info:'\x1b[35m',cmd:'\x1b[33m'}[type]||'\x1b[0m';
+  term.write(c+text+'\x1b[0m\r\n');
+  if(xtermBuf){term.write('\x1b[32m❯\x1b[0m \x1b[96m'+xtermBuf);}else{xtermPrompt();}
+}
+
+// ─── WEBSOCKET TERMINAL ───────────────────────────────────────────────────────
+function connectWS(){
+  if(wsRetry)clearTimeout(wsRetry);
+  try{
+    const wsUrl=API.replace(/^http/,'ws');
+    ws=new WebSocket(wsUrl);
+    ws.onopen=()=>{wsConnected=true;updWS(true);
+      if(term){xtermWriteOutput('info','Connected to server');}else{addTermLineLegacy('info','Connected to server');}
+    };
+    ws.onmessage=e=>{
+      if(term){xtermWriteOutput('out',e.data);}else{addTermLineLegacy('out',e.data);}
+    };
+    ws.onclose=()=>{wsConnected=false;updWS(false);wsRetry=setTimeout(connectWS,4000);};
+    ws.onerror=()=>{ws.close();};
+  }catch{wsRetry=setTimeout(connectWS,4000);}
+}
+function reconnectWS(){if(ws)ws.close();else connectWS();}
+function updWS(on){
+  document.getElementById('wsdot').classList.toggle('on',on);
+  document.getElementById('st-conn').textContent=on?'Connected':'Disconnected';
+}
+function addTermLine(type,text){
+  if(term){xtermWriteOutput(type,text);return;}
+  addTermLineLegacy(type,text);
+}
+function addTermLineLegacy(type,text){
+  const b=document.getElementById('tbody');
+  const el=document.createElement('div');
+  const cls={out:'tout',err:'terr',info:'tinfo',cmd:'tcmd',prompt:'tprompt'};
+  el.className=cls[type]||'tout';el.textContent=text;
+  b.appendChild(el);b.scrollTop=b.scrollHeight;
+  while(b.children.length>80)b.removeChild(b.firstChild);
+}
+function sendTermCmd(){
+  const v=document.getElementById('ti').value.trim();
+  if(!v)return;
+  addTermLine('prompt','❯ '+v);
+  termHistory.push(v);if(termHistory.length>20)termHistory.shift();
+  if(wsConnected&&ws){ws.send(v+'\n');}else{executeCommand(v);}
+  document.getElementById('ti').value='';
+}
+function handleTK(e){if(e.key==='Enter'){sendTermCmd();}}
+function clearTerm(){
+  if(term){term.clear();xtermPrompt();}
+  else{document.getElementById('tbody').innerHTML='<div class="tinfo">Terminal cleared</div>';}
+}
+function focusTerm(){
+  if(term){term.focus();}else{document.getElementById('ti').focus();}
+  if(!panelOpen)togglePanel();
+}
+
+// ─── EXECUTE ──────────────────────────────────────────────────────────────────
+async function executeCommand(cmd){
+  addTermLine('cmd','$ '+cmd);
+  termHistory.push(cmd);if(termHistory.length>50)termHistory.shift();
+  const bar=document.getElementById('exec-bar');
+  if(bar)bar.classList.add('on');
+  try{
+    const r=await fetch(`${API}/execute`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})});
+    const d=await r.json();
+    if(d.output)d.output.split('\n').filter(Boolean).forEach(l=>addTermLine('out',l));
+    if(d.error)d.error.split('\n').filter(Boolean).forEach(l=>addTermLine('err',l));
+  }catch(e){addTermLine('err','Execute failed: '+e.message);}
+  finally{if(bar)bar.classList.remove('on');}
+}
+
+function showRunPrompt(){
+  const cmd=prompt('Run command:');
+  if(cmd&&cmd.trim())executeCommand(cmd.trim());
+}
+
+// ─── PANEL RESIZE ────────────────────────────────────────────────────────────
+function togglePanel(){
+  const p=document.getElementById('panel');
+  panelOpen=!panelOpen;
+  p.classList.toggle('off',!panelOpen);
+  if(panelOpen){p.style.height='200px';setTimeout(()=>{try{if(xtermFit)xtermFit.fit();}catch(_){}},80);}
+  layoutEd();
+}
+function setPTab(el,tab){
+  curPTab=tab;
+  document.querySelectorAll('.ptab').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('xterm-wrap').style.display=tab==='t'?'':'none';
+  document.getElementById('procbody').style.display=tab==='p'?'':'none';
+  if(tab==='t')setTimeout(()=>{try{if(xtermFit)xtermFit.fit();}catch(_){}},50);
+  if(tab==='p')loadProcesses();
+}
+function startRz(e){rzActive=true;rzY=e.clientY;rzH=document.getElementById('panel').offsetHeight;document.addEventListener('mousemove',doRz);document.addEventListener('mouseup',stopRz);}
+function startRzT(e){rzActive=true;rzY=e.touches[0].clientY;rzH=document.getElementById('panel').offsetHeight;document.addEventListener('touchmove',doRzT);document.addEventListener('touchend',stopRz);}
+function doRz(e){if(!rzActive)return;const dY=rzY-e.clientY;const nh=Math.min(Math.max(rzH+dY,80),window.innerHeight*0.6);document.getElementById('panel').style.height=nh+'px';}
+function doRzT(e){doRz({clientY:e.touches[0].clientY});}
+function stopRz(){rzActive=false;document.removeEventListener('mousemove',doRz);document.removeEventListener('mouseup',stopRz);document.removeEventListener('touchmove',doRzT);document.removeEventListener('touchend',stopRz);layoutEd();setTimeout(()=>{try{if(xtermFit)xtermFit.fit();}catch(_){}},50);}
+
+// ─── PROCESSES ────────────────────────────────────────────────────────────────
+async function loadProcesses(){
+  const b=document.getElementById('procbody');
+  b.innerHTML=`<div style="padding:10px 14px;font-size:11px;color:var(--txs);display:flex;align-items:center;gap:6px">
+    <div class="dots" style="display:flex;gap:3px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div> Loading…</div>`;
+  try{
+    const r=await fetch(`${API}/processes`);
+    const d=await r.json();
+    // Server returns a plain array [{id}], NOT {processes:[...]}
+    const procs=Array.isArray(d)?d:(d.processes||[]);
+    if(!procs.length){
+      b.innerHTML=`<div style="padding:20px 14px;text-align:center;font-size:11px;color:var(--txs)">No running processes</div>`;
+      return;
+    }
+    b.innerHTML=procs.map(p=>`
+      <div class="proc-row">
+        <div class="proc-dot"></div>
+        <div class="proc-info">
+          <span class="proc-cmd">${escHTML(String(p.command||p.id||'process'))}</span>
+          ${p.pid?`<span class="proc-pid">PID ${escHTML(String(p.pid))}</span>`:''}
+        </div>
+        <button class="proc-stop" onclick="stopProc('${escHTML(String(p.id))}',this)" title="Stop process">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> Stop
+        </button>
+      </div>`).join('');
+  }catch(e){
+    b.innerHTML=`<div style="padding:12px 14px;font-size:11px;color:var(--er)">Failed to load — is the server running?</div>`;
+  }
+}
+async function stopProc(id,btn){
+  if(btn){btn.disabled=true;btn.innerHTML='…';}
+  try{
+    const r=await fetch(`${API}/stop-process`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    toast('Process stopped','ok');
+    await loadProcesses();
+  }catch(e){
+    toast('Stop failed: '+(e.message||'error'),'er');
+    if(btn){btn.disabled=false;btn.innerHTML=`<svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> Stop`;}
+  }
+}
+
+// ─── UPLOAD TO CODEMON ───────────────────────────────────────────────────────
+const CM_API='https://code-mon.codemon.workers.dev';
+let upTab='normal', upSrc='editor', upOrgs=[], upBusy=false;
+
+function getCMCreds(){
+  return{
+    user: localStorage.getItem('code-mon-username')||'',
+    pass: localStorage.getItem('code-mon-pass')||''
+  };
+}
+
+function showUpload(){
+  const {user,pass}=getCMCreds();
+  const warn=document.getElementById('up-credwarn');
+  if(!user||!pass){warn.style.display='flex';}else{warn.style.display='none';}
+  // Pre-fill filename from current open file
+  const fn=document.getElementById('up-filename');
+  if(curFile&&!fn.value)fn.value=curFile;
+  // Reset to defaults
+  setUpTab('normal');
+  setUpSrc('editor');
+  document.getElementById('uploadovl').classList.add('show');
+}
+
+function closeUpload(){
+  document.getElementById('uploadovl').classList.remove('show');
+}
+
+function setUpTab(tab){
+  upTab=tab;
+  document.getElementById('up-tab-normal').classList.toggle('on',tab==='normal');
+  document.getElementById('up-tab-org').classList.toggle('on',tab==='org');
+  const orgSec=document.getElementById('up-org-section');
+  if(tab==='org'){
+    orgSec.style.display='flex';
+    fetchOrgList();
+  } else {
+    orgSec.style.display='none';
+  }
+}
+
+function setUpSrc(src){
+  upSrc=src;
+  document.getElementById('up-src-editor').classList.toggle('on',src==='editor');
+  document.getElementById('up-src-custom').classList.toggle('on',src==='custom');
+  const ca=document.getElementById('up-custom-area');
+  const note=document.getElementById('up-info-note');
+  if(src==='custom'){
+    ca.style.display='block';
+    note.textContent='Paste any content to upload. New files cost 5 credits; updates are free.';
+  } else {
+    ca.style.display='none';
+    note.textContent='Uploads the currently open file in the editor. New files cost 5 credits; updates are free.';
+  }
+}
+
+async function fetchOrgList(){
+  const {user}=getCMCreds();
+  const sel=document.getElementById('up-org-select');
+  if(!user){sel.innerHTML='<option value="">Set credentials in Settings first</option>';return;}
+  sel.innerHTML='<option value="">Loading…</option>';
+  try{
+    const r=await fetch(`${CM_API}/api/org/inv?username=${encodeURIComponent(user)}`);
+    const d=await r.json();
+    upOrgs=d.orgs||[];
+    if(!upOrgs.length){
+      sel.innerHTML='<option value="">No organisations found</option>';
+    } else {
+      sel.innerHTML='<option value="">Select organisation…</option>'+upOrgs.map(o=>`<option value="${escHTML(o)}">${escHTML(o)}</option>`).join('');
+    }
+  }catch{
+    sel.innerHTML='<option value="">Failed to load orgs</option>';
+  }
+}
+
+async function doUpload(){
+  if(upBusy)return;
+  const {user,pass}=getCMCreds();
+  if(!user||!pass){toast('Set CodeMon credentials in Settings first','er');return;}
+
+  const filename=document.getElementById('up-filename').value.trim();
+  if(!filename){toast('Enter a filename','er');document.getElementById('up-filename').focus();return;}
+
+  // Get content
+  let content='';
+  if(upSrc==='editor'){
+    if(!editor||!curFile){toast('No file open in editor','er');return;}
+    content=editor.getValue();
+  } else {
+    content=document.getElementById('up-content').value;
+  }
+
+  if(upTab==='org'){
+    const orgName=document.getElementById('up-org-select').value;
+    if(!orgName){toast('Select an organisation','er');return;}
+    await doUploadOrg(user,pass,orgName,filename,content);
+  } else {
+    await doUploadNormal(user,pass,filename,content);
+  }
+}
+
+async function doUploadNormal(user,pass,filename,content){
+  upBusy=true;
+  const btn=document.getElementById('up-submit-btn');
+  const txt=document.getElementById('up-submit-txt');
+  btn.disabled=true; txt.textContent='Uploading…';
+  try{
+    const r=await fetch(`${CM_API}/api/save`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user,pass,filename,content})
+    });
+    const d=await r.json();
+    if(!r.ok||d.error||d.success===false){
+      const msg=d.error||'Upload failed';
+      if(r.status===402)toast('Insufficient credits — need 5 credits for new files','er');
+      else toast(msg,'er');
+    } else {
+      toast(d.message||'Uploaded successfully','ok');
+      closeUpload();
+    }
+  }catch(e){toast('Network error: '+e.message,'er');}
+  finally{upBusy=false;btn.disabled=false;txt.textContent='Upload';}
+}
+
+async function doUploadOrg(user,pass,orgName,filename,content){
+  upBusy=true;
+  const btn=document.getElementById('up-submit-btn');
+  const txt=document.getElementById('up-submit-txt');
+  btn.disabled=true; txt.textContent='Uploading…';
+  try{
+    const r=await fetch(`${CM_API}/api/save-org`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user,pass,orgName,filename,content})
+    });
+    const d=await r.json();
+    if(!r.ok||d.error){
+      if(r.status===402)toast('Insufficient credits — need 5 credits for new files','er');
+      else toast(d.error||'Upload failed','er');
+    } else {
+      toast(d.message||'Uploaded to organisation','ok');
+      closeUpload();
+    }
+  }catch(e){toast('Network error: '+e.message,'er');}
+  finally{upBusy=false;btn.disabled=false;txt.textContent='Upload';}
+}
+
+// Close on backdrop click
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('uploadovl').addEventListener('click',function(e){
+    if(e.target===this)closeUpload();
+  });
+});
+
+// ─── EXTENSIONS ──────────────────────────────────────────────────────────────
+async function loadExt(){
+  const el=document.getElementById('extlist');
+  el.innerHTML='<div class="eempty">Loading extensions…</div>';
+  try{
+    const r=await fetch(`${API}/list`);
+    const d=await r.json();
+    const exts=(d.files||[]).filter(f=>f.startsWith('extensions/')&&f.endsWith('.js'));
+    if(!exts.length){el.innerHTML='<div class="eempty">No extensions found.<br><small>Add .js files to the <code>extensions/</code> folder</small></div>';return;}
+    const icons=['🔌','⚡','🛠','🎯','🔧','🧩','🚀','💡'];
+    el.innerHTML=exts.map((f,i)=>{
+      const name=f.replace('extensions/','').replace('.js','');
+      const ico=icons[i%icons.length];
+      return `<div class="ec"><div class="eico">${ico}</div><div class="einfo"><div class="ename">${name}</div><div class="efile">${f}</div><div class="ebadge"><svg width="8" height="8" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg> Active</div></div></div>`;
+    }).join('');
+  }catch{el.innerHTML='<div class="eempty" style="color:var(--er)">Failed to load extensions</div>';}
+}
+
+// ─── PERMISSION SYSTEM ────────────────────────────────────────────────────────
+function requestPermission(cmd){
+  if(AUTORUN)return Promise.resolve(true);
+  return new Promise(res=>{
+    permResolve=res;
+    document.getElementById('permcmd').textContent=cmd;
+    document.getElementById('perm').classList.add('show');
+  });
+}
+function approvePerm(){document.getElementById('perm').classList.remove('show');if(permResolve){permResolve(true);permResolve=null;}}
+function denyPerm(){document.getElementById('perm').classList.remove('show');if(permResolve){permResolve(false);permResolve=null;}}
+
+// ─── COPILOT / CHAT ───────────────────────────────────────────────────────────
+const MODELS=[
+  {key:'claude-sonnet-4-6',label:'Claude Sonnet 4.6'},
+  {key:'claude-opus-4-6',label:'Claude Opus 4.6'},
+  {key:'claude-haiku-4-5',label:'Claude Haiku 4.5'},
+  {key:'gpt-5.2',label:'GPT-5.2'},
+  {key:'gemini-3-pro',label:'Gemini 3 Pro'},
+  {key:'llama-3-70b',label:'Llama 3 70B'},
+  {key:'deepseek-coder-33b',label:'DeepSeek Coder'}
+];
+const AI_URL='https://code-mon.codemon.workers.dev/api/agent';
+
+function popModels(){
+  const sel=document.getElementById('msel');
+  sel.innerHTML=MODELS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
+}
+
+function togThink(){
+  thinkMode=!thinkMode;
+  document.getElementById('thkbtn').classList.toggle('on',thinkMode);
+  document.getElementById('thkdot').style.display=thinkMode?'inline-block':'none';
+}
+
+// ─── CHAT STATE ───────────────────────────────────────────────────────────────
+function loadChats2(){
+  try{aiChats=JSON.parse(localStorage.getItem(K.chats)||'{}');}catch{aiChats={};}
+  curChatId=localStorage.getItem(K.cur)||null;
+  if(!curChatId||!aiChats[curChatId])newChat();
+  else{renderCTabs();renderMsgs();}
+}
+function saveChats(){
+  localStorage.setItem(K.chats,JSON.stringify(aiChats));
+  localStorage.setItem(K.cur,curChatId||'');
+}
+function newChat(){
+  const id='c'+Date.now();
+  const num=Object.keys(aiChats).length+1;
+  aiChats[id]={title:'Chat '+num,msgs:[]};
+  curChatId=id;
+  saveChats();
+  renderCTabs();
+  resetChatUI();
+}
+function switchChat(id){
+  curChatId=id;
+  saveChats();
+  renderCTabs();
+  renderMsgs();
+}
+function delChat(id,e){
+  e.stopPropagation();
+  delete aiChats[id];
+  if(curChatId===id){curChatId=Object.keys(aiChats)[0]||null;if(!curChatId)newChat();}
+  saveChats();
+  renderCTabs();
+  renderMsgs();
+}
+function renderCTabs(){
+  const cl=document.getElementById('chatlist');
+  const tabs=Object.entries(aiChats).map(([id,c])=>`
+    <div class="ctab ${id===curChatId?'on':''}" onclick="switchChat('${id}')">
+      ${c.title}
+      <button class="ctdel" onclick="delChat('${id}',event)"><svg width="8" height="8" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.06 1.06L9.06 8l3.22 3.22a.749.749 0 0 1-1.06 1.06L8 9.06l-3.22 3.22a.749.749 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"/></svg></button>
+    </div>`).join('');
+  cl.innerHTML=`<button class="ncbtn" onclick="newChat()"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg> New</button>${tabs}`;
+}
+
+function resetChatUI(){
+  const ms=document.getElementById('msgsi');
+  ms.innerHTML=`<div class="wscr">
+    <div class="wlogo"><svg width="22" height="22" viewBox="0 0 16 16" fill="white"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8Z"/></svg></div>
+    <div class="wt">CodeMon Copilot</div>
+    <div class="wsub">Describe what you want to build or change. I have context of your terminal history.</div>
+    <div class="wmn">
+      <div class="wmni"><code>[SAVE:filename]</code><span>Saves generated code to file</span></div>
+      <div class="wmni"><code>[RUN:command]</code><span>Executes terminal command</span></div>
+      <div class="wmni"><code>[OPEN:filename]</code><span>Opens file in editor</span></div>
+      <div class="wmni"><code>[CREATE:filename]</code><span>Creates a new file</span></div>
+      <div class="wmni"><code>[GIT:command]</code><span>Runs a git command</span></div>
+      <div class="wmni"><code>[INSTALL:package]</code><span>npm install shortcut</span></div>
+      <div class="wmni"><code>[SEARCH:term]</code><span>Searches the file tree</span></div>
+      <div class="wmni"><code>[RENAME:a->b]</code><span>Renames a file</span></div>
+      <div class="wmni"><code>[TERMINAL:cmd]</code><span>Direct to terminal</span></div>
+      <div class="wmni"><code>[TOAST:msg:type]</code><span>Shows a notification</span></div>
+    </div>
+  </div>`;
+}
+
+const AI_AV_SVG=`<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8Z"/></svg>`;
+const USR_AV_SVG=`<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M10.561 8.073a6.005 6.005 0 0 1 3.432 5.142.75.75 0 0 1-1.498.07 4.5 4.5 0 0 0-8.99 0 .75.75 0 0 1-1.498-.07 6.004 6.004 0 0 1 3.431-5.142 3.999 3.999 0 1 1 5.123 0ZM8 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>`;
+
+function typeWriter(el,text,cb){
+  let i=0;
+  function type(){
+    if(i<text.length){el.textContent+=text.charAt(i);i++;scrollMsgs();setTimeout(type,10);}
+    else{el.dataset.done='1';if(cb)cb();}
+  }
+  type();
+}
+
+function renderMsgs(){
+  const msgs=aiChats[curChatId]?.msgs||[];
+  if(!msgs.length){resetChatUI();return;}
+  const ms=document.getElementById('msgsi');
+  ms.innerHTML='';
+  msgs.forEach(m=>addMsgDOM(m.role,m.content,false));
+  scrollMsgs();
+}
+
+function scrollMsgs(){const c=document.getElementById('msgs');c.scrollTop=c.scrollHeight;}
+
+function addMsgDOM(role,content,animate=false){
+  const ms=document.getElementById('msgsi');
+  const wscr=ms.querySelector('.wscr');
+  if(wscr)wscr.remove();
+  const wrap=document.createElement('div');
+  wrap.className='msg '+(role==='user'?'u':'ai');
+  const av=document.createElement('div');
+  av.className='av';
+  av.innerHTML=role==='user'?USR_AV_SVG:AI_AV_SVG;
+  const mc=document.createElement('div');
+  mc.className='mc';
+  const bbl=document.createElement('div');
+  bbl.className='bbl';
+  if(role==='user'){
+    bbl.className+=' md';
+    bbl.innerHTML=renderUserMD(content);
+  } else {
+    bbl.className+=' md';
+    if(animate){
+      bbl.textContent='';
+      mc.appendChild(bbl);
+      typeWriter(bbl,content,()=>{
+        bbl.innerHTML=renderMD(content);
+        bbl.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b);}catch(_){}});
+      });
+    } else {
+      bbl.innerHTML=renderMD(content);
+      setTimeout(()=>bbl.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b);}catch(_){}},50));
+    }
+  }
+  const timeStr=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const meta=document.createElement('div');
+  meta.className='mmeta';
+  if(role!=='user'){
+    meta.innerHTML=`<button class="cpbtn2" onclick="navigator.clipboard.writeText(this.dataset.c);toast('Copied','nfo')" data-c="${escHTML(content)}" title="Copy"><svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Z"/></svg></button> ${timeStr}`;
+  } else {
+    meta.textContent=timeStr;
+  }
+  if(!(role!=='user'&&animate))mc.appendChild(bbl);
+  mc.appendChild(meta);
+  if(role==='user'){wrap.appendChild(mc);wrap.appendChild(av);}
+  else{wrap.appendChild(av);wrap.appendChild(mc);}
+  ms.appendChild(wrap);
+  scrollMsgs();
+  return wrap;
+}
+
+// ─── THINKING & PLAN BUBBLES ─────────────────────────────────────────────────
+function showThinkingBubble(label){
+  const wscr=document.getElementById('msgsi').querySelector('.wscr');
+  if(wscr)wscr.remove();
+  const ms=document.getElementById('msgsi');
+  const el=document.createElement('div');
+  el.className='thwrap2';
+  el.innerHTML=`<div class="av" style="background:var(--acb);color:var(--ac);border:1px solid var(--ace)">${AI_AV_SVG}</div>
+    <div class="thbbl2"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span class="th-lbl" style="font-size:11px;color:var(--txs)">${escHTML(label)}</span></div>`;
+  ms.appendChild(el);scrollMsgs();return el;
+}
+function updThinkingBubble(el,label){
+  if(!el)return;
+  const lbl=el.querySelector('.th-lbl');
+  if(lbl)lbl.textContent=label;
+}
+function removeThinkingBubble(el){if(el&&el.parentNode)el.remove();}
+
+function showPlanBubble(planText,thinkText){
+  const ms=document.getElementById('msgsi');
+  const wrap=document.createElement('div');
+  wrap.className='msg ai';
+
+  const thinkHtml=thinkText?`<div class="thkbbl2"><div class="thkhd2" onclick="(function(h){h.nextElementSibling.classList.toggle('col')})(this.parentElement)"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" style="color:var(--pu)"><path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.508 6.508 0 0 0 8 1.5ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.195 2.416 2.416 0 0 0-.692.742A2.65 2.65 0 0 0 7 9h1.5a1.15 1.15 0 0 1 .025-.242 1.01 1.01 0 0 1 .274-.39 5.21 5.21 0 0 1 .197-.133l.01-.006.35-.214c.17-.105.36-.225.52-.35.22-.17.42-.38.57-.65.15-.27.22-.56.22-.865 0-.47-.17-.92-.47-1.26C9.83 4.72 9.33 4.5 8 4.5c-.636 0-1.162.156-1.58.438-.413.278-.71.657-.88 1.047Z"/></svg><span>Thinking</span><span style="font-size:9px;color:var(--pu);margin-left:auto">▼</span></div><div class="thkbody2">${escHTML(thinkText)}</div></div>`:'';
+
+  wrap.innerHTML=`<div class="av" style="background:var(--acb);color:var(--ac);border:1px solid var(--ace)">${AI_AV_SVG}</div>
+    <div class="mc">${thinkHtml}<div class="planbbl"><div class="planhd" onclick="(function(h){const c=h.nextElementSibling;const ch=h.querySelector('.planch');c.classList.toggle('col');ch.textContent=c.classList.contains('col')?'▶':'▼'})(this)"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" style="color:var(--ok)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg><span>Plan</span><span class="planch">▼</span></div><div class="planbody"><span class="plan-typing"></span></div></div><div class="mmeta">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div>`;
+  ms.appendChild(wrap);scrollMsgs();
+
+  const typingSpan=wrap.querySelector('.plan-typing');
+  typeWriter(typingSpan,planText,null);
+  return wrap;
+}
+
+function removeThinking(el){if(el&&el.parentNode)el.remove();}
+
+// ─── AI API CALL — Bytez NDJSON streaming ─────────────────────────────────────
+// Bytez returns newline-delimited JSON: each line is {"output":"chunk"} or similar
+// The worker pipes res.body straight through so we read the stream ourselves.
+async function callAI(modelKey, prompt, onChunk){
+  const r = await fetch(AI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: prompt, model: modelKey, username: USERNAME, password: PASSWORD })
+  });
+
+  if(!r.ok){
+    let errMsg = `AI ${r.status}`;
+    try{ const j=await r.json(); errMsg=j.error||errMsg; }catch{}
+    throw new Error(errMsg);
+  }
+
+  // If no streaming callback just read full body and parse
+  if(!onChunk || !r.body){
+    const raw = await r.text();
+    return parseBytezFull(raw);
+  }
+
+  // Stream line-by-line
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  let full = '';
+
+  while(true){
+    const {done, value} = await reader.read();
+    if(done) break;
+    buf += dec.decode(value, {stream: true});
+
+    // Split on newlines, process complete lines
+    const lines = buf.split('\n');
+    buf = lines.pop(); // keep partial last line in buffer
+
+    for(const line of lines){
+      const chunk = parseBytezLine(line);
+      if(chunk){ full += chunk; onChunk(full); }
+    }
+  }
+  // Flush remaining buffer
+  if(buf.trim()){
+    const chunk = parseBytezLine(buf);
+    if(chunk){ full += chunk; onChunk(full); }
+  }
+
+  return full || '';
+}
+
+// Parse a single NDJSON line from Bytez
+function parseBytezLine(line){
+  line = line.trim();
+  if(!line || line === '[DONE]') return '';
+  // Handle SSE "data: " prefix
+  if(line.startsWith('data: ')){
+    const payload = line.slice(6).trim();
+    if(payload === '[DONE]') return '';
+    try{ return extractBytezText(JSON.parse(payload)); }catch{ return ''; }
+  }
+  try{ return extractBytezText(JSON.parse(line)); }catch{ return ''; }
+}
+
+// Extract text from a Bytez JSON chunk — handles multiple possible shapes
+function extractBytezText(j){
+  if(!j) return '';
+  // Bytez primary format
+  if(typeof j.output === 'string') return j.output;
+  // OpenAI-compat streaming delta
+  if(j.choices?.[0]?.delta?.content) return j.choices[0].delta.content;
+  // OpenAI-compat non-streaming
+  if(j.choices?.[0]?.message?.content) return j.choices[0].message.content;
+  // Anthropic-compat
+  if(j.type === 'content_block_delta') return j.delta?.text || '';
+  // Generic
+  if(typeof j.text === 'string') return j.text;
+  if(typeof j.content === 'string') return j.content;
+  return '';
+}
+
+// Parse a full (non-streaming) Bytez response body
+function parseBytezFull(raw){
+  if(!raw) throw new Error('Empty AI response');
+  // Try as NDJSON (multiple lines)
+  const lines = raw.split('\n').filter(l=>l.trim() && l.trim()!=='[DONE]');
+  let full = '';
+  for(const l of lines){
+    full += parseBytezLine(l);
+  }
+  if(full) return full;
+  // Fallback: raw text
+  return raw;
+}
+
+// ─── SEND CHAT — live streaming pipeline ──────────────────────────────────────
+async function sendChat(){
+  if(aiSending) return;
+  const inp = document.getElementById('aiinput');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+
+  if(!USERNAME){
+    toast('Enter your CodeMon username & password in Settings to use Copilot','wn');
+    setAct('settings');
+    return;
+  }
+
+  const chat = aiChats[curChatId];
+  if(!chat) return;
+
+  if(!chat.msgs.length){
+    chat.title = text.slice(0,36) + (text.length>36?'…':'');
+    renderCTabs();
+  }
+
+  let ctx = '';
+  if(termHistory.length){
+    ctx = `\n\n[Terminal history (last ${Math.min(termHistory.length,10)} cmds)]\n` +
+          termHistory.slice(-10).map((c,i)=>`${i+1}. ${c}`).join('\n');
+  }
+  if(curFile) ctx += `\n\n[Active file: ${curFile}]`;
+
+  chat.msgs.push({role:'user', content:text});
+  addMsgDOM('user', text, false);
+  saveChats();
+
+  aiSending = true;
+  document.getElementById('aisend').disabled = true;
+  const model = document.getElementById('msel').value;
+
+  // ── Stage 1: Think (optional, haiku) ─────────────────────────────────────
+  const thinkEl = showThinkingBubble('Thinking…');
+  let thinkResult = '';
+
+  try{
+    if(thinkMode){
+      updThinkingBubble(thinkEl,'Deep thinking…');
+      thinkResult = await callAI('claude-haiku-4-5',
+        `You are a deep reasoning engine for CodeMon Copilot.\nThink step-by-step about this coding task (60-100 words, plain text, no code).\n\nTask: "${text}"${ctx}`
+      );
+    }
+
+    // ── Stage 2: Plan (haiku) ───────────────────────────────────────────────
+    updThinkingBubble(thinkEl,'Planning…');
+    const plan = await callAI('claude-haiku-4-5',
+      `You are a coding task planner for CodeMon Copilot.\nCreate a concise step-by-step plan (60-100 words) for:\n"${text}"${ctx}${thinkResult?'\n\nPre-analysis:\n'+thinkResult:''}`
+    );
+
+    removeThinkingBubble(thinkEl);
+    const planEl = showPlanBubble(plan, thinkResult);
+
+    // Wait for plan typewriter
+    await new Promise(resolve=>{
+      const check = setInterval(()=>{
+        const ts = planEl.querySelector('.plan-typing');
+        if(ts && ts.dataset.done==='1'){ clearInterval(check); resolve(); }
+      }, 50);
+    });
+
+    // ── Stage 3: Code — stream live into chat ───────────────────────────────
+    const codePrompt =
+      `You are CodeMon Copilot, an expert coding assistant embedded in a browser IDE.\n` +
+      (thinkResult?`Pre-analysis:\n${thinkResult}\n\n`:'') +
+      `Plan:\n${plan}\n\n== USER REQUEST ==\n${text}${ctx}\n\n` +
+      `Generate complete, working code. Use [SAVE:filename] [RUN:command] [OPEN:filename] where useful.\n` +
+      `Format saveable files as \`\`\`[filename.ext]\ncode\n\`\`\`.`;
+
+    // Live bubble
+    let liveEl = null;
+    let accumulated = '';
+
+    const finalAnswer = await callAI(model, codePrompt, (partial)=>{
+      accumulated = partial;
+      if(!liveEl){
+        liveEl = createLiveBubble();
+      }
+      updateLiveBubble(liveEl, partial);
+    });
+
+    // Finalize
+    const finalText = finalAnswer || accumulated;
+    if(liveEl){
+      finalizeLiveBubble(liveEl, finalText);
+    } else {
+      addMsgDOM('assistant', finalText, false);
+    }
+
+    chat.msgs.push({role:'assistant', content:finalText});
+    saveChats();
+    handleMnemonics(finalText);
+
+  }catch(e){
+    removeThinkingBubble(thinkEl);
+    const errMsg = 'Copilot error: ' + (e.message||'Unknown error');
+    toast(errMsg, 'er');
+    chat.msgs.push({role:'assistant', content:errMsg});
+    addMsgDOM('assistant', errMsg, false);
+    saveChats();
+  }
+
+  aiSending = false;
+  document.getElementById('aisend').disabled = false;
+  renderCTabs();
+}
+
+// ── Live streaming bubble helpers ─────────────────────────────────────────────
+function createLiveBubble(){
+  const ms = document.getElementById('msgsi');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ai';
+  const av = document.createElement('div');
+  av.className = 'av';
+  av.innerHTML = AI_AV_SVG;
+  const mc = document.createElement('div');
+  mc.className = 'mc';
+  const bbl = document.createElement('div');
+  bbl.className = 'bbl md live-bbl';
+  mc.appendChild(bbl);
+  wrap.appendChild(av);
+  wrap.appendChild(mc);
+  ms.appendChild(wrap);
+  scrollMsgs();
+  return wrap;
+}
+
+function updateLiveBubble(wrap, text){
+  const bbl = wrap.querySelector('.bbl');
+  if(!bbl) return;
+  // Show raw text with streaming cursor while response is incomplete
+  bbl.innerHTML = renderMD(text) + '<span class="stream-cur">▋</span>';
+  scrollMsgs();
+}
+
+function finalizeLiveBubble(wrap, text){
+  const bbl = wrap.querySelector('.bbl');
+  if(!bbl) return;
+  bbl.innerHTML = renderMD(text);
+  bbl.classList.remove('live-bbl');
+  // Add copy + timestamp meta
+  const timeStr = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const mc = wrap.querySelector('.mc');
+  const meta = document.createElement('div');
+  meta.className = 'mmeta';
+  meta.innerHTML = `<button class="cpbtn2" onclick="navigator.clipboard.writeText(this.dataset.c);toast('Copied','nfo')" data-c="${escHTML(text)}" title="Copy"><svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Z"/></svg></button> ${timeStr}`;
+  mc.appendChild(meta);
+  scrollMsgs();
+}
+
+// ─── MNEMONICS ────────────────────────────────────────────────────────────────
+async function handleMnemonics(text){
+  let m;
+  // [SAVE:filename]
+  const saveRe=/\[SAVE:([^\]]+)\]/g;
+  while((m=saveRe.exec(text))!==null){
+    const filename=m[1].trim();
+    const before=text.slice(0,m.index);
+    const codeRe=/```(?:\w+)?\n([\s\S]*?)```/g;
+    let last=null,cm2;
+    while((cm2=codeRe.exec(before))!==null)last=cm2[1];
+    if(last){await saveFileByName(filename,last);mnBadge('💾 Saved: '+filename,'ok');}
+  }
+  // [RUN:command]
+  const runRe=/\[RUN:([^\]]+)\]/g;
+  while((m=runRe.exec(text))!==null){
+    const cmd=m[1].trim();
+    const ok=await requestPermission(cmd);
+    if(ok){executeCommand(cmd);mnBadge('▶ Run: '+cmd,'ok');}
+  }
+  // [OPEN:filename]
+  const openRe=/\[OPEN:([^\]]+)\]/g;
+  while((m=openRe.exec(text))!==null){openFile(m[1].trim());mnBadge('📂 Opened: '+m[1].trim(),'nfo');}
+  // [CREATE:filename]
+  const createRe=/\[CREATE:([^\]]+)\]/g;
+  while((m=createRe.exec(text))!==null){
+    const fn=m[1].trim();
+    try{
+      await fetch(`${API}/create`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:fn})});
+      await loadTree();openFile(fn);mnBadge('🆕 Created: '+fn,'ok');
+    }catch{toast('Create failed: '+fn,'er');}
+  }
+  // [GIT:command]
+  const gitRe=/\[GIT:([^\]]+)\]/g;
+  while((m=gitRe.exec(text))!==null){
+    const gc='git '+m[1].trim();
+    const ok=await requestPermission(gc);
+    if(ok){executeCommand(gc);mnBadge('🌿 git: '+m[1].trim(),'nfo');}
+  }
+  // [INSTALL:package]
+  const installRe=/\[INSTALL:([^\]]+)\]/g;
+  while((m=installRe.exec(text))!==null){
+    const pkg=m[1].trim();
+    const cmd='npm install '+pkg;
+    const ok=await requestPermission(cmd);
+    if(ok){executeCommand(cmd);mnBadge('📦 Installing: '+pkg,'nfo');}
+  }
+  // [SEARCH:term]
+  const searchRe=/\[SEARCH:([^\]]+)\]/g;
+  while((m=searchRe.exec(text))!==null){
+    const q=m[1].trim();
+    document.getElementById('srch').value=q;searchFiles(q);setAct('files');
+    mnBadge('🔍 Searching: '+q,'nfo');
+  }
+  // [RENAME:old->new]
+  const renameRe=/\[RENAME:([^\]>]+)->([^\]]+)\]/g;
+  while((m=renameRe.exec(text))!==null){
+    const [,from,to]=[m[0],m[1].trim(),m[2].trim()];
+    try{
+      const r=await fetch(`${API}/load?filename=${encodeURIComponent(from)}`);
+      const d=await r.json();
+      if(!d.error){
+        await saveFileByName(to,d.content||'');
+        await fetch(`${API}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:from})});
+        await loadTree();mnBadge('✏️ Renamed: '+from+' → '+to,'ok');
+      }
+    }catch{toast('Rename failed','er');}
+  }
+  // [TERMINAL:command] — direct to terminal, no permission prompt
+  const termRe=/\[TERMINAL:([^\]]+)\]/g;
+  while((m=termRe.exec(text))!==null){
+    const cmd=m[1].trim();
+    if(wsConnected&&ws){ws.send(cmd+'\n');}else{executeCommand(cmd);}
+    mnBadge('💻 Terminal: '+cmd,'nfo');
+  }
+  // [TOAST:message:type]
+  const toastRe=/\[TOAST:([^\]:]+)(?::(\w+))?\]/g;
+  while((m=toastRe.exec(text))!==null){toast(m[1].trim(),m[2]||'nfo');}
+}
+
+function mnBadge(msg, type){
+  const ms=document.getElementById('msgsi');
+  const el=document.createElement('div');
+  el.className='fgc';
+  el.innerHTML=`<span>${{ok:'✓',nfo:'ℹ',er:'✕',wn:'⚠'}[type]||'•'}</span><span class="fn">${escHTML(msg)}</span>`;
+  ms.appendChild(el);scrollMsgs();
+  setTimeout(()=>{if(el.parentNode)el.remove();},4000);
+}
+
+// ─── USER MESSAGE INLINE MARKDOWN ────────────────────────────────────────────
+function renderUserMD(text){
+  let s=escHTML(text);
+  // ```code block```
+  s=s.replace(/```(\w*)\n?([\s\S]*?)```/g,(a,lang,code)=>`<div class="cbw" style="margin:4px 0"><div class="cbhd"><span class="lang">${escHTML(lang||'code')}</span><button class="cbcp" onclick="cpCode(this)" style="color:rgba(255,255,255,.7)">Copy</button></div><pre><code>${code.trim()}</code></pre></div>`);
+  // `inline code`
+  s=s.replace(/`([^`\n]+)`/g,'<code style="background:rgba(255,255,255,.18);border-radius:3px;padding:1px 5px;font-family:var(--font-mono);font-size:.85em">$1</code>');
+  // **bold**
+  s=s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
+  // *italic*
+  s=s.replace(/\*([^*\n]+)\*/g,'<em>$1</em>');
+  // newlines
+  s=s.replace(/\n/g,'<br>');
+  return s;
+}
+
+// ─── MARKDOWN RENDERER ───────────────────────────────────────────────────────
+function renderMD(text){
+  if(typeof marked==='undefined')return escHTML(text);
+  // Pre-process file code blocks: ```[filename.ext]
+  text=text.replace(/```\[([^\]]+)\]\n([\s\S]*?)```/g,(all,fname,code)=>{
+    const lang=getLang(fname);
+    const safe=escHTML(code.trimEnd());
+    return `<div class="cbw"><div class="cbhd"><span class="lang">${escHTML(fname)}</span><button class="cbcp" onclick="cpCode(this)">Copy</button></div><pre><code class="language-${lang}">${safe}</code></pre></div>__FBLOCK_PLACEHOLDER_${btoa(fname).replace(/=/g,'')}_END__`;
+  });
+  // Parse markdown
+  let html=marked.parse(text,{breaks:true,gfm:true});
+  // Post-process code blocks for copy button
+  html=html.replace(/<pre><code class="language-(\w+)">([\s\S]*?)<\/code><\/pre>/g,(all,lang,code)=>{
+    return `<div class="cbw"><div class="cbhd"><span class="lang">${lang}</span><button class="cbcp" onclick="cpCode(this)">Copy</button></div><pre><code class="language-${lang}">${code}</code></pre></div>`;
+  });
+  // Highlight after insertion
+  setTimeout(()=>{document.querySelectorAll('.bbl pre code').forEach(el=>hljs.highlightElement(el));},50);
+  return html;
+}
+
+function cpCode(btn){
+  const code=btn.closest('.cbw').querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(()=>{btn.textContent='✓ Copied';setTimeout(()=>btn.textContent='Copy',2000);});
+}
+
+function escHTML(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ─── MOBILE ──────────────────────────────────────────────────────────────────
+function mobSB(){
+  const sb=document.getElementById('sb');
+  const ov=document.getElementById('mobov');
+  sb.classList.toggle('mob');
+  ov.classList.toggle('on',sb.classList.contains('mob'));
+  document.getElementById('cp').classList.remove('mob');
+}
+function mobCP(){
+  const cp=document.getElementById('cp');
+  const ov=document.getElementById('mobov');
+  cp.classList.remove('off');
+  cp.classList.toggle('mob');
+  ov.classList.toggle('on',cp.classList.contains('mob'));
+  document.getElementById('sb').classList.remove('mob');
+  if(cp.classList.contains('mob')){setAct('copilot');}
+}
+function closeMob(){
+  document.getElementById('sb').classList.remove('mob');
+  document.getElementById('cp').classList.remove('mob');
+  document.getElementById('mobov').classList.remove('on');
+}
+
+// ─── KEYBOARD SHORTCUTS ──────────────────────────────────────────────────────
+function onKey(e){
+  if((e.metaKey||e.ctrlKey)&&e.key==='s'){e.preventDefault();saveFile();}
+  if((e.metaKey||e.ctrlKey)&&e.key==='n'){e.preventDefault();showNewFile();}
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();showRunPrompt();}
+  if(e.key==='Escape'){
+    document.querySelectorAll('.ovl').forEach(o=>o.classList.add('hidden'));
+    closeCtx();
+    denyPerm();
+  }
+}
+
+// ─── UTILITIES ────────────────────────────────────────────────────────────────
+function toast(msg,type='nfo'){
+  const s=document.getElementById('tstack');
+  const t=document.createElement('div');
+  t.className='toast '+type;t.textContent=msg;
+  s.appendChild(t);
+  setTimeout(()=>t.style.opacity='0',2500);
+  setTimeout(()=>t.remove(),2800);
+}
+function cModal(id){document.getElementById(id).classList.add('hidden');}
+
+window.addEventListener('resize',layoutEd);
+</script>
+</body>
+</html>
