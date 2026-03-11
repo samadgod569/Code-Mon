@@ -1630,7 +1630,7 @@ async function sendChat(){
   try{
     if(thinkMode){
       updThinkingBubble(thinkEl,'Deep thinking…');
-      thinkResult = await callAI('claude-haiku-4-5',
+      thinkResult = await callAI('claude-haiku-4.5',
         `You are a deep reasoning engine for CodeMon Copilot.\nThink step-by-step about this coding task (60-100 words, plain text, no code).\n\nTask: "${text}"${ctx}`
       );
     }
