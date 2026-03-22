@@ -410,7 +410,7 @@ if (path === "/api/agent") {
     stream: true,
     params: {
           
-    "max_length": 5,
+    
     "temperature": 0.5
     }
   };
