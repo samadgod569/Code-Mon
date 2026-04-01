@@ -51,7 +51,48 @@ if (path === "/api/game-delete") {
   });
 }
 
-    
+  
+if (path === "/openIDE/likes" && request.method === "POST") {
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+  const { username, password, id } = body;
+  if (!username || !password || !id) return json({ error: "Missing username, password or id" }, 400);
+
+  const storedPass = await env.Pass.get(username, { type: "text" });
+  if (!storedPass) return json({ error: "Username not found" }, 404);
+  if (storedPass !== password) return json({ error: "Incorrect password" }, 403);
+
+  const extensionsRaw = await env.FILES.get("extensions", { type: "json" });
+  if (!extensionsRaw || !Array.isArray(extensionsRaw)) return json({ error: "Extensions not found" }, 404);
+
+  const extension = extensionsRaw.find(ext => ext.id === id);
+  if (!extension) return json({ error: "Extension not found" }, 404);
+
+  if (!Array.isArray(extension.stars)) extension.stars = [];
+
+  if (extension.stars.includes(username)) {
+    return json({ success: false, message: "Already liked" });
+  }
+
+  extension.stars.push(username);
+
+  // Save updated extensions back
+  await env.FILES.put("extensions", JSON.stringify(extensionsRaw));
+
+  return json({ success: true, message: "Liked successfully", id, stars: extension.stars });
+}
+
+
+if (path === "/openIDE/extensions" && request.method === "GET") {
+  const extensionsRaw = await env.FILES.get("extensions", { type: "json" });
+  if (!extensionsRaw) return json({ error: "Extensions not found" }, 404);
+
+  return new Response(JSON.stringify(extensionsRaw), {
+    status: 200,
+    headers: { "Content-Type": "application/json", ...corsHeaders }
+  });
+}  
 // 1. /api/api-save
 if (path === "/api/api-save") {
   let body;
