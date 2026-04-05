@@ -27,7 +27,80 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
-    
+    if (path === "/ai") {
+  const url = new URL(request.url);
+  const question = url.searchParams.get("question");
+
+  if (!question) {
+    return json({ error: "Missing question" }, 400);
+  }
+
+  const MODEL = "openai/gpt-4o-mini"; // <-- put your static model here
+
+  // Get API keys from KV
+  let keysRaw = await env.FILES.get("OPR");
+  if (!keysRaw) {
+    return json({ error: "No API keys found" }, 500);
+  }
+
+  let keys;
+  try {
+    keys = JSON.parse(keysRaw);
+  } catch {
+    return json({ error: "Invalid key format in KV" }, 500);
+  }
+
+  if (!Array.isArray(keys) || keys.length === 0) {
+    return json({ error: "No valid API keys" }, 500);
+  }
+
+  let lastError = "All keys failed";
+
+  for (const key of keys) {
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "user", content: question }
+          ]
+        })
+      });
+
+      if (!res.ok) {
+        lastError = `Key failed with status ${res.status}`;
+        continue;
+      }
+
+      const data = await res.json();
+
+      const content =
+        data?.choices?.[0]?.message?.content || "";
+
+      if (!content) {
+        lastError = "Empty response";
+        continue;
+      }
+
+      return json({
+        content
+      });
+
+    } catch (err) {
+      lastError = err.message;
+      continue;
+    }
+  }
+
+  return json({
+    error: lastError
+  }, 500);
+    }
 
 if (path === "/api/game-delete") {
   let body;
