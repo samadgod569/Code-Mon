@@ -35,7 +35,7 @@ const corsHeaders = {
     return json({ error: "Missing question" }, 400);
   }
 
-  const MODEL = "openai/gpt-4o-mini"; // <-- put your static model here
+  const MODEL = "qwen/qwen3.6-plus:free"; 
 
   // Get API keys from KV
   let keysRaw = await env.FILES.get("OPR");
