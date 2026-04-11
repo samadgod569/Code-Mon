@@ -35,7 +35,7 @@ const corsHeaders = {
     return json({ error: "Missing question" }, 400);
   }
 
-  const MODEL = "nvidia/nemotron-3-super-120b-a12b:free"; 
+  const MODEL = "openai/gpt-oss-120b:free"; 
 
   // Get API keys from KV
   let keysRaw = await env.FILES.get("OPR");
