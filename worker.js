@@ -72,7 +72,8 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
         zip: zip || null,
         language,
         startFile,
-        packages
+        packages,
+        key: "*()+!"
       })
     });
 
