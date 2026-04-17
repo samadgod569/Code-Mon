@@ -26,7 +26,73 @@ const corsHeaders = {
         status,
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
+if (path === "/cloudra/deploy" && request.method === "POST") {
+  let body;
 
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const {
+    username,
+    password,
+    appName,
+    appPassword,
+    repo,
+    zip,        // 👈 NEW
+    language,
+    startFile,
+    packages
+  } = body;
+
+  // basic auth/required checks
+  if (!username || !password || !appName) {
+    return json({ error: "Missing required fields" }, 400);
+  }
+
+  // 🔥 NEW RULE: repo OR zip must exist
+  if (!repo && !zip) {
+    return json({ error: "Provide either repo or zip" }, 400);
+  }
+
+  try {
+    const res = await fetch("http://45.137.70.54:8067/api/deploy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        appName,
+        appPassword,
+        repo: repo || null,
+        zip: zip || null,
+        language,
+        startFile,
+        packages
+      })
+    });
+
+    const text = await res.text();
+
+    return new Response(text, {
+      status: res.status,
+      headers: {
+        "Content-Type": res.headers.get("Content-Type") || "application/json",
+        ...corsHeaders
+      }
+    });
+
+  } catch (err) {
+    return json({
+      error: "Failed to connect to deploy API",
+      details: err.message
+    }, 500);
+  }
+}
     if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
