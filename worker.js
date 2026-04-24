@@ -94,6 +94,8 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
     }, 500);
   }
 }
+
+        
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -102,7 +104,8 @@ if (path === "/ai") {
     return json({ error: "Missing question" }, 400);
   }
 
-  const MODEL = "openai/gpt-oss-120b:free";
+  const PLANNER_MODEL = "openai/gpt-4o-mini";
+  const MAIN_MODEL = "openai/gpt-oss-120b:free";
 
   let keysRaw = await env.FILES.get("OPR");
   if (!keysRaw) {
@@ -120,47 +123,60 @@ if (path === "/ai") {
     return json({ error: "No valid API keys" }, 500);
   }
 
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  async function safeFetch(fn, retries = 3) {
+    let err;
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fn();
+        if (res.ok) return res;
+        err = res;
+      } catch (e) {
+        err = e;
+      }
+      await sleep(400 * (i + 1));
+    }
+    throw err;
+  }
+
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
-      const planRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: [
-            {
-              role: "system",
-              content: `
-You are a query planner for a Minecraft wiki retrieval system.
-
-Your job is to convert a user question into 2–5 short search queries.
+      const planRes = await safeFetch(() =>
+        fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: PLANNER_MODEL,
+            messages: [
+              {
+                role: "system",
+                content: `
+Convert the user question into 2–4 Minecraft wiki search queries.
 
 Rules:
-- Each query must be 2 to 5 words
-- Focus on Minecraft entities: items, mobs, systems, mechanics
-- Avoid full sentences
-- Avoid explanations
-- Prefer different angles of the same question (drop, craft, farm, usage, mechanics)
-- Include synonyms if useful
+- 2–5 words each
+- no sentences
+- focus on Minecraft items, mobs, mechanics
+- include synonyms if useful
 
-Return ONLY valid JSON in this format:
-{
-  "queries": ["query1", "query2", "query3"]
-}
+Return ONLY JSON:
+{ "queries": ["a", "b"] }
 `
-            },
-            { role: "user", content: question }
-          ]
+              },
+              { role: "user", content: question }
+            ]
+          })
         })
-      });
+      ).catch(() => null);
 
-      if (!planRes.ok) {
-        lastError = `Planning failed: ${planRes.status}`;
+      if (!planRes) {
+        lastError = "Planner failed";
         continue;
       }
 
@@ -171,28 +187,26 @@ Return ONLY valid JSON in this format:
       try {
         queries = JSON.parse(planText).queries;
       } catch {
-        lastError = "Invalid query JSON";
+        lastError = "Bad planner JSON";
         continue;
       }
 
       if (!Array.isArray(queries) || queries.length === 0) {
-        lastError = "No queries generated";
+        lastError = "Empty queries";
         continue;
       }
 
       let searchResults = [];
 
       for (const q of queries) {
-        const searchUrl =
-          `https://craftersmc.wiki.gg/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3`;
+        const searchRes = await fetch(
+          `https://craftersmc.wiki.gg/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3`
+        );
 
-        const searchRes = await fetch(searchUrl);
         if (!searchRes.ok) continue;
 
         const searchData = await searchRes.json();
-        const results = searchData?.query?.search || [];
-
-        searchResults.push(...results);
+        searchResults.push(...(searchData?.query?.search || []));
       }
 
       const unique = new Map();
@@ -202,27 +216,45 @@ Return ONLY valid JSON in this format:
 
       const topPages = [...unique.values()].slice(0, 4);
 
-      let context = "";
-
-      await Promise.all(
+      const pageTexts = await Promise.all(
         topPages.map(async (page) => {
-          const pageUrl =
-            `https://craftersmc.wiki.gg/api.php?action=query&prop=extracts&explaintext=true&titles=${encodeURIComponent(page.title)}&format=json`;
+          const res = await fetch(
+            `https://craftersmc.wiki.gg/api.php?action=query&prop=extracts&explaintext=true&exsectionformat=plain&titles=${encodeURIComponent(page.title)}&format=json`
+          );
 
-          const pageRes = await fetch(pageUrl);
-          if (!pageRes.ok) return;
+          if (!res.ok) return "";
 
-          const pageData = await pageRes.json();
-          const pages = pageData?.query?.pages;
+          const data = await res.json();
+          const pages = data?.query?.pages;
+
+          let text = "";
 
           for (const id in pages) {
-            const extract = pages[id]?.extract;
-            if (extract) {
-              context += `\n\n### ${page.title}\n${extract}`;
-            }
+            text = pages[id]?.extract || "";
           }
+
+          if (!text) return "";
+
+          text = text
+            .replace(/\[\d+\]/g, "")
+            .replace(/\{\{.*?\}\}/gs, "")
+            .replace(/==\s*References\s*==[\s\S]*/i, "")
+            .replace(/Category:.*\n/g, "")
+            .replace(/\n{3,}/g, "\n\n")
+            .replace(/[ \t]+\n/g, "\n")
+            .trim()
+            .slice(0, 6000);
+
+          return `\n\n### ${page.title}\n${text}`;
         })
       );
+
+      let context = pageTexts
+        .filter(Boolean)
+        .join("\n")
+        .split("\n\n")
+        .slice(0, 10)
+        .join("\n\n");
 
       const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -231,25 +263,21 @@ Return ONLY valid JSON in this format:
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: MODEL,
+          model: MAIN_MODEL,
           messages: [
             {
               role: "system",
               content: `
-You are an expert Minecraft wiki assistant.
+You are a Minecraft wiki expert assistant.
 
-You MUST follow these rules:
-- Use ONLY the provided context
-- If context is incomplete, combine information logically from multiple pages
-- Prefer accuracy over verbosity
-- Do not invent items or mechanics not supported by context
-- If multiple pages are given, synthesize them into one clear answer
-- Focus on gameplay mechanics, drops, crafting, farming, and usage
+Rules:
+- Use ONLY provided context
+- Combine multiple pages if needed
+- Never hallucinate items or mechanics
+- Be precise and gameplay-focused
+- If information is missing, say so clearly
 
-Response style:
-- Clear and direct
-- Structured if needed (bullet points allowed)
-- No mention of "context" or "sources"
+Answer clearly and structured if needed.
 `
             },
             {
@@ -261,7 +289,7 @@ Response style:
       });
 
       if (!finalRes.ok) {
-        lastError = `Final step failed: ${finalRes.status}`;
+        lastError = `Final failed: ${finalRes.status}`;
         continue;
       }
 
@@ -282,7 +310,9 @@ Response style:
   }
 
   return json({ error: lastError }, 500);
-  }
+    }
+          
+ 
 if (path === "/api/game-delete") {
   let body;
   try { body = await request.json(); }
