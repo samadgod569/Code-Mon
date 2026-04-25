@@ -100,21 +100,19 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
 
               
-if (path === "/ai") {
+
+
+  if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
-  if (!question) {
-    return json({ error: "Missing question" }, 400);
-  }
+  if (!question) return json({ error: "Missing question" }, 400);
 
   const PLANNER_MODEL = "mistralai/mistral-7b-instruct";
   const MAIN_MODEL = "openai/gpt-oss-120b:free";
 
   let keysRaw = await env.FILES.get("OPR");
-  if (!keysRaw) {
-    return json({ error: "No API keys found" }, 500);
-  }
+  if (!keysRaw) return json({ error: "No API keys found" }, 500);
 
   let keys;
   try {
@@ -123,9 +121,8 @@ if (path === "/ai") {
     return json({ error: "Invalid key format in KV" }, 500);
   }
 
-  if (!Array.isArray(keys) || keys.length === 0) {
+  if (!Array.isArray(keys) || !keys.length)
     return json({ error: "No valid API keys" }, 500);
-  }
 
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -139,126 +136,125 @@ if (path === "/ai") {
       } catch (e) {
         err = e;
       }
-      await sleep(400 * (i + 1));
+      await sleep(300 * (i + 1));
     }
     throw err;
   }
 
-  function cleanWikiText(text) {
-    return text
-      .replace(/\{\{Mob\|([^}]+)\}\}/g, "$1")
-      .replace(/\{\{Item\|([^}|]+).*?\}\}/g, "$1")
-      .replace(/\{\{NPC\|([^}]+)\}\}/g, "$1")
-      .replace(/\{\{Minion\|([^}]+)\}\}/g, "$1")
-      .replace(/\{\{Location\|([^}]+)\}\}/g, "$1")
-      .replace(/\{\{Coin\|([^}]+)\}\}/g, "$1 coins")
-      .replace(/\{\{[\s\S]*?\}\}/g, "")
-      .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
-      .replace(/\{\|[\s\S]*?\|\}/g, "")
-      .replace(/==\s*(.*?)\s*==/g, "\n\n$1:\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim()
-      .slice(0, 6000);
+  function fallback(q) {
+    return q
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(" ")
+      .filter(w => w.length > 2)
+      .slice(0, 3);
   }
+
+  const cleanText = (t) =>
+    t
+      .replace(/\{\{.*?\}\}/gs, "")
+      .replace(/\[\[|\]\]/g, "")
+      .replace(/==\s*References\s*==[\s\S]*/i, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]+\n/g, "\n")
+      .trim()
+      .slice(0, 5000);
 
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
-      const planRes = await safeFetch(() =>
-        fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: PLANNER_MODEL,
-            temperature: 0.2,
-            messages: [
-              {
-                role: "system",
-                content: `
-You generate search queries for a Minecraft wiki system.
-
-Return ONLY JSON:
-{"queries":["a","b","c"]}
-
-RULES:
-- 2 to 4 queries
-- 2–4 words each (VERY IMPORTANT)
-- extremely direct keywords only
-- no sentences
-- no explanations
-- if question is simple like "what is CraftersMC", output ["CraftersMC"]
-- include synonyms if needed
-`
-              },
-              { role: "user", content: question }
-            ]
-          })
-        })
-      );
-
-      const planData = await planRes.json();
-      const planText = planData?.choices?.[0]?.message?.content;
-
       let queries = [];
 
       try {
-        queries = JSON.parse(planText).queries;
+        const planRes = await safeFetch(() =>
+          fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${key}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: PLANNER_MODEL,
+              temperature: 0.2,
+              messages: [
+                {
+                  role: "system",
+                  content:
+`You convert user questions into VERY short Minecraft wiki search queries.
+
+RULES:
+- 2–4 words max
+- EXTREMELY direct (like keywords)
+- no sentences
+- no punctuation
+- include entity name directly if possible
+
+EXAMPLES:
+"What is CraftersMC" → ["CraftersMC"]
+"how to get rotten flesh" → ["rotten flesh", "zombie drop"]
+"rotten flesh farm" → ["rotten flesh farm", "zombie grinder"]
+
+RETURN ONLY JSON:
+{"queries":["a","b"]}`
+                },
+                { role: "user", content: question }
+              ]
+            })
+          })
+        );
+
+        const data = await planRes.json();
+        const text = data?.choices?.[0]?.message?.content || "";
+
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("no json");
+
+        const parsed = JSON.parse(jsonMatch[0]);
+        queries = parsed.queries;
+
+        if (!Array.isArray(queries)) throw new Error("bad queries");
       } catch {
-        queries = question.split(" ").slice(0, 3);
+        queries = fallback(question);
       }
 
       let searchResults = [];
 
       for (const q of queries) {
-        const searchRes = await fetch(
+        const res = await fetch(
           `https://craftersmc.wiki.gg/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3`
         );
+        if (!res.ok) continue;
 
-        if (!searchRes.ok) continue;
-
-        const searchData = await searchRes.json();
-        searchResults.push(...(searchData?.query?.search || []));
+        const data = await res.json();
+        searchResults.push(...(data?.query?.search || []));
       }
 
       const unique = new Map();
-      for (const r of searchResults) {
-        unique.set(r.title, r);
-      }
+      for (const r of searchResults) unique.set(r.title, r);
 
-      const topPages = [...unique.values()]
-        .sort((a, b) => a.title.length - b.title.length)
-        .slice(0, 4);
+      const pages = [...unique.values()].slice(0, 4);
 
       const pageTexts = await Promise.all(
-        topPages.map(async (page) => {
+        pages.map(async (p) => {
           const res = await fetch(
-            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(page.title)}&format=json`
+            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(p.title)}&format=json`
           );
 
           if (!res.ok) return "";
 
           const data = await res.json();
-          const pages = data?.query?.pages;
+          const page = Object.values(data?.query?.pages || {})[0];
+          const content =
+            page?.revisions?.[0]?.slots?.main?.["*"] || "";
 
-          let text = "";
+          if (!content) return "";
 
-          for (const id in pages) {
-            text =
-              pages[id]?.revisions?.[0]?.slots?.main?.["*"] || "";
-          }
-
-          if (!text) return "";
-
-          return `\n\n### ${page.title}\n${cleanWikiText(text)}`;
+          return `\n\n### ${p.title}\n${cleanText(content)}`;
         })
       );
 
-      const context = pageTexts.filter(Boolean).join("\n");
+      const context = pageTexts.filter(Boolean).join("\n").slice(0, 12000);
 
       const finalRes = await safeFetch(() =>
         fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -269,31 +265,32 @@ RULES:
           },
           body: JSON.stringify({
             model: MAIN_MODEL,
+            temperature: 0.3,
             messages: [
               {
                 role: "system",
-                content: `
-You are a Minecraft wiki expert.
+                content:
+`You are a Minecraft wiki assistant.
 
 RULES:
 - Use ONLY provided context
-- Never hallucinate
-- Combine multiple pages if needed
-- Be precise and factual
 - If missing info, say it clearly
-`
+- Combine multiple pages
+- Do not hallucinate
+
+Be accurate and concise.`
               },
               {
                 role: "user",
-                content: `Question: ${question}\n\nContext:\n${context}`
+                content: `QUESTION: ${question}\n\nCONTEXT:\n${context || "No context found"}`
               }
             ]
           })
         })
       );
 
-      const finalData = await finalRes.json();
-      const content = finalData?.choices?.[0]?.message?.content || "";
+      const out = await finalRes.json();
+      const content = out?.choices?.[0]?.message?.content;
 
       if (!content) {
         lastError = "Empty response";
@@ -302,15 +299,13 @@ RULES:
 
       return json({ content });
 
-    } catch (err) {
-      lastError = err.message;
-      continue;
+    } catch (e) {
+      lastError = e.message;
     }
   }
 
   return json({ error: lastError }, 500);
-}
-
+  }
 
   
 if (path === "/openIDE/likes" && request.method === "POST") {
