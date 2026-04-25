@@ -98,7 +98,9 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
         
 
 
-      if (path === "/ai") {
+
+              
+if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
@@ -142,67 +144,72 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
     throw err;
   }
 
-  function fallbackKeywords(q) {
-    return q
-      .toLowerCase()
-      .replace(/[^\w\s]/g, "")
-      .split(" ")
-      .filter(w => w.length > 2)
-      .slice(0, 3);
+  function cleanWikiText(text) {
+    return text
+      .replace(/\{\{Mob\|([^}]+)\}\}/g, "$1")
+      .replace(/\{\{Item\|([^}|]+).*?\}\}/g, "$1")
+      .replace(/\{\{NPC\|([^}]+)\}\}/g, "$1")
+      .replace(/\{\{Minion\|([^}]+)\}\}/g, "$1")
+      .replace(/\{\{Location\|([^}]+)\}\}/g, "$1")
+      .replace(/\{\{Coin\|([^}]+)\}\}/g, "$1 coins")
+      .replace(/\{\{[\s\S]*?\}\}/g, "")
+      .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
+      .replace(/\{\|[\s\S]*?\|\}/g, "")
+      .replace(/==\s*(.*?)\s*==/g, "\n\n$1:\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+      .slice(0, 6000);
   }
 
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
+      const planRes = await safeFetch(() =>
+        fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: PLANNER_MODEL,
+            temperature: 0.2,
+            messages: [
+              {
+                role: "system",
+                content: `
+You generate search queries for a Minecraft wiki system.
+
+Return ONLY JSON:
+{"queries":["a","b","c"]}
+
+RULES:
+- 2 to 4 queries
+- 2–4 words each (VERY IMPORTANT)
+- extremely direct keywords only
+- no sentences
+- no explanations
+- if question is simple like "what is CraftersMC", output ["CraftersMC"]
+- include synonyms if needed
+`
+              },
+              { role: "user", content: question }
+            ]
+          })
+        })
+      );
+
+      const planData = await planRes.json();
+      const planText = planData?.choices?.[0]?.message?.content;
+
       let queries = [];
 
       try {
-        const planRes = await safeFetch(() =>
-          fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${key}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: PLANNER_MODEL,
-              temperature: 0.2,
-              messages: [
-                {
-                  role: "system",
-                  content: `
-Generate 2–4 Minecraft wiki search queries.
-
-Return ONLY JSON:
-{"queries":["a","b"]}
-
-Rules:
-- 2–5 words each
-- no sentences
-- include synonyms
-`
-                },
-                { role: "user", content: question }
-              ]
-            })
-          })
-        );
-
-        const planData = await planRes.json();
-
-        const text = planData?.choices?.[0]?.message?.content;
-
-        if (!text) throw new Error("No planner output");
-
-        queries = JSON.parse(text).queries;
-
-        if (!Array.isArray(queries) || queries.length === 0) {
-          throw new Error("Empty planner queries");
-        }
-
-      } catch (err) {
-        queries = fallbackKeywords(question);
+        queries = JSON.parse(planText).queries;
+      } catch {
+        queries = question.split(" ").slice(0, 3);
       }
 
       let searchResults = [];
@@ -223,12 +230,14 @@ Rules:
         unique.set(r.title, r);
       }
 
-      const topPages = [...unique.values()].slice(0, 4);
+      const topPages = [...unique.values()]
+        .sort((a, b) => a.title.length - b.title.length)
+        .slice(0, 4);
 
       const pageTexts = await Promise.all(
         topPages.map(async (page) => {
           const res = await fetch(
-            `https://craftersmc.wiki.gg/api.php?action=query&prop=extracts&explaintext=true&titles=${encodeURIComponent(page.title)}&format=json`
+            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(page.title)}&format=json`
           );
 
           if (!res.ok) return "";
@@ -239,21 +248,13 @@ Rules:
           let text = "";
 
           for (const id in pages) {
-            text = pages[id]?.extract || "";
+            text =
+              pages[id]?.revisions?.[0]?.slots?.main?.["*"] || "";
           }
 
           if (!text) return "";
 
-          text = text
-            .replace(/\[\d+\]/g, "")
-            .replace(/\{\{.*?\}\}/gs, "")
-            .replace(/==\s*References\s*==[\s\S]*/i, "")
-            .replace(/Category:.*\n/g, "")
-            .replace(/\n{3,}/g, "\n\n")
-            .trim()
-            .slice(0, 5000);
-
-          return `\n\n### ${page.title}\n${text}`;
+          return `\n\n### ${page.title}\n${cleanWikiText(text)}`;
         })
       );
 
@@ -272,15 +273,14 @@ Rules:
               {
                 role: "system",
                 content: `
-You are a Minecraft wiki assistant.
+You are a Minecraft wiki expert.
 
-Rules:
+RULES:
 - Use ONLY provided context
 - Never hallucinate
-- Combine info from multiple pages
-- Focus on gameplay mechanics
-
-If missing info, say it clearly.
+- Combine multiple pages if needed
+- Be precise and factual
+- If missing info, say it clearly
 `
               },
               {
