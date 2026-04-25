@@ -96,7 +96,9 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 }
 
         
-if (path === "/ai") {
+
+
+      if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
@@ -104,7 +106,7 @@ if (path === "/ai") {
     return json({ error: "Missing question" }, 400);
   }
 
-  const PLANNER_MODEL = "openai/gpt-4o-mini";
+  const PLANNER_MODEL = "mistralai/mistral-7b-instruct";
   const MAIN_MODEL = "openai/gpt-oss-120b:free";
 
   let keysRaw = await env.FILES.get("OPR");
@@ -140,60 +142,67 @@ if (path === "/ai") {
     throw err;
   }
 
+  function fallbackKeywords(q) {
+    return q
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(" ")
+      .filter(w => w.length > 2)
+      .slice(0, 3);
+  }
+
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
-      const planRes = await safeFetch(() =>
-        fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: PLANNER_MODEL,
-            messages: [
-              {
-                role: "system",
-                content: `
-Convert the user question into 2–4 Minecraft wiki search queries.
+      let queries = [];
+
+      try {
+        const planRes = await safeFetch(() =>
+          fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${key}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: PLANNER_MODEL,
+              temperature: 0.2,
+              messages: [
+                {
+                  role: "system",
+                  content: `
+Generate 2–4 Minecraft wiki search queries.
+
+Return ONLY JSON:
+{"queries":["a","b"]}
 
 Rules:
 - 2–5 words each
 - no sentences
-- focus on Minecraft items, mobs, mechanics
-- include synonyms if useful
-
-Return ONLY JSON:
-{ "queries": ["a", "b"] }
+- include synonyms
 `
-              },
-              { role: "user", content: question }
-            ]
+                },
+                { role: "user", content: question }
+              ]
+            })
           })
-        })
-      ).catch(() => null);
+        );
 
-      if (!planRes) {
-        lastError = "Planner failed";
-        continue;
-      }
+        const planData = await planRes.json();
 
-      const planData = await planRes.json();
-      const planText = planData?.choices?.[0]?.message?.content || "";
+        const text = planData?.choices?.[0]?.message?.content;
 
-      let queries;
-      try {
-        queries = JSON.parse(planText).queries;
-      } catch {
-        lastError = "Bad planner JSON";
-        continue;
-      }
+        if (!text) throw new Error("No planner output");
 
-      if (!Array.isArray(queries) || queries.length === 0) {
-        lastError = "Empty queries";
-        continue;
+        queries = JSON.parse(text).queries;
+
+        if (!Array.isArray(queries) || queries.length === 0) {
+          throw new Error("Empty planner queries");
+        }
+
+      } catch (err) {
+        queries = fallbackKeywords(question);
       }
 
       let searchResults = [];
@@ -219,7 +228,7 @@ Return ONLY JSON:
       const pageTexts = await Promise.all(
         topPages.map(async (page) => {
           const res = await fetch(
-            `https://craftersmc.wiki.gg/api.php?action=query&prop=extracts&explaintext=true&exsectionformat=plain&titles=${encodeURIComponent(page.title)}&format=json`
+            `https://craftersmc.wiki.gg/api.php?action=query&prop=extracts&explaintext=true&titles=${encodeURIComponent(page.title)}&format=json`
           );
 
           if (!res.ok) return "";
@@ -241,57 +250,47 @@ Return ONLY JSON:
             .replace(/==\s*References\s*==[\s\S]*/i, "")
             .replace(/Category:.*\n/g, "")
             .replace(/\n{3,}/g, "\n\n")
-            .replace(/[ \t]+\n/g, "\n")
             .trim()
-            .slice(0, 6000);
+            .slice(0, 5000);
 
           return `\n\n### ${page.title}\n${text}`;
         })
       );
 
-      let context = pageTexts
-        .filter(Boolean)
-        .join("\n")
-        .split("\n\n")
-        .slice(0, 10)
-        .join("\n\n");
+      const context = pageTexts.filter(Boolean).join("\n");
 
-      const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: MAIN_MODEL,
-          messages: [
-            {
-              role: "system",
-              content: `
-You are a Minecraft wiki expert assistant.
+      const finalRes = await safeFetch(() =>
+        fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: MAIN_MODEL,
+            messages: [
+              {
+                role: "system",
+                content: `
+You are a Minecraft wiki assistant.
 
 Rules:
 - Use ONLY provided context
-- Combine multiple pages if needed
-- Never hallucinate items or mechanics
-- Be precise and gameplay-focused
-- If information is missing, say so clearly
+- Never hallucinate
+- Combine info from multiple pages
+- Focus on gameplay mechanics
 
-Answer clearly and structured if needed.
+If missing info, say it clearly.
 `
-            },
-            {
-              role: "user",
-              content: `Question: ${question}\n\nWiki Context:\n${context}`
-            }
-          ]
+              },
+              {
+                role: "user",
+                content: `Question: ${question}\n\nContext:\n${context}`
+              }
+            ]
+          })
         })
-      });
-
-      if (!finalRes.ok) {
-        lastError = `Final failed: ${finalRes.status}`;
-        continue;
-      }
+      );
 
       const finalData = await finalRes.json();
       const content = finalData?.choices?.[0]?.message?.content || "";
@@ -310,30 +309,8 @@ Answer clearly and structured if needed.
   }
 
   return json({ error: lastError }, 500);
-    }
-          
- 
-if (path === "/api/game-delete") {
-  let body;
-  try { body = await request.json(); }
-  catch { return json({ error: "Invalid JSON" }, 400); }
-
-  const { user, pass, game } = body;
-  if (!user || !pass || !game) return json({ error: "Missing user, pass, or game" }, 400);
-
-  const storedPass = await env.Pass.get(user, { type: "text" });
-  if (!storedPass) return json({ error: "Username not found" }, 404);
-  if (storedPass !== pass) return json({ error: "Incorrect password" }, 403);
-
-  const kvKey = `game/${user}/${game}`;
-  await env.STORAGE.delete(kvKey);
-
-  return json({
-    success: true,
-    message: "Game deleted",
-    game
-  });
 }
+
 
   
 if (path === "/openIDE/likes" && request.method === "POST") {
