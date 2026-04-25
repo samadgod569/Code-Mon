@@ -108,8 +108,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
   if (!question) return json({ error: "Missing question" }, 400);
 
-  const PLANNER_MODEL = "mistralai/mistral-7b-instruct";
-  const MAIN_MODEL = "openai/gpt-oss-120b:free";
+  const MODEL = "openai/gpt-oss-120b:free";
 
   let keysRaw = await env.FILES.get("OPR");
   if (!keysRaw) return json({ error: "No API keys found" }, 500);
@@ -126,97 +125,60 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-  async function safeFetch(fn, retries = 3) {
-    let err;
-    for (let i = 0; i < retries; i++) {
-      try {
-        const res = await fn();
-        if (res.ok) return res;
-        err = res;
-      } catch (e) {
-        err = e;
-      }
-      await sleep(300 * (i + 1));
-    }
-    throw err;
-  }
+  const cleanText = (t) =>
+    (t || "")
+      .replace(/\{\{.*?\}\}/gs, "")
+      .replace(/\[\d+\]/g, "")
+      .replace(/==\s*References[\s\S]*/i, "")
+      .replace(/==\s*Navigation[\s\S]*/i, "")
+      .replace(/Category:.*\n/g, "")
+      .replace(/File:.*\n/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]+\n/g, "\n")
+      .trim()
+      .slice(0, 6000);
 
-  function fallback(q) {
-    return q
+  const fallbackQueries = (q) =>
+    q
       .toLowerCase()
       .replace(/[^\w\s]/g, "")
       .split(" ")
       .filter(w => w.length > 2)
       .slice(0, 3);
-  }
-
-  const cleanText = (t) =>
-    t
-      .replace(/\{\{.*?\}\}/gs, "")
-      .replace(/\[\[|\]\]/g, "")
-      .replace(/==\s*References\s*==[\s\S]*/i, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .replace(/[ \t]+\n/g, "\n")
-      .trim()
-      .slice(0, 5000);
 
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
-      let queries = [];
+      let queries = fallbackQueries(question);
 
       try {
-        const planRes = await safeFetch(() =>
-          fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${key}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: PLANNER_MODEL,
-              temperature: 0.2,
-              messages: [
-                {
-                  role: "system",
-                  content:
-`You convert user questions into VERY short Minecraft wiki search queries.
-
-RULES:
-- 2–4 words max
-- EXTREMELY direct (like keywords)
-- no sentences
-- no punctuation
-- include entity name directly if possible
-
-EXAMPLES:
-"What is CraftersMC" → ["CraftersMC"]
-"how to get rotten flesh" → ["rotten flesh", "zombie drop"]
-"rotten flesh farm" → ["rotten flesh farm", "zombie grinder"]
-
-RETURN ONLY JSON:
-{"queries":["a","b"]}`
-                },
-                { role: "user", content: question }
-              ]
-            })
+        const planRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "mistralai/mistral-7b-instruct",
+            temperature: 0.2,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Convert question into 2–4 ultra short Minecraft wiki search queries (2–4 words). Return ONLY JSON {\"queries\":[]}"
+              },
+              { role: "user", content: question }
+            ]
           })
-        );
+        });
 
         const data = await planRes.json();
-        const text = data?.choices?.[0]?.message?.content || "";
+        const text = data?.choices?.[0]?.message?.content;
 
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("no json");
-
-        const parsed = JSON.parse(jsonMatch[0]);
-        queries = parsed.queries;
-
-        if (!Array.isArray(queries)) throw new Error("bad queries");
-      } catch {
-        queries = fallback(question);
-      }
+        const parsed = JSON.parse(text);
+        if (parsed?.queries?.length) queries = parsed.queries;
+      } catch {}
 
       let searchResults = [];
 
@@ -224,8 +186,6 @@ RETURN ONLY JSON:
         const res = await fetch(
           `https://craftersmc.wiki.gg/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3`
         );
-        if (!res.ok) continue;
-
         const data = await res.json();
         searchResults.push(...(data?.query?.search || []));
       }
@@ -233,64 +193,56 @@ RETURN ONLY JSON:
       const unique = new Map();
       for (const r of searchResults) unique.set(r.title, r);
 
-      const pages = [...unique.values()].slice(0, 4);
+      const topPages = [...unique.values()].slice(0, 4);
 
       const pageTexts = await Promise.all(
-        pages.map(async (p) => {
+        topPages.map(async (page) => {
           const res = await fetch(
-            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(p.title)}&format=json`
+            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(page.title)}&format=json`
           );
 
-          if (!res.ok) return "";
-
           const data = await res.json();
-          const page = Object.values(data?.query?.pages || {})[0];
-          const content =
-            page?.revisions?.[0]?.slots?.main?.["*"] || "";
+          const pages = data?.query?.pages;
 
-          if (!content) return "";
+          let raw = "";
+          for (const id in pages) {
+            raw = pages[id]?.revisions?.[0]?.slots?.main?.["*"] || "";
+          }
 
-          return `\n\n### ${p.title}\n${cleanText(content)}`;
+          raw = cleanText(raw);
+
+          if (!raw) return "";
+
+          return `\n\n### ${page.title}\n${raw}`;
         })
       );
 
-      const context = pageTexts.filter(Boolean).join("\n").slice(0, 12000);
+      const context = pageTexts.filter(Boolean).join("\n").slice(0, 20000);
 
-      const finalRes = await safeFetch(() =>
-        fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: MAIN_MODEL,
-            temperature: 0.3,
-            messages: [
-              {
-                role: "system",
-                content:
-`You are a Minecraft wiki assistant.
-
-RULES:
-- Use ONLY provided context
-- If missing info, say it clearly
-- Combine multiple pages
-- Do not hallucinate
-
-Be accurate and concise.`
-              },
-              {
-                role: "user",
-                content: `QUESTION: ${question}\n\nCONTEXT:\n${context || "No context found"}`
-              }
-            ]
-          })
+      const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a Minecraft wiki assistant. Use ONLY provided context. If answer exists, extract it. If missing, say what is missing. Never say you have no data if context contains it."
+            },
+            {
+              role: "user",
+              content: `QUESTION: ${question}\n\nCONTEXT:\n${context}`
+            }
+          ]
         })
-      );
+      });
 
       const out = await finalRes.json();
-      const content = out?.choices?.[0]?.message?.content;
+      const content = out?.choices?.[0]?.message?.content || "";
 
       if (!content) {
         lastError = "Empty response";
@@ -305,7 +257,7 @@ Be accurate and concise.`
   }
 
   return json({ error: lastError }, 500);
-  }
+        }
 
   
 if (path === "/openIDE/likes" && request.method === "POST") {
