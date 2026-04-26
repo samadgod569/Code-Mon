@@ -96,10 +96,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 }
 
         
-
-
-
-              
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -121,8 +117,6 @@ if (path === "/ai") {
   if (!Array.isArray(keys) || !keys.length)
     return json({ error: "No valid API keys" }, 500);
 
-  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
   const safeJson = async (res) => {
     const text = await res.text();
     if (!text || text.trim().startsWith("<")) return null;
@@ -135,8 +129,13 @@ if (path === "/ai") {
 
   const cleanText = (t) =>
     (t || "")
-      .replace(/\{\{.*?\}\}/gs, "")
-      .replace(/\[\d+\]/g, "")
+      .replace(/\{\{[^}]*\}\}/gs, "")                    // strip {{templates}}
+      .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")  // [[link|text]] → text
+      .replace(/={2,6}([^=]+)={2,6}/g, "\n$1\n")         // ==Headings== → plain
+      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")        // <ref> blocks
+      .replace(/<[^>]+>/g, "")                           // remaining HTML tags
+      .replace(/\[\d+\]/g, "")                           // [1] citation refs
+      .replace(/'''?/g, "")                              // bold/italic markers
       .replace(/==\s*References[\s\S]*/i, "")
       .replace(/==\s*Navigation[\s\S]*/i, "")
       .replace(/Category:.*\n/g, "")
@@ -149,20 +148,26 @@ if (path === "/ai") {
   const fallback = (q) =>
     q.toLowerCase().replace(/[^\w\s]/g, "").split(" ").filter(w => w.length > 2).slice(0, 3);
 
+  // ✅ CraftersMC wiki, hit via proper MediaWiki Action API
+  const WIKI_API = "https://craftersmc.wiki.gg/api.php";
+  const WIKI_HEADERS = {
+    "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
+    "Accept": "application/json"
+  };
+
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
       let queries = fallback(question);
 
+      // STEP 1 — AI generates focused search queries
       try {
         const planRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json"
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
             model: "mistralai/mistral-7b-instruct",
@@ -170,91 +175,98 @@ if (path === "/ai") {
             messages: [
               {
                 role: "system",
-                content: "Convert question into 2–4 short Minecraft wiki queries. Return JSON {\"queries\":[]}"
+                content: 'Convert the question into 2-4 short CraftersMC wiki search queries. Return ONLY raw JSON with no markdown fences: {"queries":[]}'
               },
               { role: "user", content: question }
             ]
           })
         });
 
-        const data = await safeJson(planRes);
-        const text = data?.choices?.[0]?.message?.content;
+        const planData = await safeJson(planRes);
+        const planText = planData?.choices?.[0]?.message?.content ?? "";
+        // ✅ Strip ```json fences before parsing — Mistral loves adding them
+        const stripped = planText.replace(/```(?:json)?/gi, "").trim();
+        const parsed = JSON.parse(stripped);
+        if (Array.isArray(parsed?.queries) && parsed.queries.length) {
+          queries = parsed.queries.map(q => String(q).trim()).filter(Boolean).slice(0, 4);
+        }
+      } catch { /* keep keyword fallback */ }
 
-        const parsed = text ? JSON.parse(text) : null;
-
-        if (parsed?.queries?.length) queries = parsed.queries;
-      } catch {}
-
-      let searchResults = [];
-
+      // STEP 2 — Search CraftersMC wiki using MediaWiki list=search
+      const searchResults = [];
       for (const q of queries) {
-        const res = await fetch(
-          `https://craftersmc.wiki.gg/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3`,
-          {
-            headers: {
-              "User-Agent": "Mozilla/5.0",
-              "Accept": "application/json"
-            }
-          }
-        );
-
+        const params = new URLSearchParams({
+          action: "query",
+          list: "search",
+          srsearch: q,
+          srlimit: "3",
+          format: "json"
+        });
+        const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
         const data = await safeJson(res);
         if (!data) continue;
-
-        searchResults.push(...(data?.query?.search || []));
+        searchResults.push(...(data?.query?.search ?? []));
       }
 
+      // Deduplicate by title
       const unique = new Map();
       for (const r of searchResults) unique.set(r.title, r);
-
       const topPages = [...unique.values()].slice(0, 4);
 
-      const pageTexts = await Promise.all(
-        topPages.map(async (page) => {
-          const res = await fetch(
-            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(page.title)}&format=json`,
-            {
-              headers: {
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/json"
-              }
+      if (!topPages.length) {
+        lastError = "No wiki pages found";
+        continue;
+      }
+
+      // STEP 3 — Fetch wikitext for each title using MediaWiki prop=revisions
+      const pageTexts = (
+        await Promise.all(
+          topPages.map(async ({ title }) => {
+            const params = new URLSearchParams({
+              action: "query",
+              prop: "revisions",
+              rvprop: "content",
+              rvslots: "main",
+              redirects: "1",   // ✅ follow redirects so you don't get empty pages
+              titles: title,
+              format: "json"
+            });
+            const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
+            const data = await safeJson(res);
+            if (!data) return "";
+
+            let raw = "";
+            for (const id in data?.query?.pages ?? {}) {
+              if (id === "-1") return ""; // ✅ missing page check
+              raw = data.query.pages[id]?.revisions?.[0]?.slots?.main?.["*"] ?? "";
             }
-          );
 
-          const data = await safeJson(res);
-          if (!data) return "";
+            const cleaned = cleanText(raw);
+            return cleaned ? `### ${title}\n${cleaned}` : "";
+          })
+        )
+      ).filter(Boolean);
 
-          const pages = data?.query?.pages;
+      if (!pageTexts.length) {
+        lastError = "All pages empty after cleaning";
+        continue;
+      }
 
-          let raw = "";
-          for (const id in pages) {
-            raw = pages[id]?.revisions?.[0]?.slots?.main?.["*"] || "";
-          }
+      const context = pageTexts.join("\n\n").slice(0, 20000);
 
-          raw = cleanText(raw);
-          if (!raw) return "";
-
-          return `\n\n### ${page.title}\n${raw}`;
-        })
-      );
-
-      const context = pageTexts.filter(Boolean).join("\n").slice(0, 20000);
-
+      // STEP 4 — Final AI answer using the cleaned wiki context
       const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0",
-          "Accept": "application/json"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: MODEL,
           messages: [
             {
               role: "system",
-              content:
-                "You are a Minecraft wiki assistant. Use ONLY provided context. If answer exists, extract it. If missing, say what is missing."
+              content: "You are a CraftersMC wiki assistant. Answer using ONLY the provided context. If the answer is there, extract it clearly. If not, say exactly what info is missing."
             },
             {
               role: "user",
@@ -265,11 +277,10 @@ if (path === "/ai") {
       });
 
       const out = await safeJson(finalRes);
-
-      const content = out?.choices?.[0]?.message?.content || "";
+      const content = out?.choices?.[0]?.message?.content ?? "";
 
       if (!content) {
-        lastError = "Empty response";
+        lastError = "Empty response from model";
         continue;
       }
 
@@ -281,11 +292,10 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-                            }
+}
 
 
 
-  
 if (path === "/openIDE/likes" && request.method === "POST") {
   let body;
   try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
