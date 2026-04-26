@@ -189,48 +189,59 @@ if (path === "/ai") {
       }
 
       const allTitles = allPages.map(p => p.title);
+      const half = Math.ceil(allTitles.length / 2);
+      const firstHalf = allTitles.slice(0, half);
+      const secondHalf = allTitles.slice(half);
 
-      let chosenTitles = [];
+      const pickPrompt = (titles) => ({
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "mistralai/mistral-7b-instruct",
+          temperature: 0.1,
+          messages: [
+            {
+              role: "system",
+              content: `You are given a list of wiki page titles and a user question. Pick the most relevant page titles that would help answer the question. Return ONLY raw JSON, no markdown: {"titles":["Title One","Title Two"]}. Pick at most 5 titles. Only include titles that exist exactly in the provided list.`
+            },
+            {
+              role: "user",
+              content: `QUESTION: ${question}\n\nAVAILABLE PAGES:\n${titles.join("\n")}`
+            }
+          ]
+        })
+      });
 
-      try {
-        const pickRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "mistralai/mistral-7b-instruct",
-            temperature: 0.1,
-            messages: [
-              {
-                role: "system",
-                content: `You are given a list of wiki page titles and a user question. Pick the most relevant page titles that would help answer the question. Return ONLY raw JSON, no markdown: {"titles":["Title One","Title Two"]}. Pick at most 5 titles. Only include titles that exist exactly in the provided list.`
-              },
-              {
-                role: "user",
-                content: `QUESTION: ${question}\n\nAVAILABLE PAGES:\n${allTitles.join("\n")}`
-              }
-            ]
-          })
-        });
+      const [res1, res2] = await Promise.all([
+        fetch("https://openrouter.ai/api/v1/chat/completions", pickPrompt(firstHalf)),
+        fetch("https://openrouter.ai/api/v1/chat/completions", pickPrompt(secondHalf))
+      ]);
 
-        const pickData = await safeJson(pickRes);
-        const pickText = pickData?.choices?.[0]?.message?.content ?? "";
-        const stripped = pickText.replace(/```(?:json)?/gi, "").trim();
-        const parsed = JSON.parse(stripped);
+      const [data1, data2] = await Promise.all([safeJson(res1), safeJson(res2)]);
 
-        if (Array.isArray(parsed?.titles) && parsed.titles.length) {
-          const titleSet = new Set(allTitles);
-          chosenTitles = parsed.titles
-            .map(t => String(t).trim())
-            .filter(t => titleSet.has(t))
-            .slice(0, 5);
-        }
-      } catch {}
+      const extractTitles = (data, validSet) => {
+        try {
+          const text = data?.choices?.[0]?.message?.content ?? "";
+          const stripped = text.replace(/```(?:json)?/gi, "").trim();
+          const parsed = JSON.parse(stripped);
+          if (Array.isArray(parsed?.titles)) {
+            return parsed.titles.map(t => String(t).trim()).filter(t => validSet.has(t));
+          }
+        } catch {}
+        return [];
+      };
+
+      const titleSet = new Set(allTitles);
+      const titles1 = extractTitles(data1, titleSet);
+      const titles2 = extractTitles(data2, titleSet);
+
+      const chosenTitles = [...new Set([...titles1, ...titles2])].slice(0, 5);
 
       if (!chosenTitles.length) {
-        lastError = "AI could not select relevant pages";
+        lastError = "AI could not select relevant pages from either half";
         continue;
       }
 
@@ -324,7 +335,8 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-    }
+                              }
+
 
 
 if (path === "/openIDE/likes" && request.method === "POST") {
