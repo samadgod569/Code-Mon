@@ -96,8 +96,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 }
 
         
-
-
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -192,11 +190,9 @@ if (path === "/ai") {
     return (maxLen - levenshtein(a, b)) / maxLen;
   };
 
-  // Check if a string starts with another (prefix match)
   const prefixMatch = (word, target) =>
     target.startsWith(word) || word.startsWith(target);
 
-  // Bigram similarity for better fuzzy matching
   const bigrams = (str) => {
     const set = new Set();
     for (let i = 0; i < str.length - 1; i++) set.add(str.slice(i, i + 2));
@@ -223,13 +219,10 @@ if (path === "/ai") {
       .replace(/[^\w\s]/g, "")
       .split(/\s+/)
       .filter(w => w.length > 2 && !STOPWORDS.has(w));
-
-    // Also include adjacent word pairs as phrases (bigram phrases)
     const phrases = [];
     for (let i = 0; i < words.length - 1; i++) {
       phrases.push(words[i] + " " + words[i + 1]);
     }
-
     return { words, phrases };
   };
 
@@ -239,7 +232,6 @@ if (path === "/ai") {
     const titleWords = titleLower.split(/[\s\-_]+/);
     let score = 0;
 
-    // ── Phrase match (highest weight) ──
     for (const phrase of phrases) {
       if (titleLower.includes(phrase)) {
         score += 3.0;
@@ -249,45 +241,28 @@ if (path === "/ai") {
       }
     }
 
-    // ── Per-keyword scoring ──
     for (const kw of words) {
       let best = 0;
-
       for (const tw of titleWords) {
-        // Exact word match
         if (tw === kw) { best = Math.max(best, 2.0); continue; }
-
-        // Title contains keyword or vice versa
         if (tw.includes(kw)) { best = Math.max(best, 1.5); continue; }
         if (kw.includes(tw) && tw.length > 3) { best = Math.max(best, 1.2); continue; }
-
-        // Prefix match
         if (prefixMatch(kw, tw) && kw.length > 3) { best = Math.max(best, 1.0); continue; }
-
-        // Skip fuzzy if lengths are too different
         if (Math.abs(tw.length - kw.length) > 4) continue;
-
-        // Levenshtein similarity
         const lSim = similarity(tw, kw);
         if (lSim >= 0.82) { best = Math.max(best, lSim * 1.3); continue; }
-
-        // Bigram similarity
         const bSim = bigramSimilarity(tw, kw);
         if (bSim >= 0.6) best = Math.max(best, bSim * 0.9);
       }
-
       score += best;
     }
 
-    // ── Bonus: full question keywords appear in title as substring ──
     for (const kw of words) {
       if (titleLower.includes(kw)) score += 0.5;
     }
 
-    // ── Bonus: title is short and highly focused ──
     if (titleWords.length <= 3 && score > 0) score += 0.4;
 
-    // ── Bonus: title starts with a keyword ──
     for (const kw of words) {
       if (titleLower.startsWith(kw)) score += 0.6;
     }
@@ -319,11 +294,9 @@ if (path === "/ai") {
         .filter(r => r.score > 0)
         .sort((a, b) => b.score - a.score);
 
-      // Always pick at least 7, more if scores are close to the 7th
       const MIN = 7;
       let chosenTitles = scored.slice(0, MIN).map(r => r.title);
 
-      // Pull in any extra titles whose score is within 20% of the 7th result
       if (scored.length > MIN) {
         const threshold = scored[MIN - 1].score * 0.8;
         for (let i = MIN; i < scored.length; i++) {
@@ -332,7 +305,6 @@ if (path === "/ai") {
         }
       }
 
-      // Cap at 12 to avoid too many subrequests
       chosenTitles = chosenTitles.slice(0, 12);
 
       if (!chosenTitles.length) {
@@ -352,17 +324,14 @@ if (path === "/ai") {
               titles: title,
               format: "json"
             });
-
             const res = await fetch(`https://craftersmc.wiki.gg/api.php?${params}`, {
               headers: {
                 "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
                 "Accept": "application/json"
               }
             });
-
             const data = await safeJson(res);
             if (!data) return null;
-
             let raw = "";
             let resolvedTitle = title;
             for (const id in data?.query?.pages ?? {}) {
@@ -370,10 +339,8 @@ if (path === "/ai") {
               resolvedTitle = data.query.pages[id]?.title ?? title;
               raw = data.query.pages[id]?.revisions?.[0]?.slots?.main?.["*"] ?? "";
             }
-
             const cleaned = cleanText(raw);
             if (!cleaned) return null;
-
             return {
               title: resolvedTitle,
               url: `https://craftersmc.wiki.gg/wiki/${encodeURIComponent(resolvedTitle.replace(/ /g, "_"))}`,
@@ -388,7 +355,43 @@ if (path === "/ai") {
         continue;
       }
 
-      const context = fetchedPages.map(p => `### ${p.title}\n${p.content}`).join("\n\n").slice(0, 20000);
+      const pagesWithImages = await Promise.all(
+        fetchedPages.map(async (page) => {
+          try {
+            const fileName = page.title.replace(/ /g, "_") + ".png";
+            const params = new URLSearchParams({
+              action: "query",
+              titles: `File:${fileName}`,
+              prop: "imageinfo",
+              iiprop: "url",
+              format: "json"
+            });
+            const res = await fetch(`https://craftersmc.wiki.gg/api.php?${params}`, {
+              headers: {
+                "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
+                "Accept": "application/json"
+              }
+            });
+            const data = await safeJson(res);
+            let imgUrl = null;
+            for (const id in data?.query?.pages ?? {}) {
+              if (id === "-1") break;
+              imgUrl = data.query.pages[id]?.imageinfo?.[0]?.url ?? null;
+            }
+            return { ...page, imgUrl };
+          } catch {
+            return { ...page, imgUrl: null };
+          }
+        })
+      );
+
+      const context = pagesWithImages
+        .map(p => {
+          const imgLine = p.imgUrl ? `Image: ${p.imgUrl}\n` : "";
+          return `### ${p.title}\n${imgLine}${p.content}`;
+        })
+        .join("\n\n")
+        .slice(0, 20000);
 
       const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -401,7 +404,10 @@ if (path === "/ai") {
           messages: [
             {
               role: "system",
-              content: "You are a CraftersMC wiki assistant. Answer using ONLY the provided context. If the answer is there, extract it clearly. If not, say exactly what info is missing."
+              content: `You are a CraftersMC wiki assistant. Answer using ONLY the provided context. If the answer is there, extract it clearly. If not, say exactly what info is missing.
+
+When relevant, you may embed images in your response using markdown image syntax: ![Title](image_url)
+Only use image URLs that are explicitly provided in the context under "Image:". Never invent or guess image URLs.`
             },
             {
               role: "user",
@@ -421,7 +427,11 @@ if (path === "/ai") {
 
       return json({
         content,
-        sources: fetchedPages.map(p => ({ title: p.title, url: p.url }))
+        sources: pagesWithImages.map(p => ({
+          title: p.title,
+          url: p.url,
+          imgUrl: p.imgUrl
+        }))
       });
 
     } catch (e) {
@@ -430,7 +440,8 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-                  }
+         }
+
 
 
 
