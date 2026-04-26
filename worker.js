@@ -96,6 +96,8 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 }
 
         
+
+
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -129,13 +131,13 @@ if (path === "/ai") {
 
   const cleanText = (t) =>
     (t || "")
-      .replace(/\{\{[^}]*\}\}/gs, "")                    // strip {{templates}}
-      .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")  // [[link|text]] → text
-      .replace(/={2,6}([^=]+)={2,6}/g, "\n$1\n")         // ==Headings== → plain
-      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")        // <ref> blocks
-      .replace(/<[^>]+>/g, "")                           // remaining HTML tags
-      .replace(/\[\d+\]/g, "")                           // [1] citation refs
-      .replace(/'''?/g, "")                              // bold/italic markers
+      .replace(/\{\{[^}]*\}\}/gs, "")
+      .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
+      .replace(/={2,6}([^=]+)={2,6}/g, "\n$1\n")
+      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\[\d+\]/g, "")
+      .replace(/'''?/g, "")
       .replace(/==\s*References[\s\S]*/i, "")
       .replace(/==\s*Navigation[\s\S]*/i, "")
       .replace(/Category:.*\n/g, "")
@@ -148,7 +150,6 @@ if (path === "/ai") {
   const fallback = (q) =>
     q.toLowerCase().replace(/[^\w\s]/g, "").split(" ").filter(w => w.length > 2).slice(0, 3);
 
-  // ✅ CraftersMC wiki, hit via proper MediaWiki Action API
   const WIKI_API = "https://craftersmc.wiki.gg/api.php";
   const WIKI_HEADERS = {
     "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
@@ -161,7 +162,6 @@ if (path === "/ai") {
     try {
       let queries = fallback(question);
 
-      // STEP 1 — AI generates focused search queries
       try {
         const planRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
@@ -184,22 +184,23 @@ if (path === "/ai") {
 
         const planData = await safeJson(planRes);
         const planText = planData?.choices?.[0]?.message?.content ?? "";
-        // ✅ Strip ```json fences before parsing — Mistral loves adding them
         const stripped = planText.replace(/```(?:json)?/gi, "").trim();
         const parsed = JSON.parse(stripped);
         if (Array.isArray(parsed?.queries) && parsed.queries.length) {
           queries = parsed.queries.map(q => String(q).trim()).filter(Boolean).slice(0, 4);
         }
-      } catch { /* keep keyword fallback */ }
+      } catch {}
 
-      // STEP 2 — Search CraftersMC wiki using MediaWiki list=search
+      const allQueries = [...new Set([...fallback(question), ...queries])];
       const searchResults = [];
-      for (const q of queries) {
+
+      for (const q of allQueries) {
         const params = new URLSearchParams({
           action: "query",
           list: "search",
           srsearch: q,
-          srlimit: "3",
+          srlimit: "5",
+          srnamespace: "0",
           format: "json"
         });
         const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
@@ -208,18 +209,41 @@ if (path === "/ai") {
         searchResults.push(...(data?.query?.search ?? []));
       }
 
-      // Deduplicate by title
       const unique = new Map();
       for (const r of searchResults) unique.set(r.title, r);
       const topPages = [...unique.values()].slice(0, 4);
+
+      if (!topPages.length) {
+        const guessTitle = question
+          .replace(/^(what is|what are|how to|how do i|tell me about)\s+/i, "")
+          .trim()
+          .replace(/\b\w/g, c => c.toUpperCase());
+
+        const params = new URLSearchParams({
+          action: "query",
+          prop: "revisions",
+          rvprop: "content",
+          rvslots: "main",
+          redirects: "1",
+          titles: guessTitle,
+          format: "json"
+        });
+        const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
+        const data = await safeJson(res);
+
+        if (data) {
+          for (const id in data?.query?.pages ?? {}) {
+            if (id !== "-1") topPages.push({ title: data.query.pages[id].title });
+          }
+        }
+      }
 
       if (!topPages.length) {
         lastError = "No wiki pages found";
         continue;
       }
 
-      // STEP 3 — Fetch wikitext for each title using MediaWiki prop=revisions
-      const pageTexts = (
+      const fetchedPages = (
         await Promise.all(
           topPages.map(async ({ title }) => {
             const params = new URLSearchParams({
@@ -227,34 +251,41 @@ if (path === "/ai") {
               prop: "revisions",
               rvprop: "content",
               rvslots: "main",
-              redirects: "1",   // ✅ follow redirects so you don't get empty pages
+              redirects: "1",
               titles: title,
               format: "json"
             });
             const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
             const data = await safeJson(res);
-            if (!data) return "";
+            if (!data) return null;
 
             let raw = "";
+            let resolvedTitle = title;
             for (const id in data?.query?.pages ?? {}) {
-              if (id === "-1") return ""; // ✅ missing page check
+              if (id === "-1") return null;
+              resolvedTitle = data.query.pages[id]?.title ?? title;
               raw = data.query.pages[id]?.revisions?.[0]?.slots?.main?.["*"] ?? "";
             }
 
             const cleaned = cleanText(raw);
-            return cleaned ? `### ${title}\n${cleaned}` : "";
+            if (!cleaned) return null;
+
+            return {
+              title: resolvedTitle,
+              url: `https://craftersmc.wiki.gg/wiki/${encodeURIComponent(resolvedTitle.replace(/ /g, "_"))}`,
+              content: cleaned
+            };
           })
         )
       ).filter(Boolean);
 
-      if (!pageTexts.length) {
+      if (!fetchedPages.length) {
         lastError = "All pages empty after cleaning";
         continue;
       }
 
-      const context = pageTexts.join("\n\n").slice(0, 20000);
+      const context = fetchedPages.map(p => `### ${p.title}\n${p.content}`).join("\n\n").slice(0, 20000);
 
-      // STEP 4 — Final AI answer using the cleaned wiki context
       const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -284,7 +315,13 @@ if (path === "/ai") {
         continue;
       }
 
-      return json({ content });
+      return json({
+        content,
+        sources: fetchedPages.map(p => ({
+          title: p.title,
+          url: p.url
+        }))
+      });
 
     } catch (e) {
       lastError = e.message;
@@ -292,7 +329,7 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-}
+      }
 
 
 
