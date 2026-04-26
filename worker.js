@@ -177,6 +177,62 @@ if (path === "/ai") {
     return allPages;
   }
 
+  // Levenshtein distance for typo tolerance
+  const levenshtein = (a, b) => {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, (_, i) =>
+      Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    );
+    for (let i = 1; i <= m; i++)
+      for (let j = 1; j <= n; j++)
+        dp[i][j] = a[i-1] === b[j-1]
+          ? dp[i-1][j-1]
+          : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    return dp[m][n];
+  };
+
+  const similarity = (a, b) => {
+    const maxLen = Math.max(a.length, b.length);
+    if (maxLen === 0) return 1;
+    return (maxLen - levenshtein(a, b)) / maxLen;
+  };
+
+  const STOPWORDS = new Set([
+    "what","where","when","who","how","why","is","are","was","were","the",
+    "a","an","in","on","of","to","do","does","did","can","could","would",
+    "should","tell","me","about","give","info","explain","describe","get",
+    "find","show","list","and","or","for","with","that","this","its","it"
+  ]);
+
+  const extractKeywords = (q) =>
+    q.toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !STOPWORDS.has(w));
+
+  const scoreTitle = (title, keywords) => {
+    const titleWords = title.toLowerCase().split(/[\s\-_]+/);
+    let score = 0;
+
+    for (const kw of keywords) {
+      let best = 0;
+      for (const tw of titleWords) {
+        // Exact match
+        if (tw === kw) { best = Math.max(best, 1.0); continue; }
+        // Contains match
+        if (tw.includes(kw) || kw.includes(tw)) { best = Math.max(best, 0.8); continue; }
+        // Fuzzy match — only bother if lengths are close
+        if (Math.abs(tw.length - kw.length) <= 3) {
+          const sim = similarity(tw, kw);
+          if (sim >= 0.75) best = Math.max(best, sim * 0.7);
+        }
+      }
+      score += best;
+    }
+
+    return score;
+  };
+
   let lastError = "All keys failed";
 
   for (const key of keys) {
@@ -189,59 +245,23 @@ if (path === "/ai") {
       }
 
       const allTitles = allPages.map(p => p.title);
-      const half = Math.ceil(allTitles.length / 2);
-      const firstHalf = allTitles.slice(0, half);
-      const secondHalf = allTitles.slice(half);
+      const keywords = extractKeywords(question);
 
-      const pickPrompt = (titles) => ({
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "mistralai/mistral-7b-instruct",
-          temperature: 0.1,
-          messages: [
-            {
-              role: "system",
-              content: `You are given a list of wiki page titles and a user question. Pick the most relevant page titles that would help answer the question. Return ONLY raw JSON, no markdown: {"titles":["Title One","Title Two"]}. Pick at most 5 titles. Only include titles that exist exactly in the provided list.`
-            },
-            {
-              role: "user",
-              content: `QUESTION: ${question}\n\nAVAILABLE PAGES:\n${titles.join("\n")}`
-            }
-          ]
-        })
-      });
+      if (!keywords.length) {
+        lastError = "Could not extract keywords from question";
+        continue;
+      }
 
-      const [res1, res2] = await Promise.all([
-        fetch("https://openrouter.ai/api/v1/chat/completions", pickPrompt(firstHalf)),
-        fetch("https://openrouter.ai/api/v1/chat/completions", pickPrompt(secondHalf))
-      ]);
+      const scored = allTitles
+        .map(title => ({ title, score: scoreTitle(title, keywords) }))
+        .filter(r => r.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
 
-      const [data1, data2] = await Promise.all([safeJson(res1), safeJson(res2)]);
-
-      const extractTitles = (data, validSet) => {
-        try {
-          const text = data?.choices?.[0]?.message?.content ?? "";
-          const stripped = text.replace(/```(?:json)?/gi, "").trim();
-          const parsed = JSON.parse(stripped);
-          if (Array.isArray(parsed?.titles)) {
-            return parsed.titles.map(t => String(t).trim()).filter(t => validSet.has(t));
-          }
-        } catch {}
-        return [];
-      };
-
-      const titleSet = new Set(allTitles);
-      const titles1 = extractTitles(data1, titleSet);
-      const titles2 = extractTitles(data2, titleSet);
-
-      const chosenTitles = [...new Set([...titles1, ...titles2])].slice(0, 5);
+      const chosenTitles = scored.map(r => r.title);
 
       if (!chosenTitles.length) {
-        lastError = "AI could not select relevant pages from either half";
+        lastError = "No relevant pages found for question";
         continue;
       }
 
@@ -335,7 +355,7 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-                              }
+              }
 
 
 
