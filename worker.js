@@ -100,9 +100,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
 
               
-
-
-  if (path === "/ai") {
+if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
@@ -125,6 +123,16 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+  const safeJson = async (res) => {
+    const text = await res.text();
+    if (!text || text.trim().startsWith("<")) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  };
+
   const cleanText = (t) =>
     (t || "")
       .replace(/\{\{.*?\}\}/gs, "")
@@ -138,26 +146,23 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
       .trim()
       .slice(0, 6000);
 
-  const fallbackQueries = (q) =>
-    q
-      .toLowerCase()
-      .replace(/[^\w\s]/g, "")
-      .split(" ")
-      .filter(w => w.length > 2)
-      .slice(0, 3);
+  const fallback = (q) =>
+    q.toLowerCase().replace(/[^\w\s]/g, "").split(" ").filter(w => w.length > 2).slice(0, 3);
 
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
-      let queries = fallbackQueries(question);
+      let queries = fallback(question);
 
       try {
         const planRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json"
           },
           body: JSON.stringify({
             model: "mistralai/mistral-7b-instruct",
@@ -165,18 +170,18 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
             messages: [
               {
                 role: "system",
-                content:
-                  "Convert question into 2–4 ultra short Minecraft wiki search queries (2–4 words). Return ONLY JSON {\"queries\":[]}"
+                content: "Convert question into 2–4 short Minecraft wiki queries. Return JSON {\"queries\":[]}"
               },
               { role: "user", content: question }
             ]
           })
         });
 
-        const data = await planRes.json();
+        const data = await safeJson(planRes);
         const text = data?.choices?.[0]?.message?.content;
 
-        const parsed = JSON.parse(text);
+        const parsed = text ? JSON.parse(text) : null;
+
         if (parsed?.queries?.length) queries = parsed.queries;
       } catch {}
 
@@ -184,9 +189,18 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
       for (const q of queries) {
         const res = await fetch(
-          `https://craftersmc.wiki.gg/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3`
+          `https://craftersmc.wiki.gg/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3`,
+          {
+            headers: {
+              "User-Agent": "Mozilla/5.0",
+              "Accept": "application/json"
+            }
+          }
         );
-        const data = await res.json();
+
+        const data = await safeJson(res);
+        if (!data) continue;
+
         searchResults.push(...(data?.query?.search || []));
       }
 
@@ -198,10 +212,18 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
       const pageTexts = await Promise.all(
         topPages.map(async (page) => {
           const res = await fetch(
-            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(page.title)}&format=json`
+            `https://craftersmc.wiki.gg/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=${encodeURIComponent(page.title)}&format=json`,
+            {
+              headers: {
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json"
+              }
+            }
           );
 
-          const data = await res.json();
+          const data = await safeJson(res);
+          if (!data) return "";
+
           const pages = data?.query?.pages;
 
           let raw = "";
@@ -210,7 +232,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
           }
 
           raw = cleanText(raw);
-
           if (!raw) return "";
 
           return `\n\n### ${page.title}\n${raw}`;
@@ -223,7 +244,9 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "application/json"
         },
         body: JSON.stringify({
           model: MODEL,
@@ -231,7 +254,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
             {
               role: "system",
               content:
-                "You are a Minecraft wiki assistant. Use ONLY provided context. If answer exists, extract it. If missing, say what is missing. Never say you have no data if context contains it."
+                "You are a Minecraft wiki assistant. Use ONLY provided context. If answer exists, extract it. If missing, say what is missing."
             },
             {
               role: "user",
@@ -241,7 +264,8 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
         })
       });
 
-      const out = await finalRes.json();
+      const out = await safeJson(finalRes);
+
       const content = out?.choices?.[0]?.message?.content || "";
 
       if (!content) {
@@ -257,7 +281,9 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 
   return json({ error: lastError }, 500);
-        }
+                            }
+
+
 
   
 if (path === "/openIDE/likes" && request.method === "POST") {
