@@ -97,6 +97,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
         
 
+
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -149,7 +150,6 @@ if (path === "/ai") {
   async function getAllPages() {
     let allPages = [];
     let apcontinue = "";
-
     while (true) {
       const apiUrl = new URL("https://craftersmc.wiki.gg/api.php");
       apiUrl.searchParams.set("action", "query");
@@ -158,26 +158,21 @@ if (path === "/ai") {
       apiUrl.searchParams.set("apnamespace", "0");
       apiUrl.searchParams.set("format", "json");
       if (apcontinue) apiUrl.searchParams.set("apcontinue", apcontinue);
-
       const res = await fetch(apiUrl.toString(), {
         headers: {
           "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
           "Accept": "application/json"
         }
       });
-
       const data = await safeJson(res);
       if (!data) break;
-
       allPages.push(...(data?.query?.allpages ?? []));
       if (!data.continue?.apcontinue) break;
       apcontinue = data.continue.apcontinue;
     }
-
     return allPages;
   }
 
-  // Levenshtein distance for typo tolerance
   const levenshtein = (a, b) => {
     const m = a.length, n = b.length;
     const dp = Array.from({ length: m + 1 }, (_, i) =>
@@ -197,37 +192,104 @@ if (path === "/ai") {
     return (maxLen - levenshtein(a, b)) / maxLen;
   };
 
+  // Check if a string starts with another (prefix match)
+  const prefixMatch = (word, target) =>
+    target.startsWith(word) || word.startsWith(target);
+
+  // Bigram similarity for better fuzzy matching
+  const bigrams = (str) => {
+    const set = new Set();
+    for (let i = 0; i < str.length - 1; i++) set.add(str.slice(i, i + 2));
+    return set;
+  };
+
+  const bigramSimilarity = (a, b) => {
+    const ba = bigrams(a), bb = bigrams(b);
+    let shared = 0;
+    for (const bg of ba) if (bb.has(bg)) shared++;
+    return (2 * shared) / (ba.size + bb.size || 1);
+  };
+
   const STOPWORDS = new Set([
     "what","where","when","who","how","why","is","are","was","were","the",
     "a","an","in","on","of","to","do","does","did","can","could","would",
     "should","tell","me","about","give","info","explain","describe","get",
-    "find","show","list","and","or","for","with","that","this","its","it"
+    "find","show","list","and","or","for","with","that","this","its","it",
+    "i","my","your","their","there","here","have","has","had","been","be"
   ]);
 
-  const extractKeywords = (q) =>
-    q.toLowerCase()
+  const extractKeywords = (q) => {
+    const words = q.toLowerCase()
       .replace(/[^\w\s]/g, "")
       .split(/\s+/)
       .filter(w => w.length > 2 && !STOPWORDS.has(w));
 
+    // Also include adjacent word pairs as phrases (bigram phrases)
+    const phrases = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      phrases.push(words[i] + " " + words[i + 1]);
+    }
+
+    return { words, phrases };
+  };
+
   const scoreTitle = (title, keywords) => {
-    const titleWords = title.toLowerCase().split(/[\s\-_]+/);
+    const { words, phrases } = keywords;
+    const titleLower = title.toLowerCase();
+    const titleWords = titleLower.split(/[\s\-_]+/);
     let score = 0;
 
-    for (const kw of keywords) {
-      let best = 0;
-      for (const tw of titleWords) {
-        // Exact match
-        if (tw === kw) { best = Math.max(best, 1.0); continue; }
-        // Contains match
-        if (tw.includes(kw) || kw.includes(tw)) { best = Math.max(best, 0.8); continue; }
-        // Fuzzy match — only bother if lengths are close
-        if (Math.abs(tw.length - kw.length) <= 3) {
-          const sim = similarity(tw, kw);
-          if (sim >= 0.75) best = Math.max(best, sim * 0.7);
-        }
+    // ── Phrase match (highest weight) ──
+    for (const phrase of phrases) {
+      if (titleLower.includes(phrase)) {
+        score += 3.0;
+      } else {
+        const phraseSim = bigramSimilarity(titleLower, phrase);
+        if (phraseSim >= 0.6) score += phraseSim * 2.0;
       }
+    }
+
+    // ── Per-keyword scoring ──
+    for (const kw of words) {
+      let best = 0;
+
+      for (const tw of titleWords) {
+        // Exact word match
+        if (tw === kw) { best = Math.max(best, 2.0); continue; }
+
+        // Title contains keyword or vice versa
+        if (tw.includes(kw)) { best = Math.max(best, 1.5); continue; }
+        if (kw.includes(tw) && tw.length > 3) { best = Math.max(best, 1.2); continue; }
+
+        // Prefix match
+        if (prefixMatch(kw, tw) && kw.length > 3) { best = Math.max(best, 1.0); continue; }
+
+        // Skip fuzzy if lengths are too different
+        if (Math.abs(tw.length - kw.length) > 4) continue;
+
+        // Levenshtein similarity
+        const lSim = similarity(tw, kw);
+        if (lSim >= 0.82) { best = Math.max(best, lSim * 1.3); continue; }
+
+        // Bigram similarity
+        const bSim = bigramSimilarity(tw, kw);
+        if (bSim >= 0.6) best = Math.max(best, bSim * 0.9);
+      }
+
       score += best;
+    }
+
+    // ── Bonus: full question keywords appear in title as substring ──
+    for (const kw of words) {
+      if (titleLower.includes(kw)) score += 0.5;
+    }
+
+    // ── Bonus: title is short and highly focused ──
+    if (titleWords.length <= 3 && score > 0) score += 0.4;
+
+    // ── Bonus: title starts with a keyword ──
+    for (const kw of words) {
+      if (titleLower.startsWith(kw)) score += 0.6;
     }
 
     return score;
@@ -247,7 +309,7 @@ if (path === "/ai") {
       const allTitles = allPages.map(p => p.title);
       const keywords = extractKeywords(question);
 
-      if (!keywords.length) {
+      if (!keywords.words.length) {
         lastError = "Could not extract keywords from question";
         continue;
       }
@@ -255,10 +317,23 @@ if (path === "/ai") {
       const scored = allTitles
         .map(title => ({ title, score: scoreTitle(title, keywords) }))
         .filter(r => r.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5);
+        .sort((a, b) => b.score - a.score);
 
-      const chosenTitles = scored.map(r => r.title);
+      // Always pick at least 7, more if scores are close to the 7th
+      const MIN = 7;
+      let chosenTitles = scored.slice(0, MIN).map(r => r.title);
+
+      // Pull in any extra titles whose score is within 20% of the 7th result
+      if (scored.length > MIN) {
+        const threshold = scored[MIN - 1].score * 0.8;
+        for (let i = MIN; i < scored.length; i++) {
+          if (scored[i].score >= threshold) chosenTitles.push(scored[i].title);
+          else break;
+        }
+      }
+
+      // Cap at 12 to avoid too many subrequests
+      chosenTitles = chosenTitles.slice(0, 12);
 
       if (!chosenTitles.length) {
         lastError = "No relevant pages found for question";
@@ -355,7 +430,7 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-              }
+                  }
 
 
 
