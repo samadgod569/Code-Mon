@@ -97,7 +97,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
         
 
-
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -148,7 +147,7 @@ if (path === "/ai") {
       .slice(0, 6000);
 
   const fallback = (q) =>
-    q.toLowerCase().replace(/[^\w\s]/g, "").split(" ").filter(w => w.length > 2).slice(0, 3);
+    q.toLowerCase().replace(/[^\w\s]/g, "").split(" ").filter(w => w.length > 2).slice(0, 4);
 
   const WIKI_API = "https://craftersmc.wiki.gg/api.php";
   const WIKI_HEADERS = {
@@ -156,15 +155,29 @@ if (path === "/ai") {
     "Accept": "application/json"
   };
 
+  // Aggressively strip all question noise to get the core topic
+  const extractTopic = (q) =>
+    q
+      .replace(/^(what is|what are|what does|what do|how to|how do i|how does|how can i|tell me about|explain|describe|give me info on|who is|where is|can you tell me|do you know|i want to know about|what's|whats)\s+/i, "")
+      .replace(/\?+$/, "")
+      .replace(/\s+(mean|means|work|works|do|does|is|are)\s*\??$/i, "")
+      .trim();
+
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
-      const directGuess = question
-        .replace(/^(what is|what are|how to|how do i|tell me about|what does|who is|where is)\s+/i, "")
-        .trim();
+      const directGuess = extractTopic(question);
 
-      let queries = fallback(question);
+      // Also build partial combos from directGuess words for fuzzy coverage
+      const guessParts = directGuess.split(" ").filter(w => w.length > 1);
+      const partialCombos = [];
+      if (guessParts.length > 1) {
+        partialCombos.push(guessParts.slice(0, 2).join(" "));
+        if (guessParts.length > 2) partialCombos.push(guessParts.slice(-2).join(" "));
+      }
+
+      let aiQueries = fallback(question);
 
       try {
         const planRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -175,11 +188,11 @@ if (path === "/ai") {
           },
           body: JSON.stringify({
             model: "mistralai/mistral-7b-instruct",
-            temperature: 0.2,
+            temperature: 0.1,
             messages: [
               {
                 role: "system",
-                content: 'Convert the question into 2-4 short CraftersMC wiki search queries. Return ONLY raw JSON with no markdown fences: {"queries":[]}'
+                content: 'You extract the core topic from a question for wiki search. Return ONLY raw JSON, no markdown: {"queries":["short topic","alternate name","related term"]}. Max 4 queries, each under 4 words. Focus on the NOUN/ITEM name, not the question words.'
               },
               { role: "user", content: question }
             ]
@@ -191,15 +204,17 @@ if (path === "/ai") {
         const stripped = planText.replace(/```(?:json)?/gi, "").trim();
         const parsed = JSON.parse(stripped);
         if (Array.isArray(parsed?.queries) && parsed.queries.length) {
-          queries = parsed.queries.map(q => String(q).trim()).filter(Boolean).slice(0, 4);
+          aiQueries = parsed.queries.map(q => String(q).trim()).filter(Boolean).slice(0, 4);
         }
       } catch {}
 
+      // Priority order: directGuess first, then partials, then fallback keywords, then AI queries
       const allQueries = [...new Set([
         directGuess,
+        ...partialCombos,
         ...fallback(question),
-        ...queries
-      ])];
+        ...aiQueries
+      ])].filter(Boolean);
 
       const searchResults = [];
 
@@ -208,8 +223,10 @@ if (path === "/ai") {
           action: "query",
           list: "search",
           srsearch: q,
-          srlimit: q === directGuess ? "8" : "5",
+          srlimit: q === directGuess ? "10" : "6",
           srnamespace: "0",
+          srinfo: "",
+          srprop: "title|snippet",
           format: "json"
         });
         const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
@@ -220,27 +237,37 @@ if (path === "/ai") {
 
       const unique = new Map();
       for (const r of searchResults) unique.set(r.title, r);
-      const topPages = [...unique.values()].slice(0, 4);
+      const topPages = [...unique.values()].slice(0, 5);
 
+      // Hard fallback: try title lookup directly if search came up empty
       if (!topPages.length) {
         const guessTitle = directGuess.replace(/\b\w/g, c => c.toUpperCase());
+        const titleVariants = [
+          guessTitle,
+          directGuess.toLowerCase(),
+          directGuess.toUpperCase(),
+        ];
 
-        const params = new URLSearchParams({
-          action: "query",
-          prop: "revisions",
-          rvprop: "content",
-          rvslots: "main",
-          redirects: "1",
-          titles: guessTitle,
-          format: "json"
-        });
-        const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
-        const data = await safeJson(res);
-
-        if (data) {
+        for (const variant of titleVariants) {
+          const params = new URLSearchParams({
+            action: "query",
+            prop: "revisions",
+            rvprop: "content",
+            rvslots: "main",
+            redirects: "1",
+            titles: variant,
+            format: "json"
+          });
+          const res = await fetch(`${WIKI_API}?${params}`, { headers: WIKI_HEADERS });
+          const data = await safeJson(res);
+          if (!data) continue;
           for (const id in data?.query?.pages ?? {}) {
-            if (id !== "-1") topPages.push({ title: data.query.pages[id].title });
+            if (id !== "-1") {
+              topPages.push({ title: data.query.pages[id].title });
+              break;
+            }
           }
+          if (topPages.length) break;
         }
       }
 
@@ -335,8 +362,7 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-    }
-
+  }
 
 
 
