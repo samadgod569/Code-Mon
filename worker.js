@@ -160,6 +160,10 @@ if (path === "/ai") {
 
   for (const key of keys) {
     try {
+      const directGuess = question
+        .replace(/^(what is|what are|how to|how do i|tell me about|what does|who is|where is)\s+/i, "")
+        .trim();
+
       let queries = fallback(question);
 
       try {
@@ -191,7 +195,12 @@ if (path === "/ai") {
         }
       } catch {}
 
-      const allQueries = [...new Set([...fallback(question), ...queries])];
+      const allQueries = [...new Set([
+        directGuess,
+        ...fallback(question),
+        ...queries
+      ])];
+
       const searchResults = [];
 
       for (const q of allQueries) {
@@ -199,7 +208,7 @@ if (path === "/ai") {
           action: "query",
           list: "search",
           srsearch: q,
-          srlimit: "5",
+          srlimit: q === directGuess ? "8" : "5",
           srnamespace: "0",
           format: "json"
         });
@@ -214,10 +223,7 @@ if (path === "/ai") {
       const topPages = [...unique.values()].slice(0, 4);
 
       if (!topPages.length) {
-        const guessTitle = question
-          .replace(/^(what is|what are|how to|how do i|tell me about)\s+/i, "")
-          .trim()
-          .replace(/\b\w/g, c => c.toUpperCase());
+        const guessTitle = directGuess.replace(/\b\w/g, c => c.toUpperCase());
 
         const params = new URLSearchParams({
           action: "query",
@@ -329,7 +335,8 @@ if (path === "/ai") {
   }
 
   return json({ error: lastError }, 500);
-      }
+    }
+
 
 
 
