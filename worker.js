@@ -95,7 +95,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 }
 
-if (path === "/ai-test") {
+if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
@@ -445,7 +445,7 @@ if (path === "/ai-test") {
   return json({ error: lastError }, 500);
       }
                         
-if (path === "/ai") {
+if (path === "/ai-backup") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
