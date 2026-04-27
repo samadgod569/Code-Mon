@@ -95,6 +95,356 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 }
 
+if (path === "/ai-test") {
+  const url = new URL(request.url);
+  const question = url.searchParams.get("question");
+
+  if (!question) return json({ error: "Missing question" }, 400);
+
+  const MODEL = "openai/gpt-oss-120b:free";
+
+  let keysRaw = await env.FILES.get("OPR");
+  if (!keysRaw) return json({ error: "No API keys found" }, 500);
+
+  let keys;
+  try {
+    keys = JSON.parse(keysRaw);
+  } catch {
+    return json({ error: "Invalid key format in KV" }, 500);
+  }
+
+  if (!Array.isArray(keys) || !keys.length)
+    return json({ error: "No valid API keys" }, 500);
+
+  const safeJson = async (res) => {
+    const text = await res.text();
+    if (!text || text.trim().startsWith("<")) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  };
+
+  async function getAllPages() {
+    let allPages = [];
+    let apcontinue = "";
+    while (true) {
+      const apiUrl = new URL("https://craftersmc.wiki.gg/api.php");
+      apiUrl.searchParams.set("action", "query");
+      apiUrl.searchParams.set("list", "allpages");
+      apiUrl.searchParams.set("aplimit", "max");
+      apiUrl.searchParams.set("apnamespace", "0");
+      apiUrl.searchParams.set("format", "json");
+      if (apcontinue) apiUrl.searchParams.set("apcontinue", apcontinue);
+      const res = await fetch(apiUrl.toString(), {
+        headers: {
+          "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
+          "Accept": "application/json"
+        }
+      });
+      const data = await safeJson(res);
+      if (!data) break;
+      allPages.push(...(data?.query?.allpages ?? []));
+      if (!data.continue?.apcontinue) break;
+      apcontinue = data.continue.apcontinue;
+    }
+    return allPages;
+  }
+
+  const levenshtein = (a, b) => {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, (_, i) =>
+      Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    );
+    for (let i = 1; i <= m; i++)
+      for (let j = 1; j <= n; j++)
+        dp[i][j] = a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    return dp[m][n];
+  };
+
+  const similarity = (a, b) => {
+    const maxLen = Math.max(a.length, b.length);
+    if (maxLen === 0) return 1;
+    return (maxLen - levenshtein(a, b)) / maxLen;
+  };
+
+  const prefixMatch = (word, target) =>
+    target.startsWith(word) || word.startsWith(target);
+
+  const bigrams = (str) => {
+    const set = new Set();
+    for (let i = 0; i < str.length - 1; i++) set.add(str.slice(i, i + 2));
+    return set;
+  };
+
+  const bigramSimilarity = (a, b) => {
+    const ba = bigrams(a), bb = bigrams(b);
+    let shared = 0;
+    for (const bg of ba) if (bb.has(bg)) shared++;
+    return (2 * shared) / (ba.size + bb.size || 1);
+  };
+
+  const STOPWORDS = new Set([
+    "what","where","when","who","how","why","is","are","was","were","the",
+    "a","an","in","on","of","to","do","does","did","can","could","would",
+    "should","tell","me","about","give","info","explain","describe","get",
+    "find","show","list","and","or","for","with","that","this","its","it",
+    "i","my","your","their","there","here","have","has","had","been","be"
+  ]);
+
+  const extractKeywords = (q) => {
+    const words = q.toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !STOPWORDS.has(w));
+    const phrases = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      phrases.push(words[i] + " " + words[i + 1]);
+    }
+    return { words, phrases };
+  };
+
+  const scoreTitle = (title, keywords) => {
+    const { words, phrases } = keywords;
+    const titleLower = title.toLowerCase();
+    const titleWords = titleLower.split(/[\s\-_]+/);
+    let score = 0;
+
+    for (const phrase of phrases) {
+      if (titleLower.includes(phrase)) {
+        score += 3.0;
+      } else {
+        const phraseSim = bigramSimilarity(titleLower, phrase);
+        if (phraseSim >= 0.6) score += phraseSim * 2.0;
+      }
+    }
+
+    for (const kw of words) {
+      let best = 0;
+      for (const tw of titleWords) {
+        if (tw === kw) { best = Math.max(best, 2.0); continue; }
+        if (tw.includes(kw)) { best = Math.max(best, 1.5); continue; }
+        if (kw.includes(tw) && tw.length > 3) { best = Math.max(best, 1.2); continue; }
+        if (prefixMatch(kw, tw) && kw.length > 3) { best = Math.max(best, 1.0); continue; }
+        if (Math.abs(tw.length - kw.length) > 4) continue;
+        const lSim = similarity(tw, kw);
+        if (lSim >= 0.82) { best = Math.max(best, lSim * 1.3); continue; }
+        const bSim = bigramSimilarity(tw, kw);
+        if (bSim >= 0.6) best = Math.max(best, bSim * 0.9);
+      }
+      score += best;
+    }
+
+    for (const kw of words) {
+      if (titleLower.includes(kw)) score += 0.5;
+    }
+
+    if (titleWords.length <= 3 && score > 0) score += 0.4;
+
+    for (const kw of words) {
+      if (titleLower.startsWith(kw)) score += 0.6;
+    }
+
+    return score;
+  };
+
+  let lastError = "All keys failed";
+
+  for (const key of keys) {
+    try {
+      const allPages = await getAllPages();
+      if (!allPages.length) {
+        lastError = "Could not fetch wiki page list";
+        continue;
+      }
+
+      const allTitles = allPages.map(p => p.title);
+      const keywords = extractKeywords(question);
+
+      if (!keywords.words.length) {
+        lastError = "Could not extract keywords from question";
+        continue;
+      }
+
+      const scored = allTitles
+        .map(title => ({ title, score: scoreTitle(title, keywords) }))
+        .filter(r => r.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      const MIN = 7;
+      let chosenTitles = scored.slice(0, MIN).map(r => r.title);
+
+      if (scored.length > MIN) {
+        const threshold = scored[MIN - 1].score * 0.8;
+        for (let i = MIN; i < scored.length; i++) {
+          if (scored[i].score >= threshold) chosenTitles.push(scored[i].title);
+          else break;
+        }
+      }
+
+      chosenTitles = chosenTitles.slice(0, 12);
+
+      if (!chosenTitles.length) {
+        lastError = "No relevant pages found for question";
+        continue;
+      }
+
+      const fetchedPages = (
+        await Promise.all(
+          chosenTitles.map(async (title) => {
+            const params = new URLSearchParams({
+              action: "query",
+              prop: "revisions",
+              rvprop: "content",
+              rvslots: "main",
+              redirects: "1",
+              titles: title,
+              format: "json"
+            });
+            const res = await fetch(`https://craftersmc.wiki.gg/api.php?${params}`, {
+              headers: {
+                "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
+                "Accept": "application/json"
+              }
+            });
+            const data = await safeJson(res);
+            if (!data) return null;
+            let raw = "";
+            let resolvedTitle = title;
+            for (const id in data?.query?.pages ?? {}) {
+              if (id === "-1") return null;
+              resolvedTitle = data.query.pages[id]?.title ?? title;
+              // ✅ Keep the raw wikitext — no cleaning at all
+              raw = data.query.pages[id]?.revisions?.[0]?.slots?.main?.["*"] ?? "";
+            }
+            if (!raw.trim()) return null;
+            return {
+              title: resolvedTitle,
+              url: `https://craftersmc.wiki.gg/wiki/${encodeURIComponent(resolvedTitle.replace(/ /g, "_"))}`,
+              content: raw   // raw wikitext passed as-is
+            };
+          })
+        )
+      ).filter(Boolean);
+
+      if (!fetchedPages.length) {
+        lastError = "All chosen pages were empty";
+        continue;
+      }
+
+      const pagesWithImages = await Promise.all(
+        fetchedPages.map(async (page) => {
+          try {
+            const fileName = page.title.replace(/ /g, "_") + ".png";
+            const params = new URLSearchParams({
+              action: "query",
+              titles: `File:${fileName}`,
+              prop: "imageinfo",
+              iiprop: "url",
+              format: "json"
+            });
+            const res = await fetch(`https://craftersmc.wiki.gg/api.php?${params}`, {
+              headers: {
+                "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
+                "Accept": "application/json"
+              }
+            });
+            const data = await safeJson(res);
+            let imgUrl = null;
+            for (const id in data?.query?.pages ?? {}) {
+              if (id === "-1") break;
+              imgUrl = data.query.pages[id]?.imageinfo?.[0]?.url ?? null;
+            }
+            return { ...page, imgUrl };
+          } catch {
+            return { ...page, imgUrl: null };
+          }
+        })
+      );
+
+      // ✅ Raised slice limit since raw wikitext is denser — adjust as needed
+      const context = pagesWithImages
+        .map(p => {
+          const imgLine = p.imgUrl ? `Image: ${p.imgUrl}\n` : "";
+          return `### ${p.title}\n${imgLine}${p.content}`;
+        })
+        .join("\n\n")
+        .slice(0, 30000);
+
+      const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You are a CraftersMC wiki assistant. You will receive raw MediaWiki wikitext scraped directly from the CraftersMC wiki. Your job is to read and interpret this wikitext accurately to answer the user's question.
+
+## How to read wikitext:
+- \`{{TemplateName|arg1|arg2|key=value}}\` are templates. Many contain real game data — read their arguments carefully.
+  - \`{{item|Diamond Sword|1}}\` → 1x Diamond Sword
+  - \`{{craft table|result=...|materials=...}}\` → a crafting recipe with listed materials
+  - \`{{infobox|...}}\` → structured item/mob data such as stats, rarity, type
+  - \`{{minion|Fire|V}}\` → Fire Minion V
+  - \`{{color|...}}\`, \`{{rarity|...}}\`, \`{{icon|...}}\` → cosmetic/display hints, extract the value inside
+  - Navigation, stub, and navbox templates have no useful data — skip them
+- \`[[Link|Display Text]]\` → refers to "Display Text" as a wiki page or item name
+- \`[[Link]]\` → the word itself is the page/item name
+- \`'''bold'''\` and \`''italic''\` → emphasis, not meaningful data
+- \`== Section ==\` → section heading
+- \`* item\` → bullet list entry
+- \`<ref>...</ref>\` → citation footnote, ignore
+- \`<br>\`, \`<div>\`, \`<span>\` etc. → HTML layout tags, ignore the tags but keep inner text if meaningful
+
+## Rules:
+- NEVER use outside knowledge, assumptions, or training data
+- NEVER invent items, stats, recipes, or mechanics
+- Extract and present all relevant data found inside templates and wikitext — do not skip template contents
+- If crafting/obtaining info is present, list all materials with exact quantities and any workstation/requirement
+- If something is not in the context at all, say: "The wiki does not have that information."
+- You may embed the item image once at the top using markdown: ![Title](image_url)
+- Only use image URLs explicitly provided in the context under "Image:". Never guess or invent image URLs`
+            },
+            {
+              role: "user",
+              content: `QUESTION: ${question}\n\nCONTEXT (raw wikitext):\n${context}`
+            }
+          ]
+        })
+      });
+
+      const out = await safeJson(finalRes);
+      const content = out?.choices?.[0]?.message?.content ?? "";
+
+      if (!content) {
+        lastError = "Empty response from model";
+        continue;
+      }
+
+      return json({
+        content,
+        sources: pagesWithImages.map(p => ({
+          title: p.title,
+          url: p.url,
+          imgUrl: p.imgUrl
+        }))
+      });
+
+    } catch (e) {
+      lastError = e.message;
+    }
+  }
+
+  return json({ error: lastError }, 500);
+      }
+                        
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
