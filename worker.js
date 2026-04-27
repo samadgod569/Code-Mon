@@ -217,18 +217,23 @@ if (path === "/ai") {
       const resolved = resolveTemplate(m[1]);
       t = t.slice(0, m.index) + resolved + t.slice(m.index + m[0].length);
     }
-
     t = t.replace(/\{\{[\s\S]*?\}\}/g, "");
+
     t = t.replace(/\n={2,6}\s*Navigation\s*={2,6}[\s\S]*/i, "");
+
     t = t.replace(/\[\[(?:[^\]|]*\|)?([^\]]+)\]\]/g, "$1");
-    t = t.replace(/={2,6}\s*(.+?)\s*={2,6}/g, (_, header) => `\n\n=== ${header.trim()} ===\n`);
+
     t = t.replace(/<[^>]+>/g, "");
+
     t = t.replace(/'{2,3}/g, "");
+
     t = t.replace(/\[\d+\]/g, "");
-    t = t.replace(/^\*+\s*/gm, "• ");
+
     t = t.replace(/[ \t]{2,}/g, " ");
     t = t.replace(/\n{4,}/g, "\n\n\n");
     t = t.replace(/[ \t]+$/gm, "");
+
+    t = t.replace(/={2,6}\s*(.+?)\s*={2,6}/g, (_, h) => `\n\n[${h.trim()}]\n`);
 
     return t.trim().slice(0, 12000);
   };
@@ -358,13 +363,6 @@ if (path === "/ai") {
     return score;
   };
 
-  const extractCrafting = (cleanedText) => {
-    const match = cleanedText.match(
-      /=== Obtaining ===[\s\S]*?(?=\n===\s|\n==\s|$)/i
-    );
-    return match ? match[0].trim() : "";
-  };
-
   let lastError = "All keys failed";
 
   for (const key of keys) {
@@ -388,7 +386,7 @@ if (path === "/ai") {
         .filter(r => r.score > 0)
         .sort((a, b) => b.score - a.score);
 
-      const MIN = 3;
+      const MIN = 7;
       let chosenTitles = scored.slice(0, MIN).map(r => r.title);
 
       if (scored.length > MIN) {
@@ -399,7 +397,7 @@ if (path === "/ai") {
         }
       }
 
-      chosenTitles = chosenTitles.slice(0, 3);
+      chosenTitles = chosenTitles.slice(0, 12);
 
       if (!chosenTitles.length) {
         lastError = "No relevant pages found for question";
@@ -482,11 +480,10 @@ if (path === "/ai") {
       const context = pagesWithImages
         .map(p => {
           const imgLine = p.imgUrl ? `Image: ${p.imgUrl}\n` : "";
-          const crafting = extractCrafting(p.content);
-          return `### ${p.title}\n${imgLine}${crafting || p.content}`;
+          return `### ${p.title}\n${imgLine}${p.content}`;
         })
         .join("\n\n")
-        .slice(0, 30000);
+        .slice(0, 20000);
 
       const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -499,26 +496,19 @@ if (path === "/ai") {
           messages: [
             {
               role: "system",
-              content: `You are CraftersMC AI assistant by CraftersMC Navigators.
+              content: `You are a CraftersMC wiki assistant. Answer using ONLY the provided context. You have zero outside knowledge — if it is not in the context, it does not exist.
 
-Extract useful information clearly.
-
-If crafting exists:
-- Always list materials in bullet points
-- Include quantities and requirements
-
-Convert messy wiki text into clean readable answers.
-
-Never say "no info" unless nothing relevant exists.`
+Rules:
+- NEVER use outside knowledge, assumptions, or training data
+- NEVER invent items, stats, recipes, or mechanics
+- If the context has crafting or obtaining info, list materials in bullet points with exact quantities and requirements
+- If something is not in the context, say: "The wiki does not have that information."
+- You may embed the item image once at the top of your response using markdown: ![Title](image_url)
+- Only use image URLs explicitly provided in the context under "Image:". Never invent or guess image URLs`
             },
             {
               role: "user",
-              content: `QUESTION: ${question}
-
-If this is about crafting or obtaining, extract recipe clearly.
-
-CONTEXT:
-${context}`
+              content: `QUESTION: ${question}\n\nCONTEXT:\n${context}`
             }
           ]
         })
@@ -547,9 +537,7 @@ ${context}`
   }
 
   return json({ error: lastError }, 500);
-                                        }
-
-
+          }
 
 if (path === "/openIDE/likes" && request.method === "POST") {
   let body;
