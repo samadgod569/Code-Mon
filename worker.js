@@ -95,7 +95,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 }
 
-        
 if (path === "/ai") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -127,23 +126,112 @@ if (path === "/ai") {
     }
   };
 
-  const cleanText = (t) =>
-    (t || "")
-      .replace(/\{\{[^}]*\}\}/gs, "")
-      .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
-      .replace(/={2,6}([^=]+)={2,6}/g, "\n$1\n")
-      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")
-      .replace(/<[^>]+>/g, "")
-      .replace(/\[\d+\]/g, "")
-      .replace(/'''?/g, "")
-      .replace(/==\s*References[\s\S]*/i, "")
-      .replace(/==\s*Navigation[\s\S]*/i, "")
-      .replace(/Category:.*\n/g, "")
-      .replace(/File:.*\n/g, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .replace(/[ \t]+\n/g, "\n")
-      .trim()
-      .slice(0, 6000);
+  const resolveTemplate = (templateContent) => {
+    const parts = templateContent.split("|");
+    const name = (parts[0] || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+    const posArgs = [];
+    const namedArgs = {};
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i];
+      const eqIdx = part.indexOf("=");
+      if (eqIdx > 0) {
+        const key = part.slice(0, eqIdx).trim();
+        if (/^[\w ]+$/.test(key)) {
+          namedArgs[key.toLowerCase()] = part.slice(eqIdx + 1);
+          continue;
+        }
+      }
+      posArgs.push(part.trim());
+    }
+
+    const pos0 = (posArgs[0] || "").trim();
+    const pos1 = (posArgs[1] || "").trim();
+
+    switch (name) {
+      case "item": {
+        const itemName = (pos0 || (namedArgs["name"] || "")).trim();
+        const qty = (pos1 || "").trim();
+        if (!itemName) return "";
+        return qty ? `${qty}x ${itemName}` : itemName;
+      }
+      case "mob":
+      case "name":
+      case "icon":
+      case "color":
+      case "rarity":
+        return pos0;
+      case "minion": {
+        const type = pos0;
+        const level = pos1;
+        if (!type) return "";
+        return level ? `${type} Minion ${level}` : `${type} Minion`;
+      }
+      case "*":
+        return "\n• ";
+      case "craft table": {
+        const result = (namedArgs["result"] || pos0 || "").trim();
+        const rawMats = (namedArgs["materials"] || "").trim();
+        const source = (namedArgs["source"] || "").trim();
+        let out = result ? `\n[Recipe] ${result}\n` : "\n[Recipe]\n";
+        if (rawMats) {
+          const matLines = rawMats
+            .split("\n")
+            .map((l) => l.replace(/^\*+\s*/, "").trim())
+            .filter(Boolean)
+            .map((l) => `  • ${l}`)
+            .join("\n");
+          if (matLines) out += `  Materials:\n${matLines}\n`;
+        }
+        if (source) out += `  Requires: ${source}\n`;
+        return out;
+      }
+      case "patch":
+        return pos0 ? `v${pos0}` : "";
+      case "history":
+        return (namedArgs["update"] || pos0 || "").trim();
+      case "table":
+      case "allp":
+        return "";
+      default:
+        if (
+          name.startsWith("navbox") ||
+          name.startsWith("infobox") ||
+          name.startsWith("stub")
+        ) return "";
+        return pos0;
+    }
+  };
+
+  const cleanText = (raw) => {
+    if (!raw) return "";
+    let t = raw;
+
+    t = t.replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "");
+    t = t.replace(/<ref[^>]*\/>/gi, "");
+
+    let passes = 0;
+    while (passes++ < 300) {
+      const m = t.match(/\{\{([^{}]*)\}\}/);
+      if (!m) break;
+      const resolved = resolveTemplate(m[1]);
+      t = t.slice(0, m.index) + resolved + t.slice(m.index + m[0].length);
+    }
+
+    t = t.replace(/\{\{[\s\S]*?\}\}/g, "");
+    t = t.replace(/\n={2,6}\s*Navigation\s*={2,6}[\s\S]*/i, "");
+    t = t.replace(/\[\[(?:[^\]|]*\|)?([^\]]+)\]\]/g, "$1");
+    t = t.replace(/={2,6}\s*(.+?)\s*={2,6}/g, (_, header) => `\n\n=== ${header.trim()} ===\n`);
+    t = t.replace(/<[^>]+>/g, "");
+    t = t.replace(/'{2,3}/g, "");
+    t = t.replace(/\[\d+\]/g, "");
+    t = t.replace(/^\*+\s*/gm, "• ");
+    t = t.replace(/[ \t]{2,}/g, " ");
+    t = t.replace(/\n{4,}/g, "\n\n\n");
+    t = t.replace(/[ \t]+$/gm, "");
+
+    return t.trim().slice(0, 12000);
+  };
 
   async function getAllPages() {
     let allPages = [];
@@ -178,9 +266,9 @@ if (path === "/ai") {
     );
     for (let i = 1; i <= m; i++)
       for (let j = 1; j <= n; j++)
-        dp[i][j] = a[i-1] === b[j-1]
-          ? dp[i-1][j-1]
-          : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+        dp[i][j] = a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
     return dp[m][n];
   };
 
@@ -270,12 +358,18 @@ if (path === "/ai") {
     return score;
   };
 
+  const extractCrafting = (cleanedText) => {
+    const match = cleanedText.match(
+      /=== Obtaining ===[\s\S]*?(?=\n===\s|\n==\s|$)/i
+    );
+    return match ? match[0].trim() : "";
+  };
+
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
       const allPages = await getAllPages();
-
       if (!allPages.length) {
         lastError = "Could not fetch wiki page list";
         continue;
@@ -294,7 +388,7 @@ if (path === "/ai") {
         .filter(r => r.score > 0)
         .sort((a, b) => b.score - a.score);
 
-      const MIN = 7;
+      const MIN = 3;
       let chosenTitles = scored.slice(0, MIN).map(r => r.title);
 
       if (scored.length > MIN) {
@@ -305,7 +399,7 @@ if (path === "/ai") {
         }
       }
 
-      chosenTitles = chosenTitles.slice(0, 12);
+      chosenTitles = chosenTitles.slice(0, 3);
 
       if (!chosenTitles.length) {
         lastError = "No relevant pages found for question";
@@ -388,10 +482,11 @@ if (path === "/ai") {
       const context = pagesWithImages
         .map(p => {
           const imgLine = p.imgUrl ? `Image: ${p.imgUrl}\n` : "";
-          return `### ${p.title}\n${imgLine}${p.content}`;
+          const crafting = extractCrafting(p.content);
+          return `### ${p.title}\n${imgLine}${crafting || p.content}`;
         })
         .join("\n\n")
-        .slice(0, 20000);
+        .slice(0, 30000);
 
       const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -404,14 +499,26 @@ if (path === "/ai") {
           messages: [
             {
               role: "system",
-              content: `You are a CraftersMC wiki assistant. Answer using ONLY the provided context. If the answer is there, extract it clearly. If not, say exactly what info is missing.
+              content: `You are a CraftersMC wiki assistant.
 
-When relevant, you may embed images in your response using markdown image syntax: ![Title](image_url)
-Only use image URLs that are explicitly provided in the context under "Image:". Never invent or guess image URLs.`
+Extract useful information clearly.
+
+If crafting exists:
+- Always list materials in bullet points
+- Include quantities and requirements
+
+Convert messy wiki text into clean readable answers.
+
+Never say "no info" unless nothing relevant exists.`
             },
             {
               role: "user",
-              content: `QUESTION: ${question}\n\nCONTEXT:\n${context}`
+              content: `QUESTION: ${question}
+
+If this is about crafting or obtaining, extract recipe clearly.
+
+CONTEXT:
+${context}`
             }
           ]
         })
@@ -440,8 +547,7 @@ Only use image URLs that are explicitly provided in the context under "Image:". 
   }
 
   return json({ error: lastError }, 500);
-         }
-
+                                        }
 
 
 
