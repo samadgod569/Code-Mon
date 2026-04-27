@@ -499,7 +499,7 @@ if (path === "/ai") {
           messages: [
             {
               role: "system",
-              content: `You are a CraftersMC wiki assistant.
+              content: `You are CraftersMC AI assistant by CraftersMC Navigators.
 
 Extract useful information clearly.
 
