@@ -129,7 +129,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   // ── Fetch custom data.json ──────────────────────────────────────────────────
   let customData = [];
   try {
-    const dataRes = await fetch("data.json");
+    const dataRes = await fetch("https://craftersmc-navigators.xyz/ai-data.json");
     const dataJson = await safeJson(dataRes);
     if (Array.isArray(dataJson)) customData = dataJson;
   } catch {
