@@ -129,9 +129,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   // ── Fetch custom data.json ──────────────────────────────────────────────────
   let customData = [];
   try {
-    const dataRes = await fetch("https://YOUR_DOMAIN/data.json", {  // 🔁 Replace with your actual URL
-      headers: { "Accept": "application/json" }
-    });
+    const dataRes = await fetch("data.json");
     const dataJson = await safeJson(dataRes);
     if (Array.isArray(dataJson)) customData = dataJson;
   } catch {
