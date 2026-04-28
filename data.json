@@ -1,22 +1,23 @@
-[{
+[
+  {
     "title": "CraftersMC Navigators",
-    "des": "CraftersMC Navigators, looking for a navigator who can guide you at very part of your craftersmc journey, have a glance yiu have come to the perfect place.",
-    "data": "CraftersMc navigators is one of the non official craftersmc project. CraftersMc navigators give user an experience of various tools like many calculators, bazzar and even craftersmc ai to even farming contest predictors and even cool home page. It is one of the most good looking website on CraftersMC it is owned by C69P2W, Dev. and Ndr",
+    "des": "CraftersMC Navigators, looking for a navigator who can guide you at every part of your CraftersMC journey? Have a glance—you’ve come to the perfect place.",
+    "data": "CraftersMC Navigators is one of the non-official CraftersMC projects. It provides users with various tools like calculators, bazaar utilities, CraftersMC AI, farming contest predictors, and a visually appealing homepage. It is one of the best-looking websites on CraftersMC and is owned by C69P2W Dev and Ndr.",
     "url": "https://craftersmc-navigators.xyz/ai",
     "img": "https://craftersmc-navigators.xyz/assets/main/icon.png"
-},
-{
-    "des": "CraftersMC owners or founders of craftersMC iphyruss and irreleventdev",
-    "data": "iphyruss and irrelevent dev are the owners or founder os craftersmc, irreleveantdev is one of the software engenierr. iphyruss birthday is on 26th march and irreleventdev birthday is on 12th october",
-    "img": "no img for this",
-    "title": null,
-    "url": null
-},
-{
-    "title": "CraftersMC calculators - by CraftersMC Navigators",
-    "des": "CraftersMC navigators calculators or tools by navigators Farm yield optimization, Slayer XP tracking bosses required, Farming Fortune stats calculation, Minion production rates profit efficiency, Emerald Armor defense bonus scaling, Blaze Armor damage boost essence scaling, Emerald Blade coin-based damage scaling, Raider Axe kill wood damage scaling, Reaper Armor zombie defense synergy, Mastiff Permafrost extra health scaling, Atoned Helmet speed-based damage boost, Trial of Fire survival healing efficiency, Pet XP leveling rarity upgrade, Experience level XP requirements bottles, Skill average target calculation, Skill level XP requirement, Magic find max criteria optimization, Minion upgrade cost calculation, Blood God Crest strength kill scaling",
-    "data": "CraftersMC Navigators offers a wide range of useful calculators and tools designed to help players optimize their gameplay, including features like Farm Production to estimate crop yield and efficiency, Slayer XP to track boss kills needed for experience goals, and Farming Fortune to calculate total fortune from gear and upgrades. It also includes Minion Production and Minion Manufacturing calculators for analyzing profits and upgrade costs, along with gear-focused tools such as Emerald Armor, Blaze Armor, Emerald Blade, Raider Axe, Reaper Armor, Mastiff/Permafrost Armor, and Atoned Helmet to measure stats and bonuses. Additional tools like Trial of Fire help estimate survival and healing efficiency, while Pet Experience and Experience Level calculators track XP requirements. For progression, players can use the Skill Average and Skill Level calculators, as well as the Magic Find calculator to reach optimal stats, and the Blood God Crest Strength calculator to determine strength gained from kills; the full list of tools is available at https://craftersmc-navigators.xyz/tools/tools.",
-"url": "https://craftersmc-navigators.xyz/tools/tools",
-"img": "https://craftersmc-navigators.xyz/assets/main/icon.png"
-}
+  },
+  {
+    "title": "CraftersMC Founders",
+    "des": "CraftersMC owners or founders are iphyruss and irreleventdev.",
+    "data": "Iphyruss and irreleventdev are the founders of CraftersMC. Irreleventdev is a software engineer. Iphyruss's birthday is on 26th March, and irreleventdev's birthday is on 12th October.",
+    "url": null,
+    "img": null
+  },
+  {
+    "title": "CraftersMC Calculators - by CraftersMC Navigators",
+    "des": "A collection of tools including farm yield optimization, Slayer XP tracking, Farming Fortune stats, minion production efficiency, armor scaling, weapon scaling, and more.",
+    "data": "CraftersMC Navigators offers a wide range of useful calculators and tools designed to help players optimize their gameplay, including Farm Production, Slayer XP tracking, Farming Fortune calculation, Minion Production and Manufacturing, gear stat tools like Emerald Armor, Blaze Armor, Emerald Blade, Raider Axe, Reaper Armor, Mastiff/Permafrost Armor, and Atoned Helmet. It also includes Trial of Fire survival calculations, Pet Experience tracking, Experience Level requirements, Skill Average and Skill Level calculators, Magic Find optimization, and Blood God Crest strength scaling tools.",
+    "url": "https://craftersmc-navigators.xyz/tools/tools",
+    "img": "https://craftersmc-navigators.xyz/assets/main/icon.png"
+  }
 ]
