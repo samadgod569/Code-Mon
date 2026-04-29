@@ -110,7 +110,7 @@ if (path === "/api/auction") {
   }
 
   try {
-    const res = await fetch(`https://api.craftersmc.net/docs/v1/skyblock/auction/${auctionId}`, {
+    const res = await fetch(`https://api.craftersmc.net/v1/skyblock/auction/${auctionId}`, {
       headers: {
         "X-API-Key": apiKey
       }
