@@ -150,7 +150,7 @@ if (path === "/ai-1.1") {
   if (!question) return json({ error: "Missing question" }, 400);
 
   const MODEL = "openai/gpt-oss-120b:free";
-  const YT_API_KEY = "AIzaSyAKG7DFv19FmlsvW2se5cVwZvDBYkhrBTA";
+  const YT_API_KEY = await env.FILES.get("google");
 
   let keysRaw = await env.FILES.get("OPR");
   if (!keysRaw) return json({ error: "No API keys found" }, 500);
