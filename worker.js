@@ -95,13 +95,62 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 }
 
-    if (path === "/ai-1.1") {
+if (path === "/api/auction") {
+  const url = new URL(request.url);
+  const auctionId = url.searchParams.get("auctionId");
+
+  if (!auctionId) return json({ error: "Missing auctionId" }, 400);
+
+  let apiKey;
+  try {
+    apiKey = await env.FILES.get("CMC-API");
+    if (!apiKey) return json({ error: "API key not found" }, 500);
+  } catch {
+    return json({ error: "Failed to retrieve API key" }, 500);
+  }
+
+  try {
+    const res = await fetch(`https://api.craftersmc.net/docs/v1/skyblock/auction/${auctionId}`, {
+      headers: {
+        "X-API-Key": apiKey
+      }
+    });
+
+    const text = await res.text();
+
+    if (!text || text.trim().startsWith("<")) {
+      return json({ error: "Invalid response from CraftersMC API" }, 502);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return json({ error: "Failed to parse CraftersMC API response" }, 502);
+    }
+
+    if (!res.ok) {
+      return json({ error: data?.message ?? "CraftersMC API error", status: res.status }, res.status);
+    }
+
+    return json(data);
+
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+      }
+    
+
+
+
+if (path === "/ai-1.1") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
   if (!question) return json({ error: "Missing question" }, 400);
 
   const MODEL = "openai/gpt-oss-120b:free";
+  const YT_API_KEY = "AIzaSyAKG7DFv19FmlsvW2se5cVwZvDBYkhrBTA";
 
   let keysRaw = await env.FILES.get("OPR");
   if (!keysRaw) return json({ error: "No API keys found" }, 500);
@@ -126,16 +175,92 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
     }
   };
 
-  // ── Fetch custom data.json ──────────────────────────────────────────────────
   let customData = [];
   try {
     const dataRes = await fetch("https://craftersmc-navigators.xyz/ai-data.json");
     const dataJson = await safeJson(dataRes);
     if (Array.isArray(dataJson)) customData = dataJson;
-  } catch {
-    // If data.json fails, continue without it
-  }
-  // ───────────────────────────────────────────────────────────────────────────
+  } catch {}
+
+  const isCraftersMCRelated = (title) => {
+    const t = title.toLowerCase();
+    return (
+      t.includes("craftersmc") ||
+      t.includes("crafters mc") ||
+      t.includes("#craftersmc") ||
+      t.includes("crafters server") ||
+      t.includes("crafters smp")
+    );
+  };
+
+  const scoreYouTubeTitle = (title, keywords) => {
+    const { words, phrases } = keywords;
+    const titleLower = title.toLowerCase();
+    const titleWords = titleLower.split(/[\s\-_]+/);
+    let score = 0;
+
+    for (const phrase of phrases) {
+      if (titleLower.includes(phrase)) score += 3.0;
+    }
+
+    for (const kw of words) {
+      for (const tw of titleWords) {
+        if (tw === kw) { score += 2.0; break; }
+        if (tw.includes(kw)) { score += 1.5; break; }
+      }
+    }
+
+    if (isCraftersMCRelated(title)) score += 5.0;
+
+    return score;
+  };
+
+  let youtubVideos = [];
+  try {
+    const ytSearchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+    ytSearchUrl.searchParams.set("part", "snippet");
+    ytSearchUrl.searchParams.set("q", `CraftersMC ${question}`);
+    ytSearchUrl.searchParams.set("maxResults", "10");
+    ytSearchUrl.searchParams.set("type", "video");
+    ytSearchUrl.searchParams.set("relevanceLanguage", "en");
+    ytSearchUrl.searchParams.set("key", YT_API_KEY);
+
+    const ytRes = await fetch(ytSearchUrl.toString());
+    const ytData = await safeJson(ytRes);
+
+    if (ytData?.items?.length) {
+      const keywords = (() => {
+        const STOPWORDS = new Set([
+          "what","where","when","who","how","why","is","are","was","were","the",
+          "a","an","in","on","of","to","do","does","did","can","could","would",
+          "should","tell","me","about","give","info","explain","describe","get",
+          "find","show","list","and","or","for","with","that","this","its","it",
+          "i","my","your","their","there","here","have","has","had","been","be"
+        ]);
+        const words = question.toLowerCase()
+          .replace(/[^\w\s]/g, "")
+          .split(/\s+/)
+          .filter(w => w.length > 2 && !STOPWORDS.has(w));
+        const phrases = [];
+        for (let i = 0; i < words.length - 1; i++) phrases.push(words[i] + " " + words[i + 1]);
+        return { words, phrases };
+      })();
+
+      youtubVideos = ytData.items
+        .map(item => ({
+          videoId: item.id?.videoId ?? null,
+          title: item.snippet?.title ?? "",
+          description: item.snippet?.description ?? "",
+          channel: item.snippet?.channelTitle ?? "",
+          thumbnail: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null,
+          publishedAt: item.snippet?.publishedAt ?? null,
+          score: scoreYouTubeTitle(item.snippet?.title ?? "", keywords)
+        }))
+        .filter(v => v.videoId && v.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+    }
+  } catch {}
 
   async function getAllPages() {
     let allPages = [];
@@ -262,14 +387,12 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
     return score;
   };
 
-  // ── Score a custom data.json entry by matching keywords against its `des` ──
   const scoreCustomEntry = (entry, keywords) => {
     const { words, phrases } = keywords;
     const text = (entry.des ?? "").toLowerCase();
     const textWords = text.split(/[\s\-_,.:;!?]+/);
     let score = 0;
 
-    // Phrase matches in description (weighted slightly lower than wiki title exact match)
     for (const phrase of phrases) {
       if (text.includes(phrase)) {
         score += 2.5;
@@ -279,7 +402,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
       }
     }
 
-    // Word matches in description
     for (const kw of words) {
       let best = 0;
       for (const tw of textWords) {
@@ -298,13 +420,11 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
     return score;
   };
-  // ───────────────────────────────────────────────────────────────────────────
 
   let lastError = "All keys failed";
 
   for (const key of keys) {
     try {
-      // ── Match custom data.json entries ──────────────────────────────────────
       const keywords = extractKeywords(question);
 
       if (!keywords.words.length) {
@@ -314,25 +434,23 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
       const scoredCustom = customData
         .map(entry => ({ entry, score: scoreCustomEntry(entry, keywords) }))
-        .filter(r => r.score > 1.0)           // minimum relevance threshold
+        .filter(r => r.score > 1.0)
         .sort((a, b) => b.score - a.score)
-        .slice(0, 3)                           // take top 3 custom entries max
+        .slice(0, 3)
         .map(r => r.entry);
 
-      // Build context block and sources list from matched custom entries
       const customContextBlocks = scoredCustom.map(e => {
         const imgLine = e.img ? `Image: ${e.img}\n` : "";
         return `### ${e.title ?? "Custom Entry"}\n${imgLine}${e.data ?? e.des ?? ""}`;
       });
 
       const customSources = scoredCustom
-        .filter(e => e.title && e.url)          // only include if both present
+        .filter(e => e.title && e.url)
         .map(e => ({
           title: e.title,
           url: e.url,
           imgUrl: e.img ?? null
         }));
-      // ────────────────────────────────────────────────────────────────────────
 
       const allPages = await getAllPages();
       if (!allPages.length) {
@@ -360,7 +478,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
       chosenTitles = chosenTitles.slice(0, 12);
 
-      if (!chosenTitles.length && !scoredCustom.length) {
+      if (!chosenTitles.length && !scoredCustom.length && !youtubVideos.length) {
         lastError = "No relevant pages found for question";
         continue;
       }
@@ -432,11 +550,16 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
         })
       );
 
-      // ── Merge custom context BEFORE wiki context so AI sees it first ────────
       const wikiContextBlocks = pagesWithImages.map(p => {
         const imgLine = p.imgUrl ? `Image: ${p.imgUrl}\n` : "";
         return `### ${p.title}\n${imgLine}${p.content}`;
       });
+
+      const youtubeContextBlock = youtubVideos.length
+        ? `## YOUTUBE VIDEOS\n` + youtubVideos.map(v =>
+            `Video Title: ${v.title}\nChannel: ${v.channel}\nVideo ID: ${v.videoId}\nThumbnail: ${v.thumbnail ?? "none"}\nDescription: ${v.description}\nPublished: ${v.publishedAt ?? "unknown"}\nEmbed URL: https://www.youtube.com/embed/${v.videoId}`
+          ).join("\n\n")
+        : "";
 
       const context = [
         ...(customContextBlocks.length
@@ -444,11 +567,11 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
           : []),
         ...(wikiContextBlocks.length
           ? ["## WIKI DATA (raw wikitext)", ...wikiContextBlocks]
-          : [])
+          : []),
+        ...(youtubeContextBlock ? [youtubeContextBlock] : [])
       ]
         .join("\n\n")
         .slice(0, 30000);
-      // ────────────────────────────────────────────────────────────────────────
 
       const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -461,36 +584,46 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
           messages: [
             {
               role: "system",
-              content: `You are a CraftersMC wiki assistant. You will receive two types of context:
+              content: `You are a CraftersMC wiki assistant. You will receive three types of context:
 
-1. **CUSTOM DATA** — manually curated entries from data.json. These are authoritative and should be prioritised over wiki data when both cover the same topic.
-2. **WIKI DATA** — raw MediaWiki wikitext scraped from the CraftersMC wiki.
+1. CUSTOM DATA — manually curated entries. These are authoritative and override wiki data on the same topic.
+2. WIKI DATA — raw MediaWiki wikitext from the CraftersMC wiki.
+3. YOUTUBE VIDEOS — search results from YouTube relevant to the question. Each entry includes a title, channel, description, video ID, and embed URL.
 
-## How to read wikitext:
-- \`{{TemplateName|arg1|arg2|key=value}}\` are templates. Many contain real game data — read their arguments carefully.
-  - \`{{item|Diamond Sword|1}}\` → 1x Diamond Sword
-  - \`{{craft table|result=...|materials=...}}\` → a crafting recipe with listed materials
-  - \`{{infobox|...}}\` → structured item/mob data such as stats, rarity, type
-  - \`{{minion|Fire|V}}\` → Fire Minion V
-  - \`{{color|...}}\`, \`{{rarity|...}}\`, \`{{icon|...}}\` → cosmetic/display hints, extract the value inside
+How to read wikitext:
+- {{TemplateName|arg1|arg2|key=value}} are templates with real game data — read arguments carefully.
+  - {{item|Diamond Sword|1}} means 1x Diamond Sword
+  - {{craft table|result=...|materials=...}} means a crafting recipe
+  - {{infobox|...}} means structured item or mob data
+  - {{minion|Fire|V}} means Fire Minion V
+  - {{color|...}}, {{rarity|...}}, {{icon|...}} are display hints — extract the value inside
   - Navigation, stub, and navbox templates have no useful data — skip them
-- \`[[Link|Display Text]]\` → refers to "Display Text" as a wiki page or item name
-- \`[[Link]]\` → the word itself is the page/item name
-- \`'''bold'''\` and \`''italic''\` → emphasis, not meaningful data
-- \`== Section ==\` → section heading
-- \`* item\` → bullet list entry
-- \`<ref>...</ref>\` → citation footnote, ignore
-- \`<br>\`, \`<div>\`, \`<span>\` etc. → HTML layout tags, ignore the tags but keep inner text if meaningful
+- [[Link|Display Text]] refers to Display Text as a wiki page or item
+- [[Link]] means the word itself is the page or item name
+- Bold and italic markers are emphasis only, not meaningful data
+- == Section == is a section heading
+- * item is a bullet list entry
+- <ref>...</ref> is a citation footnote — ignore it
+- <br>, <div>, <span> are HTML layout tags — ignore the tags but keep inner text if meaningful
 
-## Rules:
+Rules for wiki and custom data:
 - NEVER use outside knowledge, assumptions, or training data
 - NEVER invent items, stats, recipes, or mechanics
-- Custom data entries are pre-vetted — use them as-is without questioning their content
-- Extract and present all relevant data found inside templates and wikitext — do not skip template contents
-- If crafting/obtaining info is present, list all materials with exact quantities and any workstation/requirement
-- If something is not in the context at all, say: "The wiki does not have that information."
-- You may embed the item image once at the top using markdown: ![Title](image_url)
-- Only use image URLs explicitly provided in the context under "Image:". Never guess or invent image URLs`
+- Custom data entries are pre-vetted — use them as-is
+- Extract all relevant data from templates and wikitext — do not skip template contents
+- If crafting or obtaining info is present, list all materials with exact quantities and workstation requirements
+- If something is not in the context at all, say: The wiki does not have that information
+- You may embed an item image once at the top using markdown: ![Title](image_url)
+- Only use image URLs explicitly provided in the context under Image: — never guess or invent image URLs
+
+Rules for YouTube videos:
+- If one or more YouTube videos are present in the context and are relevant to the question, suggest them to the user
+- For each suggested video, render it as an embedded iframe using this exact format so the user can watch it directly:
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/VIDEO_ID" frameborder="0" allowfullscreen></iframe>
+- Replace VIDEO_ID with the actual Video ID from the context
+- Below each iframe, write the video title and channel name in plain text
+- Only suggest videos that are genuinely relevant to what the user asked — do not force video suggestions if they do not match
+- Never invent or guess video IDs or URLs — only use what is explicitly in the context`
             },
             {
               role: "user",
@@ -508,7 +641,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
         continue;
       }
 
-      // ── Merge wiki sources + custom sources (only those with title + url) ───
       return json({
         content,
         sources: [
@@ -518,9 +650,15 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
             imgUrl: p.imgUrl
           })),
           ...customSources
-        ]
+        ],
+        videos: youtubVideos.map(v => ({
+          videoId: v.videoId,
+          title: v.title,
+          channel: v.channel,
+          thumbnail: v.thumbnail,
+          embedUrl: `https://www.youtube.com/embed/${v.videoId}`
+        }))
       });
-      // ────────────────────────────────────────────────────────────────────────
 
     } catch (e) {
       lastError = e.message;
@@ -528,7 +666,11 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 
   return json({ error: lastError }, 500);
-  }
+}
+
+
+
+
 
 if (path === "/ai") {
   const url = new URL(request.url);
