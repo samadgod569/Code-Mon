@@ -97,9 +97,6 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
 if (path === "/api/auction") {
   const url = new URL(request.url);
-  const auctionId = url.searchParams.get("auctionId");
-
-  if (!auctionId) return json({ error: "Missing auctionId" }, 400);
 
   let apiKey;
   try {
@@ -110,7 +107,7 @@ if (path === "/api/auction") {
   }
 
   try {
-    const res = await fetch(`https://api.craftersmc.net/v1/skyblock/auction/${auctionId}`, {
+    const res = await fetch(`https://api.craftersmc.net/v1/skyblock/auctions`, {
       headers: {
         "X-API-Key": apiKey
       }
