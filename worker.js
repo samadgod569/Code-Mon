@@ -26,6 +26,10 @@ const corsHeaders = {
         status,
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
+
+
+
+    
 if (path === "/cloudra/deploy" && request.method === "POST") {
   let body;
 
@@ -95,6 +99,365 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 }
 
+
+
+if (path === "/ai-1.1") {
+  const url = new URL(request.url);
+  const question = url.searchParams.get("question");
+
+  if (!question) return json({ error: "Missing question" }, 400);
+
+  const MODEL = "openai/gpt-oss-120b:free";
+  const YT_API_KEY = env.FILES.get("google");
+
+  let keysRaw = await env.FILES.get("OPR");
+  if (!keysRaw) return json({ error: "No API keys found" }, 500);
+
+  let keys;
+  try {
+    keys = JSON.parse(keysRaw);
+  } catch {
+    return json({ error: "Invalid key format in KV" }, 500);
+  }
+
+  if (!Array.isArray(keys) || !keys.length)
+    return json({ error: "No valid API keys" }, 500);
+
+  const safeJson = async (res) => {
+    const text = await res.text();
+    if (!text || text.trim().startsWith("<")) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  };
+
+  let customData = [];
+  try {
+    const dataRes = await fetch("https://craftersmc-navigators.xyz/ai-data.json");
+    const dataJson = await safeJson(dataRes);
+    if (Array.isArray(dataJson)) customData = dataJson;
+  } catch {}
+
+  const isCraftersMCRelated = (title) => {
+    const t = title.toLowerCase();
+    return (
+      t.includes("craftersmc") ||
+      t.includes("crafters mc") ||
+      t.includes("#craftersmc") ||
+      t.includes("crafters server") ||
+      t.includes("crafters smp")
+    );
+  };
+
+  const STOPWORDS = new Set([
+    "what","where","when","who","how","why","is","are","was","were","the",
+    "a","an","in","on","of","to","do","does","did","can","could","would",
+    "should","tell","me","about","give","info","explain","describe","get",
+    "find","show","list","and","or","for","with","that","this","its","it",
+    "i","my","your","their","there","here","have","has","had","been","be"
+  ]);
+
+  const extractKeywords = (q) => {
+    const words = q.toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !STOPWORDS.has(w));
+    const phrases = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      phrases.push(words[i] + " " + words[i + 1]);
+    }
+    return { words, phrases };
+  };
+
+  const levenshtein = (a, b) => {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, (_, i) =>
+      Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    );
+    for (let i = 1; i <= m; i++)
+      for (let j = 1; j <= n; j++)
+        dp[i][j] = a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    return dp[m][n];
+  };
+
+  const similarity = (a, b) => {
+    const maxLen = Math.max(a.length, b.length);
+    if (maxLen === 0) return 1;
+    return (maxLen - levenshtein(a, b)) / maxLen;
+  };
+
+  const prefixMatch = (word, target) =>
+    target.startsWith(word) || word.startsWith(target);
+
+  const bigrams = (str) => {
+    const set = new Set();
+    for (let i = 0; i < str.length - 1; i++) set.add(str.slice(i, i + 2));
+    return set;
+  };
+
+  const bigramSimilarity = (a, b) => {
+    const ba = bigrams(a), bb = bigrams(b);
+    let shared = 0;
+    for (const bg of ba) if (bb.has(bg)) shared++;
+    return (2 * shared) / (ba.size + bb.size || 1);
+  };
+
+  const scoreCustomEntry = (entry, keywords) => {
+    const { words, phrases } = keywords;
+    const text = ((entry.title ?? "") + " " + (entry.data ?? "")).toLowerCase();
+    const textWords = text.split(/[\s\-_,.:;!?]+/);
+    let score = 0;
+
+    for (const phrase of phrases) {
+      if (text.includes(phrase)) {
+        score += 2.5;
+      } else {
+        const phraseSim = bigramSimilarity(text, phrase);
+        if (phraseSim >= 0.55) score += phraseSim * 1.8;
+      }
+    }
+
+    for (const kw of words) {
+      let best = 0;
+      for (const tw of textWords) {
+        if (tw === kw) { best = Math.max(best, 1.8); continue; }
+        if (tw.includes(kw)) { best = Math.max(best, 1.3); continue; }
+        if (kw.includes(tw) && tw.length > 3) { best = Math.max(best, 1.0); continue; }
+        if (prefixMatch(kw, tw) && kw.length > 3) { best = Math.max(best, 0.9); continue; }
+        if (Math.abs(tw.length - kw.length) > 4) continue;
+        const lSim = similarity(tw, kw);
+        if (lSim >= 0.82) { best = Math.max(best, lSim * 1.1); continue; }
+        const bSim = bigramSimilarity(tw, kw);
+        if (bSim >= 0.6) best = Math.max(best, bSim * 0.8);
+      }
+      score += best;
+    }
+
+    return score;
+  };
+
+  const scoreYouTubeTitle = (title, keywords) => {
+    const { words, phrases } = keywords;
+    const titleLower = title.toLowerCase();
+    const titleWords = titleLower.split(/[\s\-_]+/);
+    let score = 0;
+
+    for (const phrase of phrases) {
+      if (titleLower.includes(phrase)) score += 3.0;
+    }
+
+    for (const kw of words) {
+      for (const tw of titleWords) {
+        if (tw === kw) { score += 2.0; break; }
+        if (tw.includes(kw)) { score += 1.5; break; }
+      }
+    }
+
+    if (isCraftersMCRelated(title)) score += 5.0;
+
+    return score;
+  };
+
+  let youtubVideos = [];
+  try {
+    const keywords = extractKeywords(question);
+    const ytQuery = `${question} in CraftersMC`;
+    const ytSearchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+    ytSearchUrl.searchParams.set("part", "snippet");
+    ytSearchUrl.searchParams.set("q", ytQuery);
+    ytSearchUrl.searchParams.set("maxResults", "10");
+    ytSearchUrl.searchParams.set("type", "video");
+    ytSearchUrl.searchParams.set("relevanceLanguage", "en");
+    ytSearchUrl.searchParams.set("key", YT_API_KEY);
+
+    const ytRes = await fetch(ytSearchUrl.toString());
+    const ytData = await safeJson(ytRes);
+
+    if (ytData?.items?.length) {
+      youtubVideos = ytData.items
+        .map(item => ({
+          videoId: item.id?.videoId ?? null,
+          title: item.snippet?.title ?? "",
+          description: item.snippet?.description ?? "",
+          channel: item.snippet?.channelTitle ?? "",
+          thumbnail: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null,
+          publishedAt: item.snippet?.publishedAt ?? null,
+          score: scoreYouTubeTitle(item.snippet?.title ?? "", keywords)
+        }))
+        .filter(v => v.videoId && v.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+    }
+  } catch {}
+
+  let lastError = "All keys failed";
+
+  for (const key of keys) {
+    try {
+      const keywords = extractKeywords(question);
+
+      if (!keywords.words.length) {
+        lastError = "Could not extract keywords from question";
+        continue;
+      }
+
+      const scoredCustom = customData
+        .map(entry => ({ entry, score: scoreCustomEntry(entry, keywords) }))
+        .filter(r => r.score > 1.0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 12);
+
+      if (!scoredCustom.length && !youtubVideos.length) {
+        lastError = "No relevant data found for question";
+        continue;
+      }
+
+      const enrichedCustom = await Promise.all(
+        scoredCustom.map(async ({ entry }) => {
+          if (entry.img) {
+            return { ...entry, resolvedImg: entry.img };
+          }
+          try {
+            const titleForFile = (entry.title ?? "").replace(/ /g, "_") + ".png";
+            const params = new URLSearchParams({
+              action: "query",
+              titles: `File:${titleForFile}`,
+              prop: "imageinfo",
+              iiprop: "url",
+              format: "json"
+            });
+            const res = await fetch(`https://craftersmc.wiki.gg/api.php?${params}`, {
+              headers: {
+                "User-Agent": "CraftersMCBot/1.0 (cloudflare-worker)",
+                "Accept": "application/json"
+              }
+            });
+            const data = await safeJson(res);
+            let imgUrl = null;
+            for (const id in data?.query?.pages ?? {}) {
+              if (id === "-1") break;
+              imgUrl = data.query.pages[id]?.imageinfo?.[0]?.url ?? null;
+            }
+            return { ...entry, resolvedImg: imgUrl };
+          } catch {
+            return { ...entry, resolvedImg: null };
+          }
+        })
+      );
+
+      const customContextBlocks = enrichedCustom.map(e => {
+        const imgLine = e.resolvedImg ? `Image: ${e.resolvedImg}\n` : "";
+        return `### ${e.title ?? "Custom Entry"}\n${imgLine}${e.data ?? ""}`;
+      });
+
+      const customSources = enrichedCustom
+        .filter(e => e.title && e.url)
+        .map(e => ({
+          title: e.title,
+          url: e.url,
+          imgUrl: e.resolvedImg ?? null
+        }));
+
+      const youtubeContextBlock = youtubVideos.length
+        ? `## YOUTUBE VIDEOS\n` + youtubVideos.map(v =>
+            `Video Title: ${v.title}\nChannel: ${v.channel}\nVideo ID: ${v.videoId}\nThumbnail: ${v.thumbnail ?? "none"}\nDescription: ${v.description}\nPublished: ${v.publishedAt ?? "unknown"}\nEmbed URL: https://www.youtube.com/embed/${v.videoId}`
+          ).join("\n\n")
+        : "";
+
+      const context = [
+        ...(customContextBlocks.length
+          ? ["## CUSTOM DATA (from data.json — treat as authoritative)", ...customContextBlocks]
+          : []),
+        ...(youtubeContextBlock ? [youtubeContextBlock] : [])
+      ]
+        .join("\n\n")
+        .slice(0, 30000);
+
+      const finalRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You are a CraftersMC assistant. You will receive two types of context:
+
+1. CUSTOM DATA — manually curated entries from data.json. These are authoritative. Use them as your primary source.
+2. YOUTUBE VIDEOS — search results from YouTube relevant to the question. Each entry includes a title, channel, description, video ID, and embed URL.
+
+Rules for custom data:
+- NEVER use outside knowledge, assumptions, or training data
+- NEVER invent items, stats, recipes, or mechanics
+- Custom data entries are pre-vetted — use them as-is
+- If something is not in the context at all, say: The data does not have that information
+- You may embed an item image once at the top using markdown: ![Title](image_url)
+- Only use image URLs explicitly provided in the context under Image: — never guess or invent image URLs
+
+Rules for YouTube videos:
+- If one or more YouTube videos are present in the context and are relevant to the question, suggest them to the user
+- For each suggested video, render it as an embedded iframe using this exact format so the user can watch it directly:
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/VIDEO_ID" frameborder="0" allowfullscreen></iframe>
+- Replace VIDEO_ID with the actual Video ID from the context
+- Below each iframe, write the video title and channel name in plain text
+- Only suggest videos that are genuinely relevant to what the user asked — do not force video suggestions if they do not match
+- Never invent or guess video IDs or URLs — only use what is explicitly in the context`
+            },
+            {
+              role: "user",
+              content: `QUESTION: ${question}\n\nCONTEXT:\n${context}`
+            }
+          ]
+        })
+      });
+
+      const out = await safeJson(finalRes);
+      const content = out?.choices?.[0]?.message?.content ?? "";
+
+      if (!content) {
+        lastError = "Empty response from model";
+        continue;
+      }
+
+      return json({
+        content,
+        sources: customSources,
+        videos: youtubVideos.map(v => ({
+          videoId: v.videoId,
+          title: v.title,
+          channel: v.channel,
+          thumbnail: v.thumbnail,
+          embedUrl: `https://www.youtube.com/embed/${v.videoId}`
+        })),
+        suggestions: youtubVideos.map(v => ({
+          videoId: v.videoId,
+          title: v.title,
+          channel: v.channel,
+          thumbnail: v.thumbnail,
+          description: v.description,
+          publishedAt: v.publishedAt,
+          embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+          score: v.score
+        }))
+      });
+
+    } catch (e) {
+      lastError = e.message;
+    }
+  }
+
+  return json({ error: lastError }, 500);
+                                               }
+
+
+    
 if (path === "/api/auction") {
   const url = new URL(request.url);
 
@@ -140,7 +503,7 @@ if (path === "/api/auction") {
 
 
 
-if (path === "/ai-1.1") {
+if (path === "/ai-1.1-backup") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
 
