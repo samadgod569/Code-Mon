@@ -99,7 +99,31 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
   }
 }
 
+if (path === "/api/ai-data") {
+  const url = new URL(request.url);
+  const question = url.searchParams.get("question");
 
+  if (!question) {
+    return new Response(JSON.stringify({ error: "Missing question" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+    });
+  }
+
+  const upstream = await fetch(
+    `http://45.13.236.245:25909/ai-1.1?question=${encodeURIComponent(question)}`
+  );
+
+  const data = await upstream.text();
+
+  return new Response(data, {
+    status: upstream.status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
+}
 
 
 if (path === "/ai-1.1") {
