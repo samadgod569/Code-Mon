@@ -101,6 +101,7 @@ if (path === "/cloudra/deploy" && request.method === "POST") {
 
 
 
+
 if (path === "/ai-1.1") {
   const url = new URL(request.url);
   const question = url.searchParams.get("question");
@@ -206,6 +207,28 @@ if (path === "/ai-1.1") {
     return (2 * shared) / (ba.size + bb.size || 1);
   };
 
+  const scoreYouTubeTitle = (title, keywords) => {
+    const { words, phrases } = keywords;
+    const titleLower = title.toLowerCase();
+    const titleWords = titleLower.split(/[\s\-_]+/);
+    let score = 0;
+
+    for (const phrase of phrases) {
+      if (titleLower.includes(phrase)) score += 3.0;
+    }
+
+    for (const kw of words) {
+      for (const tw of titleWords) {
+        if (tw === kw) { score += 2.0; break; }
+        if (tw.includes(kw)) { score += 1.5; break; }
+      }
+    }
+
+    if (isCraftersMCRelated(title)) score += 5.0;
+
+    return score;
+  };
+
   const scoreCustomEntry = (entry, keywords) => {
     const { words, phrases } = keywords;
     const text = ((entry.title ?? "") + " " + (entry.data ?? "")).toLowerCase();
@@ -240,31 +263,10 @@ if (path === "/ai-1.1") {
     return score;
   };
 
-  const scoreYouTubeTitle = (title, keywords) => {
-    const { words, phrases } = keywords;
-    const titleLower = title.toLowerCase();
-    const titleWords = titleLower.split(/[\s\-_]+/);
-    let score = 0;
-
-    for (const phrase of phrases) {
-      if (titleLower.includes(phrase)) score += 3.0;
-    }
-
-    for (const kw of words) {
-      for (const tw of titleWords) {
-        if (tw === kw) { score += 2.0; break; }
-        if (tw.includes(kw)) { score += 1.5; break; }
-      }
-    }
-
-    if (isCraftersMCRelated(title)) score += 5.0;
-
-    return score;
-  };
+  const keywords = extractKeywords(question);
 
   let youtubVideos = [];
   try {
-    const keywords = extractKeywords(question);
     const ytQuery = `${question} in CraftersMC`;
     const ytSearchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
     ytSearchUrl.searchParams.set("part", "snippet");
@@ -288,7 +290,7 @@ if (path === "/ai-1.1") {
           publishedAt: item.snippet?.publishedAt ?? null,
           score: scoreYouTubeTitle(item.snippet?.title ?? "", keywords)
         }))
-        .filter(v => v.videoId && v.score > 0)
+        .filter(v => v.videoId)
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
     }
@@ -298,8 +300,6 @@ if (path === "/ai-1.1") {
 
   for (const key of keys) {
     try {
-      const keywords = extractKeywords(question);
-
       if (!keywords.words.length) {
         lastError = "Could not extract keywords from question";
         continue;
@@ -454,7 +454,11 @@ Rules for YouTube videos:
   }
 
   return json({ error: lastError }, 500);
-                                               }
+          }
+
+
+
+
 
 
     
