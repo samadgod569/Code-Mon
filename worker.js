@@ -27,7 +27,58 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+if (path === "/api/resend-test") {
+  let body;
 
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { to, subject, html } = body;
+
+  if (!to) {
+    return json({ error: "Missing recipient email" }, 400);
+  }
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer re_ZTmtBBEm_E1M7wm4hrmNMYdhq5HZd48CV`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Acme <onboarding@resend.dev>",
+        to: [to],
+        subject: subject || "Test Email",
+        html: html || "<strong>It works!</strong>",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return json({
+        success: false,
+        error: data,
+      }, res.status);
+    }
+
+    return json({
+      success: true,
+      message: "Email sent successfully",
+      data,
+    });
+
+  } catch (err) {
+    return json({
+      success: false,
+      error: err.message,
+    }, 500);
+  }
+}
 
     
 if (path === "/cloudra/deploy" && request.method === "POST") {
