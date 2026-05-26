@@ -30,8 +30,6 @@ const corsHeaders = {
 
 
     
-    
-
     // 8. /api/port/op
 if (path === "/api/port/op" && request.method === "POST") {
   let body;
@@ -44,9 +42,9 @@ if (path === "/api/port/op" && request.method === "POST") {
 
   const { secret, operation, data, username } = body;
 
-  if (!secret || !operation || !username) {
+  if (!secret || !operation) {
     return json(
-      { error: "Missing secret, operation or username" },
+      { error: "Missing secret or operation" },
       400
     );
   }
@@ -62,6 +60,29 @@ if (path === "/api/port/op" && request.method === "POST") {
 
   if (storedSecret !== secret) {
     return json({ error: "Invalid secret key" }, 403);
+  }
+
+  // LIST operation
+  if (operation === "LIST") {
+    const list = await env.Cloudra.list({
+      prefix: "cloudra/port/"
+    });
+
+    const users = [];
+
+    for (const key of list.keys) {
+      const username = key.name.replace("cloudra/port/", "");
+      users.push(username);
+    }
+
+    return json({
+      success: true,
+      data: users
+    });
+  }
+
+  if (!username) {
+    return json({ error: "Missing username" }, 400);
   }
 
   const kvKey = `cloudra/port/${username}`;
@@ -113,27 +134,9 @@ if (path === "/api/port/op" && request.method === "POST") {
     });
   }
 
-  // LIST operation
-  if (operation === "LIST") {
-    const list = await env.Cloudra.list({
-      prefix: "cloudra/port/"
-    });
-
-    const users = [];
-
-    for (const key of list.keys) {
-      const username = key.name.replace("cloudra/port/", "");
-      users.push(username);
-    }
-
-    return json({
-      success: true,
-      data: users
-    });
-  }
-
   return json({ error: "Invalid operation" }, 400);
 }
+
 
 
 
@@ -149,9 +152,9 @@ if (path === "/api/credentials/op" && request.method === "POST") {
 
   const { secret, operation, data, username } = body;
 
-  if (!secret || !operation || !username) {
+  if (!secret || !operation) {
     return json(
-      { error: "Missing secret, operation or username" },
+      { error: "Missing secret or operation" },
       400
     );
   }
@@ -167,6 +170,33 @@ if (path === "/api/credentials/op" && request.method === "POST") {
 
   if (storedSecret !== secret) {
     return json({ error: "Invalid secret key" }, 403);
+  }
+
+  // LIST operation
+  if (operation === "LIST") {
+    const list = await env.Cloudra.list({
+      prefix: "cloudra/credentials/"
+    });
+
+    const users = [];
+
+    for (const key of list.keys) {
+      const username = key.name.replace(
+        "cloudra/credentials/",
+        ""
+      );
+
+      users.push(username);
+    }
+
+    return json({
+      success: true,
+      data: users
+    });
+  }
+
+  if (!username) {
+    return json({ error: "Missing username" }, 400);
   }
 
   const kvKey = `cloudra/credentials/${username}`;
@@ -218,31 +248,9 @@ if (path === "/api/credentials/op" && request.method === "POST") {
     });
   }
 
-  // LIST operation
-  if (operation === "LIST") {
-    const list = await env.Cloudra.list({
-      prefix: "cloudra/credentials/"
-    });
-
-    const users = [];
-
-    for (const key of list.keys) {
-      const username = key.name.replace(
-        "cloudra/credentials/",
-        ""
-      );
-
-      users.push(username);
-    }
-
-    return json({
-      success: true,
-      data: users
-    });
-  }
-
   return json({ error: "Invalid operation" }, 400);
 }
+
 
 
 
@@ -256,11 +264,16 @@ if (path === "/api/backups/op" && request.method === "POST") {
     return json({ error: "Invalid JSON" }, 400);
   }
 
-  const { secret, backupData, backupId, operation } = body;
+  const {
+    secret,
+    backupData,
+    backupId,
+    operation
+  } = body;
 
-  if (!secret || !backupId || !operation) {
+  if (!secret || !operation) {
     return json(
-      { error: "Missing secret, backupId or operation" },
+      { error: "Missing secret or operation" },
       400
     );
   }
@@ -278,7 +291,28 @@ if (path === "/api/backups/op" && request.method === "POST") {
     return json({ error: "Invalid secret key" }, 403);
   }
 
+  if (!backupId) {
+    return json({ error: "Missing backupId" }, 400);
+  }
+
   const kvKey = `cloudra/backups/${backupId}`;
+
+  // GET operation
+  if (operation === "GET") {
+    const value = await env.Cloudra.get(kvKey, {
+      type: "json"
+    });
+
+    if (!value) {
+      return json({ error: "Backup not found" }, 404);
+    }
+
+    return json({
+      success: true,
+      backupId,
+      data: value
+    });
+  }
 
   // CREATE operation
   if (operation === "CREATE") {
@@ -314,8 +348,11 @@ if (path === "/api/backups/op" && request.method === "POST") {
   }
 
   return json({ error: "Invalid operation" }, 400);
-}
-    
+        }
+
+
+
+
 
 if (path === "/api/resend-test") {
   let body;
