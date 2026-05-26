@@ -27,6 +27,247 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+
+// 10. /api/backups/op
+if (path === "/api/backups/op" && request.method === "POST") {
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { secret, backupData, backupId, operation } = body;
+
+  if (!secret || !backupId || !operation) {
+    return json(
+      { error: "Missing secret, backupId or operation" },
+      400
+    );
+  }
+
+  // Validate secret key
+  const storedSecret = await env.FILES.get("cloudra-key", {
+    type: "text"
+  });
+
+  if (!storedSecret) {
+    return json({ error: "Secret key not configured" }, 500);
+  }
+
+  if (storedSecret !== secret) {
+    return json({ error: "Invalid secret key" }, 403);
+  }
+
+  const kvKey = `cloudra/backups/${backupId}`;
+
+  // CREATE operation
+  if (operation === "CREATE") {
+    if (backupData === undefined) {
+      return json(
+        { error: "Missing backupData for CREATE" },
+        400
+      );
+    }
+
+    await env.Cloudra.put(
+      kvKey,
+      JSON.stringify(backupData)
+    );
+
+    return json({
+      success: true,
+      message: "Backup created successfully",
+      backupId,
+      data: backupData
+    });
+  }
+
+  // DELETE operation
+  if (operation === "DELETE") {
+    await env.Cloudra.delete(kvKey);
+
+    return json({
+      success: true,
+      message: "Backup deleted successfully",
+      backupId
+    });
+  }
+
+  return json({ error: "Invalid operation" }, 400);
+      }
+    
+    // 9. /api/credentials/op
+if (path === "/api/credentials/op" && request.method === "POST") {
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { secret, operation, data, username } = body;
+
+  if (!secret || !operation || !username) {
+    return json(
+      { error: "Missing secret, operation or username" },
+      400
+    );
+  }
+
+  // Validate secret key
+  const storedSecret = await env.FILES.get("cloudra-key", {
+    type: "text"
+  });
+
+  if (!storedSecret) {
+    return json({ error: "Secret key not configured" }, 500);
+  }
+
+  if (storedSecret !== secret) {
+    return json({ error: "Invalid secret key" }, 403);
+  }
+
+  const kvKey = `cloudra/credentials/${username}`;
+
+  // GET operation
+  if (operation === "GET") {
+    const value = await env.Cloudra.get(kvKey, {
+      type: "json"
+    });
+
+    if (!value) {
+      return json({ error: "Data not found" }, 404);
+    }
+
+    return json({
+      success: true,
+      username,
+      data: value
+    });
+  }
+
+  // UPDATE operation
+  if (operation === "UPDATE") {
+    if (data === undefined) {
+      return json({ error: "Missing data for UPDATE" }, 400);
+    }
+
+    await env.Cloudra.put(
+      kvKey,
+      JSON.stringify(data)
+    );
+
+    return json({
+      success: true,
+      message: "Credentials updated successfully",
+      username,
+      data
+    });
+  }
+
+  // DELETE operation
+  if (operation === "DELETE") {
+    await env.Cloudra.delete(kvKey);
+
+    return json({
+      success: true,
+      message: "Credentials deleted successfully",
+      username
+    });
+  }
+
+  return json({ error: "Invalid operation" }, 400);
+}
+
+    // 8. /api/port/op
+if (path === "/api/port/op" && request.method === "POST") {
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const { secret, operation, data, username } = body;
+
+  if (!secret || !operation || !username) {
+    return json(
+      { error: "Missing secret, operation or username" },
+      400
+    );
+  }
+
+  // Validate secret key
+  const storedSecret = await env.FILES.get("cloudra-key", {
+    type: "text"
+  });
+
+  if (!storedSecret) {
+    return json({ error: "Secret key not configured" }, 500);
+  }
+
+  if (storedSecret !== secret) {
+    return json({ error: "Invalid secret key" }, 403);
+  }
+
+  const kvKey = `cloudra/port/${username}`;
+
+  // GET operation
+  if (operation === "GET") {
+    const value = await env.Cloudra.get(kvKey, {
+      type: "json"
+    });
+
+    if (!value) {
+      return json({ error: "Data not found" }, 404);
+    }
+
+    return json({
+      success: true,
+      username,
+      data: value
+    });
+  }
+
+  // UPDATE operation
+  if (operation === "UPDATE") {
+    if (data === undefined) {
+      return json({ error: "Missing data for UPDATE" }, 400);
+    }
+
+    await env.Cloudra.put(
+      kvKey,
+      JSON.stringify(data)
+    );
+
+    return json({
+      success: true,
+      message: "Data updated successfully",
+      username,
+      data
+    });
+  }
+
+  // DELETE operation
+  if (operation === "DELETE") {
+    await env.Cloudra.delete(kvKey);
+
+    return json({
+      success: true,
+      message: "Data deleted successfully",
+      username
+    });
+  }
+
+  return json({ error: "Invalid operation" }, 400);
+}
+
+    
+
 if (path === "/api/resend-test") {
   let body;
 
