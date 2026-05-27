@@ -28,3 +28,6 @@ id = "5163935978d34b47ac564672381a718d"
 [[kv_namespaces]]
 binding = "CREDITS"
 id = "b7fdf62fe23f49ceab70e36119745b76"
+[[kv_namespaces]]
+binding = "Cloudra"
+id = "8c0f14322c004946be37e58e50db79ea"
