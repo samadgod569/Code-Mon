@@ -87,22 +87,30 @@ if (path === "/api/port/op" && request.method === "POST") {
 
   const kvKey = `cloudra/port/${username}`;
 
-  // GET operation
-  if (operation === "GET") {
-    const value = await env.Cloudra.get(kvKey, {
-      type: "json"
-    });
+// GET operation
+if (operation === "GET") {
+  const value = await env.Cloudra.get(kvKey, {
+    type: "text"  // Get as text first
+  });
 
-    if (!value) {
-      return json({ error: "Data not found" }, 404);
-    }
-
-    return json({
-      success: true,
-      username,
-      data: value
-    });
+  if (!value) {
+    return json({ error: "Data not found" }, 404);
   }
+
+  // Try to parse as JSON
+  let parsedValue;
+  try {
+    parsedValue = JSON.parse(value);
+  } catch (e) {
+    return json({ error: "Invalid JSON in KV" }, 500);
+  }
+
+  return json({
+    success: true,
+    username,
+    data: parsedValue
+  });
+}
 
   // UPDATE operation
   if (operation === "UPDATE") {
