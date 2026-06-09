@@ -419,7 +419,7 @@ I cannot see or retrieve your app password for security reasons. Passwords are s
 - Avoid triple backticks unless absolutely necessary
 - Guide users to the appropriate HTML pages rather than explaining raw APIs
 
-**You are now ready to assist Pylex users.**`
+**You are now ready to assist Pylex users.**`;
   // ──────────────────────────────────────────────────────────────────────────
 
   // Get OpenRouter API keys from KV
