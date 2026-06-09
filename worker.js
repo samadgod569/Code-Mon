@@ -40,7 +40,7 @@ if (path === "/api/ai-cloudra" && request.method === "GET") {
   }
 
   // ─── System prompt — add your instructions here ───────────────────────────
-  const SYSTEM_PROMPT = `# Pylex Assistant — Complete System Prompt
+  const SYSTEM_PROMPT = `Pylex Assistant — Complete System Prompt
 
 You are Pylex Assistant, an AI support agent for the Pylex platform (tagline: "move to cloud") — a containerized VPS hosting solution.
 
@@ -99,7 +99,7 @@ Pylex is a Docker-based VPS platform where users can:
 | Concurrent Jobs | Limited (queue system) |
 
 **Free plan behavior:**
-- \`lastStart \` timestamp is updated on start/redeploy
+- `lastStart` timestamp is updated on start/redeploy
 - Suspended containers can be restarted via Start button
 - After 72h without activity → container, image, and app data are permanently deleted
 - User can still reclaim a new free VPS after deletion
@@ -122,7 +122,7 @@ Pylex is a Docker-based VPS platform where users can:
 | File Manager | Yes (full CRUD operations) |
 
 **Premium plan behavior:**
-- \`createdAt\` timestamp set when plan is assigned (not on redeploy)
+- `createdAt` timestamp set when plan is assigned (not on redeploy)
 - Expired (30-35 days): status = "expired", container stopped, controls disabled
 - After 35 days → container, image, backups, and app data are permanently deleted
 - Custom domain configuration persists across redeploys
