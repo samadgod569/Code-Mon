@@ -27,7 +27,89 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+if (path === "/api/ai-test") {
+  const question = new URL(request.url).searchParams.get("question");
 
+  if (!question) {
+    return new Response("Missing question", { status: 400 });
+  }
+
+  const MODEL = "openai/gpt-oss-120b:free";
+
+  const keysRaw = await env.FILES.get("OPR");
+
+  if (!keysRaw) {
+    return new Response("No API keys found", { status: 500 });
+  }
+
+  let keys;
+
+  try {
+    keys = JSON.parse(keysRaw);
+  } catch {
+    return new Response("Invalid OPR format", { status: 500 });
+  }
+
+  if (!Array.isArray(keys) || !keys.length) {
+    return new Response("No valid API keys", { status: 500 });
+  }
+
+  let lastError = "All API keys failed";
+
+  for (const apiKey of keys) {
+    try {
+      const res = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: [
+              {
+                role: "user",
+                content: question
+              }
+            ]
+          })
+        }
+      );
+
+      if (!res.ok) {
+        lastError = `OpenRouter ${res.status}`;
+        continue;
+      }
+
+      const data = await res.json();
+
+      const answer =
+        data?.choices?.[0]?.message?.content?.trim();
+
+      if (!answer) {
+        lastError = "Empty response";
+        continue;
+      }
+
+      return new Response(answer, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8"
+        }
+      });
+    } catch (err) {
+      lastError = err?.message || "Unknown error";
+    }
+  }
+
+  return new Response(lastError, {
+    status: 500,
+    headers: {
+      "Content-Type": "text/plain"
+    }
+  });
+}
 // 8. /api/ai-cloudra
 if (path === "/api/ai-cloudra" && request.method === "GET") {
   const question = url.searchParams.get("question");
