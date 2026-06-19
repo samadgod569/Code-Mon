@@ -42,7 +42,7 @@ if (path === "/api/ai-test") {
     });
   }
 
-  const MODEL = "openai/gpt-4o-mini";
+  const MODEL = "qwen/qwen3-coder:free";
 
   const keysRaw = await env.FILES.get("OPR");
 
