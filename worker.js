@@ -27,7 +27,109 @@ const corsHeaders = {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
+
+    
+
+
+
 if (path === "/api/ai-test") {
+  const question = new URL(request.url).searchParams.get("question");
+
+  if (!question) {
+    return new Response("Missing question", {
+      status: 400,
+      headers: CORS_HEADERS
+    });
+  }
+
+  const MODEL = "openai/gpt-oss-120b:free";
+
+  const keysRaw = await env.FILES.get("OPR");
+
+  if (!keysRaw) {
+    return new Response("No API keys found", {
+      status: 500,
+      headers: CORS_HEADERS
+    });
+  }
+
+  let keys;
+
+  try {
+    keys = JSON.parse(keysRaw);
+  } catch {
+    return new Response("Invalid OPR format", {
+      status: 500,
+      headers: CORS_HEADERS
+    });
+  }
+
+  if (!Array.isArray(keys) || !keys.length) {
+    return new Response("No valid API keys", {
+      status: 500,
+      headers: CORS_HEADERS
+    });
+  }
+
+  let lastError = "All API keys failed";
+
+  for (const apiKey of keys) {
+    try {
+      const res = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: [
+              {
+                role: "user",
+                content: question
+              }
+            ]
+          })
+        }
+      );
+
+      if (!res.ok) {
+        lastError = `OpenRouter ${res.status}`;
+        continue;
+      }
+
+      const data = await res.json();
+
+      const answer =
+        data?.choices?.[0]?.message?.content?.trim();
+
+      if (!answer) {
+        lastError = "Empty response";
+        continue;
+      }
+
+      return new Response(answer, {
+        headers: {
+          ...CORS_HEADERS,
+          "Content-Type": "text/plain; charset=utf-8"
+        }
+      });
+    } catch (err) {
+      lastError = err?.message || "Unknown error";
+    }
+  }
+
+  return new Response(lastError, {
+    status: 500,
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "text/plain"
+    }
+  });
+}
+if (path === "/api/ai-test-hmm") {
   const question = new URL(request.url).searchParams.get("question");
 
   if (!question) {
