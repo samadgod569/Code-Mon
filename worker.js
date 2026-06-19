@@ -38,18 +38,18 @@ if (path === "/api/ai-test") {
   if (!question) {
     return new Response("Missing question", {
       status: 400,
-      headers: CORS_HEADERS
+      headers: corsHeaders
     });
   }
 
-  const MODEL = "openai/gpt-oss-120b:free";
+  const MODEL = "openai/gpt-4o-mini";
 
   const keysRaw = await env.FILES.get("OPR");
 
   if (!keysRaw) {
     return new Response("No API keys found", {
       status: 500,
-      headers: CORS_HEADERS
+      headers: corsHeaders
     });
   }
 
@@ -60,14 +60,14 @@ if (path === "/api/ai-test") {
   } catch {
     return new Response("Invalid OPR format", {
       status: 500,
-      headers: CORS_HEADERS
+      headers: corsHeaders
     });
   }
 
   if (!Array.isArray(keys) || !keys.length) {
     return new Response("No valid API keys", {
       status: 500,
-      headers: CORS_HEADERS
+      headers: corsHeaders
     });
   }
 
@@ -112,7 +112,7 @@ if (path === "/api/ai-test") {
 
       return new Response(answer, {
         headers: {
-          ...CORS_HEADERS,
+          ...corsHeaders,
           "Content-Type": "text/plain; charset=utf-8"
         }
       });
@@ -124,7 +124,7 @@ if (path === "/api/ai-test") {
   return new Response(lastError, {
     status: 500,
     headers: {
-      ...CORS_HEADERS,
+      ...corsHeaders,
       "Content-Type": "text/plain"
     }
   });
