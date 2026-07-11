@@ -30,7 +30,122 @@ const corsHeaders = {
 
     
 
+if (path === "/api/ai-test-very" && request.method === "POST") {
+  let body;
 
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ message: "Invalid JSON body" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  const message = body?.message;
+  const history = Array.isArray(body?.history) ? body.history : [];
+
+  if (!message) {
+    return new Response(JSON.stringify({ message: "Missing message" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  const MODEL = "openai/gpt-4o-mini";
+
+  const keysRaw = await env.FILES.get("OPR");
+
+  if (!keysRaw) {
+    return new Response(JSON.stringify({ message: "No API keys found" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  let keys;
+
+  try {
+    keys = JSON.parse(keysRaw);
+  } catch {
+    return new Response(JSON.stringify({ message: "Invalid OPR format" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  if (!Array.isArray(keys) || !keys.length) {
+    return new Response(JSON.stringify({ message: "No valid API keys" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  // The panel sends its own system_prompt entry plus user/assistant/system
+  // turns in "history" — translate roles to what OpenRouter/OpenAI expect
+  // and use that as the full conversation instead of just the bare message.
+  const messages = history.length
+    ? history.map((m) => ({
+        role:
+          m.role === "system_prompt"
+            ? "system"
+            : m.role === "assistant"
+            ? "assistant"
+            : m.role === "system"
+            ? "user"
+            : "user",
+        content: m.text ?? ""
+      }))
+    : [{ role: "user", content: message }];
+
+  let lastError = "All API keys failed";
+
+  for (const apiKey of keys) {
+    try {
+      const res = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages
+          })
+        }
+      );
+
+      if (!res.ok) {
+        lastError = `OpenRouter ${res.status}`;
+        continue;
+      }
+
+      const data = await res.json();
+
+      const answer = data?.choices?.[0]?.message?.content?.trim();
+
+      if (!answer) {
+        lastError = "Empty response";
+        continue;
+      }
+
+      // The panel expects { content: "<reply>" } back, not raw text.
+      return new Response(JSON.stringify({ content: answer }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    } catch (err) {
+      lastError = err?.message || "Unknown error";
+    }
+  }
+
+  return new Response(JSON.stringify({ message: lastError }), {
+    status: 500,
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+}
+    
 
 if (path === "/api/ai-test") {
   const question = new URL(request.url).searchParams.get("question");
