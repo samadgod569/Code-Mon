@@ -157,7 +157,7 @@ if (path === "/api/ai-test") {
     });
   }
 
-  const MODEL = "inclusionai/ling-3.1-flash";
+  const MODEL = "qwen/qwen3.8-27b:free";
 
   const keysRaw = await env.FILES.get("OPR");
 
