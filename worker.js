@@ -157,7 +157,7 @@ if (path === "/api/ai-test") {
     });
   }
 
-  const MODEL = "qwen/qwen3.8-27b:free";
+  const MODEL = "apodex/apodex-1.1-mini:free";
 
   const keysRaw = await env.FILES.get("OPR");
 
