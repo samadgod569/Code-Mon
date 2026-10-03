@@ -157,7 +157,7 @@ if (path === "/api/ai-test") {
     });
   }
 
-  const MODEL = "openai/gpt-4o-mini";
+  const MODEL = "inclusionai/ling-3.1-flash";
 
   const keysRaw = await env.FILES.get("OPR");
 
