@@ -148,7 +148,19 @@ if (path === "/api/ai-test-very" && request.method === "POST") {
     
 
 if (path === "/api/ai-test") {
-  const question = new URL(request.url).searchParams.get("question");
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return new Response("Invalid JSON body", {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  const question = body?.question;
+  const model = body?.model;
 
   if (!question) {
     return new Response("Missing question", {
@@ -157,7 +169,12 @@ if (path === "/api/ai-test") {
     });
   }
 
-  const MODEL = "apodex/apodex-1.1-mini:free";
+  if (!model) {
+    return new Response("Missing model", {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
 
   const keysRaw = await env.FILES.get("OPR");
 
@@ -199,7 +216,7 @@ if (path === "/api/ai-test") {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: MODEL,
+            model: model,
             messages: [
               {
                 role: "user",
